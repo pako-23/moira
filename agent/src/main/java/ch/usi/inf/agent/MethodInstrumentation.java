@@ -111,15 +111,18 @@ class MethodInstrumentation extends MethodVisitor {
     } else if (op == Opcodes.GETFIELD) {
       mv.visitInsn(Opcodes.DUP);
       mv.visitLdcInsn(name);
-      mv.visitMethodInsn(Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[5], methodDescs[5], false);
+      mv.visitMethodInsn(
+          Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[5], methodDescs[5], false);
       useExtraStackWords(2);
     } else if (op == Opcodes.PUTSTATIC) {
       mv.visitLdcInsn(owner + "#" + name);
-      mv.visitMethodInsn(Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[0], methodDescs[0], false);
+      mv.visitMethodInsn(
+          Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[0], methodDescs[0], false);
       useExtraStackWords(2);
     } else if (op == Opcodes.GETSTATIC) {
       mv.visitLdcInsn(owner + "#" + name);
-      mv.visitMethodInsn(Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[3], methodDescs[3], false);
+      mv.visitMethodInsn(
+          Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[3], methodDescs[3], false);
       useExtraStackWords(2);
     }
 

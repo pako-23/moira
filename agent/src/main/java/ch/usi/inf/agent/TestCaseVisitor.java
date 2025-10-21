@@ -29,8 +29,7 @@ class TestCaseVisitor extends AdviceAdapter {
       final String description) {
     super(Opcodes.ASM9, mv, access, methodName, description);
     this.isTestMethod = false;
-    if (isJunit3TestCase)
-      isTestMethod = methodName.startsWith("test");
+    if (isJunit3TestCase) isTestMethod = methodName.startsWith("test");
 
     this.className = className;
     this.methodName = methodName;
@@ -47,13 +46,15 @@ class TestCaseVisitor extends AdviceAdapter {
   protected void onMethodEnter() {
     if (isTestMethod) {
       mv.visitLdcInsn(className + "#" + methodName);
-      mv.visitMethodInsn(Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[0], methodDescs[0], false);
+      mv.visitMethodInsn(
+          Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[0], methodDescs[0], false);
     }
   }
 
   protected void onMethodExit(int opcode) {
     if (isTestMethod && opcode != Opcodes.ATHROW) {
-      mv.visitMethodInsn(Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[1], methodDescs[1], false);
+      mv.visitMethodInsn(
+          Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[1], methodDescs[1], false);
     }
   }
 
@@ -68,7 +69,8 @@ class TestCaseVisitor extends AdviceAdapter {
       mv.visitTryCatchBlock(tryBegin, tryEnd, tryEnd, null);
       mv.visitLabel(tryEnd);
       mv.visitFrame(F_NEW, 0, null, 1, new Object[] {"java/lang/Throwable"});
-      mv.visitMethodInsn(Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[1], methodDescs[1], false);
+      mv.visitMethodInsn(
+          Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[1], methodDescs[1], false);
       mv.visitInsn(Opcodes.ATHROW);
     }
 

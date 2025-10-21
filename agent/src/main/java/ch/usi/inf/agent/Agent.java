@@ -6,8 +6,7 @@ public class Agent {
   public static String PROFILER = "ch/usi/inf/profiler/NullProfiler";
 
   public static void premain(String agentArgs, Instrumentation inst) {
-    if (agentArgs != null && !agentArgs.isEmpty())
-      PROFILER = "ch/usi/inf/profiler/" + agentArgs;
+    if (agentArgs != null && !agentArgs.isEmpty()) PROFILER = "ch/usi/inf/profiler/" + agentArgs;
 
     try {
       inst.addTransformer(new Transformer(), true);
