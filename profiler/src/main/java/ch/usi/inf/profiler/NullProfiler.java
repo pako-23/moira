@@ -1,6 +1,8 @@
 package ch.usi.inf.profiler;
 
-public class NullProfiler {
+public final class NullProfiler {
+  private NullProfiler() {}
+
   public static void writeStaticField(String field) {}
 
   public static void writeArrayElement(Object array, int index) {}

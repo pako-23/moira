@@ -6,9 +6,21 @@ public interface Map<K, V> {
     public V produce();
   }
 
+  public interface Iterator<K, V> {
+    public boolean hasNext();
+
+    public V value();
+
+    public K key();
+
+    public void next();
+  }
+
   public int capacity();
 
   public int size();
 
   public V getOrPut(K key, ValueProducer<V> producer);
+
+  public Iterator<K, V> iterator();
 }

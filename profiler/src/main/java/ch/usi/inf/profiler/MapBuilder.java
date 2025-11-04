@@ -3,14 +3,19 @@ package ch.usi.inf.profiler;
 public class MapBuilder<K, V> {
   private static final int DEFAULT_INITIAL_CAPACITY = 1 << 4;
 
+  private KeyDeletionCallback<V> keyDeletionCallaback;
   private Equivalence<K> equivalence;
   private HashFunction<K> hashFunction;
   private int initialCapacity;
   private ReferenceStrength keyReferenceStrength;
 
   private MapBuilder() {
-    equivalence = (K first, K second) -> first.equals(second);
-    hashFunction = (K key) -> key.hashCode();
+    keyDeletionCallaback =
+        (value) -> {
+          return;
+        };
+    equivalence = (first, second) -> first.equals(second);
+    hashFunction = (key) -> key.hashCode();
     initialCapacity = DEFAULT_INITIAL_CAPACITY;
     keyReferenceStrength = ReferenceStrength.STRONG;
   }
@@ -47,6 +52,11 @@ public class MapBuilder<K, V> {
     return this;
   }
 
+  public MapBuilder<K, V> keyDeletionCallback(KeyDeletionCallback<V> callback) {
+    this.keyDeletionCallaback = callback;
+    return this;
+  }
+
   public int getInitialCapacity() {
     return initialCapacity;
   }
@@ -59,12 +69,21 @@ public class MapBuilder<K, V> {
     return hashFunction;
   }
 
+  public KeyDeletionCallback<V> getKeyDeletionCallback() {
+    return keyDeletionCallaback;
+  }
+
   public ReferenceStrength getKeyReferenceStrength() {
     return keyReferenceStrength;
   }
 
   public Map<K, V> build() {
-    return new HashMap<>(this);
+    return new HashMap(this);
+  }
+
+  @FunctionalInterface
+  public interface KeyDeletionCallback<V> {
+    public void apply(V value);
   }
 
   private interface Reference<K> {
@@ -110,12 +129,13 @@ public class MapBuilder<K, V> {
     public abstract <K> Reference<K> create(K object);
   }
 
-  private class HashMap<K, V> implements Map<K, V> {
+  private class HashMap implements Map<K, V> {
     private int capacity;
     private int size;
     private Reference<K>[] keys;
     private V[] values;
     private int[] hashes;
+    private final KeyDeletionCallback<V> keyDeletionCallback;
     private final HashFunction<K> hashFunction;
     private final Equivalence<K> equivalence;
     private final ReferenceStrength keyReferenceStrength;
@@ -126,6 +146,7 @@ public class MapBuilder<K, V> {
       keys = newKeys(capacity);
       values = newValues(capacity);
       hashes = new int[capacity];
+      keyDeletionCallback = builder.getKeyDeletionCallback();
       hashFunction = builder.getHashFunction();
       equivalence = builder.getEquivalence();
       keyReferenceStrength = builder.getKeyReferenceStrength();
@@ -146,7 +167,7 @@ public class MapBuilder<K, V> {
         values[index] = producer.produce();
         ++size;
       } else if (keys[index].get() == null) {
-
+        keyDeletionCallback.apply(values[index]);
         hashes[index] = hash;
         keys[index] = keyReferenceStrength.create(key);
         values[index] = producer.produce();
@@ -168,22 +189,23 @@ public class MapBuilder<K, V> {
     private void rehash() {
       int capacity = this.capacity;
       this.capacity <<= 1;
-      Reference<K>[] keys = newKeys(this.capacity);
-      V[] values = newValues(this.capacity);
-      int[] hashes = new int[this.capacity];
+
+      Reference<K>[] keys = this.keys;
+      V[] values = this.values;
+      int[] hashes = this.hashes;
+
+      this.keys = newKeys(this.capacity);
+      this.values = newValues(this.capacity);
+      this.hashes = new int[this.capacity];
 
       for (int i = 0; i < capacity; ++i) {
-        if (this.keys[i] == null) continue;
+        if (keys[i] == null) continue;
 
-        int index = keyIndex(this.keys[i].get(), this.hashes[i]);
-        keys[index] = this.keys[i];
-        values[index] = this.values[i];
-        hashes[index] = this.hashes[i];
+        int index = keyIndex(keys[i].get(), hashes[i]);
+        this.keys[index] = keys[i];
+        this.values[index] = values[i];
+        this.hashes[index] = hashes[i];
       }
-
-      this.keys = keys;
-      this.values = values;
-      this.hashes = hashes;
     }
 
     private int keyIndex(K key, int hash) {
@@ -223,6 +245,47 @@ public class MapBuilder<K, V> {
     @SuppressWarnings("unchecked")
     private V[] newValues(int capacity) {
       return (V[]) new Object[capacity];
+    }
+
+    @Override
+    public Map.Iterator<K, V> iterator() {
+      return new Iterator();
+    }
+
+    private class Iterator implements Map.Iterator<K, V> {
+      private int index;
+
+      public Iterator() {
+        index = 0;
+        advance();
+      }
+
+      private void advance() {
+        while (hasNext() && keys[index] == null) {
+          ++index;
+        }
+      }
+
+      @Override
+      public boolean hasNext() {
+        return index < capacity;
+      }
+
+      @Override
+      public V value() {
+        return values[index];
+      }
+
+      @Override
+      public K key() {
+        return keys[index].get();
+      }
+
+      @Override
+      public void next() {
+        ++index;
+        advance();
+      }
     }
   }
 }

@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.ref.WeakReference;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
@@ -181,11 +183,17 @@ public class HashMapTest {
   }
 
   @Test
-  public void testWeakKeys() throws InterruptedException {
+  public void testWeakKeys() {
+    AtomicInteger invocations = new AtomicInteger(0);
     Map<Object, String> map =
         MapBuilder.<Object, String>builder()
             .hashFunction(value -> 1)
             .weakKeys()
+            .keyDeletionCallback(
+                (value) -> {
+                  assertEquals("first-value", value);
+                  invocations.incrementAndGet();
+                })
             .initialCapacity(4)
             .build();
 
@@ -204,5 +212,145 @@ public class HashMapTest {
 
     assertEquals("second-value", result);
     assertEquals(1, map.size());
+    assertEquals(1, invocations.get());
+  }
+
+  @Test
+  public void testWeakKeysMultipleCollisions() {
+    Map<String, String> map =
+        MapBuilder.<String, String>builder()
+            .hashFunction(value -> 1)
+            .weakKeys()
+            .initialCapacity(8)
+            .build();
+
+    String key1 = new String("first-key");
+    String result = map.getOrPut(key1, () -> "first-value");
+    assertEquals("first-value", result);
+    assertEquals(1, map.size());
+
+    String key2 = new String("second-key");
+    result = map.getOrPut(key2, () -> "second-value");
+    assertEquals("second-value", result);
+    assertEquals(2, map.size());
+
+    String key3 = new String("third-key");
+    result = map.getOrPut(key3, () -> "third-value");
+    assertEquals("third-value", result);
+    assertEquals(3, map.size());
+  }
+
+  @Test
+  public void testWeakKeysCollisionDeletedKey() {
+    Map<String, String> map =
+        MapBuilder.<String, String>builder()
+            .hashFunction(value -> 1)
+            .weakKeys()
+            .initialCapacity(8)
+            .build();
+
+    String key1 = new String("first-key");
+    String result = map.getOrPut(key1, () -> "first-value");
+    assertEquals("first-value", result);
+    assertEquals(1, map.size());
+
+    String key2 = new String("second-key");
+    result = map.getOrPut(key2, () -> "second-value");
+    assertEquals("second-value", result);
+    assertEquals(2, map.size());
+    WeakReference<String> reference = new WeakReference<>(key2);
+    key2 = null;
+    while (reference.get() != null) {
+      System.gc();
+    }
+
+    String key3 = new String("third-key");
+    result = map.getOrPut(key3, () -> "third-value");
+    assertEquals("third-value", result);
+    assertEquals(2, map.size());
+  }
+
+  @Test
+  public void testEmptyMapHasNoNext() {
+    Map<Integer, String> map = MapBuilder.<Integer, String>builder().build();
+    Map.Iterator<Integer, String> it = map.iterator();
+    assertFalse(it.hasNext());
+  }
+
+  @Test
+  public void testSingleEntryIteration() {
+    Map<Integer, String> map = MapBuilder.<Integer, String>builder().build();
+    map.getOrPut(10, () -> "Ten");
+
+    Map.Iterator<Integer, String> it = map.iterator();
+    assertTrue(it.hasNext());
+    assertEquals(10, it.key());
+    assertEquals("Ten", it.value());
+
+    it.next();
+    assertFalse(it.hasNext());
+  }
+
+  @Test
+  public void testMultipleEntryIteration() {
+    Map<Integer, String> map = MapBuilder.<Integer, String>builder().initialCapacity(4).build();
+    map.getOrPut(1, () -> "A");
+    map.getOrPut(2, () -> "B");
+    map.getOrPut(3, () -> "C");
+    map.getOrPut(4, () -> "D");
+
+    Map.Iterator<Integer, String> it = map.iterator();
+    Set<Integer> keysFound = new HashSet<>();
+
+    while (it.hasNext()) {
+      keysFound.add(it.key());
+      it.next();
+    }
+
+    assertEquals(4, keysFound.size());
+    assertTrue(keysFound.contains(1));
+    assertTrue(keysFound.contains(2));
+    assertTrue(keysFound.contains(3));
+    assertTrue(keysFound.contains(4));
+  }
+
+  @Test
+  public void testWeakKeyEvictionDuringIteration() {
+    String key1 = "Keep me Strong";
+    String key2 = new String("I will be collected");
+    String key3 = "Keep me also Strong";
+
+    Map<String, String> map =
+        MapBuilder.<String, String>builder().initialCapacity(4).weakKeys().build();
+
+    map.getOrPut(key1, () -> "Value1");
+    map.getOrPut(key2, () -> "Value2");
+    map.getOrPut(key3, () -> "Value3");
+
+    WeakReference<String> weakKey = new WeakReference<>(key2);
+    key2 = null;
+    while (weakKey.get() != null) {
+      System.gc();
+    }
+
+    Map.Iterator<String, String> it = map.iterator();
+    Set<String> valuesFound = new HashSet<>();
+    Set<String> keysFound = new HashSet<>();
+
+    while (it.hasNext()) {
+      String key = it.key();
+      if (key != null) keysFound.add(key);
+      valuesFound.add(it.value());
+      it.next();
+    }
+
+    assertEquals(2, keysFound.size());
+    assertTrue(keysFound.contains(key1));
+    assertTrue(keysFound.contains(key3));
+
+    assertEquals(3, valuesFound.size());
+    assertTrue(valuesFound.contains("Value1"));
+    assertTrue(valuesFound.contains("Value2"));
+    assertTrue(valuesFound.contains("Value3"));
   }
 }
