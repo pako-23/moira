@@ -6,3 +6,6 @@ build
 
 .project
 .settings
+
+# Ignore experiments directory
+experiments
