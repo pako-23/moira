@@ -1,31 +1,28 @@
 package ch.usi.inf.profiler;
 
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+
 public class ProfilerDump {
   private int capacity;
   private int size;
   private String[] testNames;
   private byte[][] dependencies;
-  private volatile int runningTest;
 
   public ProfilerDump() {
     capacity = 128;
     size = 0;
     testNames = new String[capacity];
     dependencies = new byte[capacity][capacity];
-    runningTest = -1;
   }
 
-  public int getRunningTest() {
-    return runningTest;
-  }
-
-  public void registerTest(final String test) {
+  public int registerTest(final String test) {
     if (size == capacity) {
       grow();
     }
 
-    this.runningTest = size;
-    testNames[size++] = test;
+    testNames[size] = test;
+    return size++;
   }
 
   private void grow() {
@@ -53,8 +50,30 @@ public class ProfilerDump {
     return testNames[i];
   }
 
-  public void unregisterTest() {
-    runningTest = -1;
+  public void dump(final String fileName) throws FileNotFoundException {
+    try (PrintWriter writer = new PrintWriter(fileName)) {
+      Iterator it = iterator();
+
+      while (it.hasNext()) {
+        int dependant = it.getDependant();
+        int dependee = it.getDependee();
+
+        writer.println(getTestName(dependant) + " " + getTestName(dependee));
+        it.next();
+      }
+    }
+  }
+
+  public void computeConflicts(final ReadWriteSet set) {
+    for (int i = set.min(); i < set.max(); ++i) {
+      if ((set.get(i) & ReadWriteSet.WRITE) == 0) continue;
+
+      for (int j = set.min(); j < set.max(); ++j) {
+        if ((set.get(j) & ReadWriteSet.READ_BEFORE_WRITE) == 0 || i == j) continue;
+
+        registerDependency(i, j);
+      }
+    }
   }
 
   public Iterator iterator() {
