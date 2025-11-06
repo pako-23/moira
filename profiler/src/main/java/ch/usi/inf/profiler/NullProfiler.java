@@ -18,4 +18,6 @@ public final class NullProfiler {
   public static void enterTestMethod(String test) {}
 
   public static void exitTestMethod() {}
+
+  public static void dump(final String fileName) {}
 }

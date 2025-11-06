@@ -4,7 +4,7 @@ import java.io.FileNotFoundException;
 import java.lang.reflect.Array;
 
 public class DOIProfiler {
-  private static ThreadLocal<Boolean> suspended;
+  private static ThreadSuspension suspension;
   private static ProfilerDump dump;
   private static Map<String, ReadWriteSet> staticMapping;
   private static Map<Object, Map<Integer, ReadWriteSet>> arrayMapping;
@@ -12,7 +12,13 @@ public class DOIProfiler {
   private static volatile int runningTest = -1;
 
   static {
-    suspended = new ThreadLocal<>();
+    setup();
+  }
+
+  private DOIProfiler() {}
+
+  public static void setup() {
+    suspension = new ThreadSuspension();
     dump = new ProfilerDump();
     staticMapping = MapBuilder.<String, ReadWriteSet>builder().initialCapacity(64).build();
     arrayMapping =
@@ -31,36 +37,33 @@ public class DOIProfiler {
             .hashFunction(object -> System.identityHashCode(object))
             .equivalence((first, second) -> first == second)
             .build();
-    Runtime.getRuntime()
-        .addShutdownHook(
-            new Thread() {
-              @Override
-              public void run() {
-                fieldMappingDump(staticMapping);
-                arrayMappingDump();
-                objectMappingDump();
-
-                try {
-                  dump.dump("conflicts");
-                } catch (FileNotFoundException e) {
-                  System.err.println("Failed to write profiler dump: " + e.getMessage());
-                }
-              }
-            });
   }
 
-  private DOIProfiler() {}
+  public static void dump(final String fileName) throws FileNotFoundException {
+    fieldMappingDump(staticMapping);
+    arrayMappingDump();
+    objectMappingDump();
+    dump.dump(fileName);
+  }
+
+  public static void suspend() {
+    suspension.suspend();
+  }
+
+  public static void resume() {
+    suspension.resume();
+  }
 
   private static void staticFieldEvent(final String field, final byte event) {
     int runningTest = DOIProfiler.runningTest;
     if (runningTest < 0) return;
-    if (suspended.get() != null && suspended.get()) return;
+    if (suspension.isSuspended()) return;
 
     synchronized (staticMapping) {
-      suspended.set(true);
+      suspend();
       ReadWriteSet set = staticMapping.getOrPut(field, () -> new ReadWriteSet());
       set.update(runningTest, event);
-      suspended.set(false);
+      resume();
     }
   }
 
@@ -95,16 +98,16 @@ public class DOIProfiler {
     int runningTest = DOIProfiler.runningTest;
     if (runningTest < 0) return;
     if (object == null) return;
-    if (suspended.get() != null && suspended.get()) return;
+    if (suspension.isSuspended()) return;
 
     synchronized (objectMapping) {
-      suspended.set(true);
+      suspend();
       Map<String, ReadWriteSet> fieldMapping =
           objectMapping.getOrPut(
               object, () -> MapBuilder.<String, ReadWriteSet>builder().initialCapacity(4).build());
       ReadWriteSet set = fieldMapping.getOrPut(field, () -> new ReadWriteSet());
       set.update(runningTest, event);
-      suspended.set(false);
+      resume();
     }
   }
 
@@ -112,15 +115,15 @@ public class DOIProfiler {
     int runningTest = DOIProfiler.runningTest;
     if (array == null) return;
     if (runningTest < 0) return;
-    if (suspended.get() != null && suspended.get()) return;
+    if (suspension.isSuspended()) return;
 
     synchronized (arrayMapping) {
-      suspended.set(true);
+      suspend();
       Map<Integer, ReadWriteSet> mapping =
           arrayMapping.getOrPut(array, () -> new ArrayMap<>(Array.getLength(array)));
       ReadWriteSet set = mapping.getOrPut(index, () -> new ReadWriteSet());
       set.update(runningTest, event);
-      suspended.set(false);
+      resume();
     }
   }
 

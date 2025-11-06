@@ -3,7 +3,7 @@ package ch.usi.inf.profiler;
 import java.io.FileNotFoundException;
 
 public class ObjectProfiler {
-  private static ThreadLocal<Boolean> suspended;
+  private static ThreadSuspension suspension;
   private static ProfilerDump dump;
   private static Map<String, ReadWriteSet> staticMapping;
   private static Map<Object, ReadWriteSet> arrayMapping;
@@ -11,7 +11,13 @@ public class ObjectProfiler {
   private static volatile int runningTest = -1;
 
   static {
-    suspended = new ThreadLocal<>();
+    setup();
+  }
+
+  private ObjectProfiler() {}
+
+  public static void setup() {
+    suspension = new ThreadSuspension();
     dump = new ProfilerDump();
     staticMapping = MapBuilder.<String, ReadWriteSet>builder().initialCapacity(64).build();
     arrayMapping =
@@ -30,35 +36,61 @@ public class ObjectProfiler {
             .hashFunction(object -> System.identityHashCode(object))
             .equivalence((first, second) -> first == second)
             .build();
-    Runtime.getRuntime()
-        .addShutdownHook(
-            new Thread() {
-              @Override
-              public void run() {
-                mappingDump(staticMapping);
-                mappingDump(arrayMapping);
-                mappingDump(objectMapping);
-                try {
-                  dump.dump("conflicts");
-                } catch (FileNotFoundException e) {
-                  System.err.println("Failed to write profiler dump: " + e.getMessage());
-                }
-              }
-            });
   }
 
-  private ObjectProfiler() {}
+  public static void suspend() {
+    suspension.suspend();
+  }
+
+  public static void resume() {
+    suspension.resume();
+  }
+
+  public static void dump(final String fileName) throws FileNotFoundException {
+    mappingDump(staticMapping);
+    mappingDump(arrayMapping);
+    mappingDump(objectMapping);
+    dump.dump(fileName);
+  }
 
   private static void staticFieldEvent(final String field, final byte event) {
     int runningTest = ObjectProfiler.runningTest;
     if (runningTest < 0) return;
-    if (suspended.get() != null && suspended.get()) return;
+    if (suspension.isSuspended()) return;
 
     synchronized (staticMapping) {
-      suspended.set(true);
+      suspend();
       ReadWriteSet set = staticMapping.getOrPut(field, () -> new ReadWriteSet());
       set.update(runningTest, event);
-      suspended.set(false);
+      resume();
+    }
+  }
+
+  private static void objectEvent(final Object object, final byte event) {
+    int runningTest = ObjectProfiler.runningTest;
+    if (runningTest < 0) return;
+    if (object == null) return;
+    if (suspension.isSuspended()) return;
+
+    synchronized (objectMapping) {
+      suspend();
+      ReadWriteSet set = objectMapping.getOrPut(object, () -> new ReadWriteSet());
+      set.update(runningTest, event);
+      resume();
+    }
+  }
+
+  private static void arrayEvent(final Object array, final byte event) {
+    int runningTest = ObjectProfiler.runningTest;
+    if (array == null) return;
+    if (runningTest < 0) return;
+    if (suspension.isSuspended()) return;
+
+    synchronized (arrayMapping) {
+      suspend();
+      ReadWriteSet set = arrayMapping.getOrPut(array, () -> new ReadWriteSet());
+      set.update(runningTest, event);
+      resume();
     }
   }
 
@@ -68,34 +100,6 @@ public class ObjectProfiler {
     while (it.hasNext()) {
       dump.computeConflicts(it.value());
       it.next();
-    }
-  }
-
-  private static void objectEvent(final Object object, final byte event) {
-    int runningTest = ObjectProfiler.runningTest;
-    if (runningTest < 0) return;
-    if (object == null) return;
-    if (suspended.get() != null && suspended.get()) return;
-
-    synchronized (objectMapping) {
-      suspended.set(true);
-      ReadWriteSet set = objectMapping.getOrPut(object, () -> new ReadWriteSet());
-      set.update(runningTest, event);
-      suspended.set(false);
-    }
-  }
-
-  private static void arrayEvent(final Object array, final byte event) {
-    int runningTest = ObjectProfiler.runningTest;
-    if (array == null) return;
-    if (runningTest < 0) return;
-    if (suspended.get() != null && suspended.get()) return;
-
-    synchronized (arrayMapping) {
-      suspended.set(true);
-      ReadWriteSet set = arrayMapping.getOrPut(array, () -> new ReadWriteSet());
-      set.update(runningTest, event);
-      suspended.set(false);
     }
   }
 

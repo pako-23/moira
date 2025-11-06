@@ -159,7 +159,6 @@ public class ProfilerDumpTest {
     List<String> expected =
         Arrays.asList("TestA TestB", "TestC TestD").stream().sorted().collect(Collectors.toList());
 
-    assertEquals(2, lines.size());
     assertEquals(expected, lines);
   }
 

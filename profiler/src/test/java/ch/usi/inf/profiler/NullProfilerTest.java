@@ -55,6 +55,11 @@ public class NullProfilerTest {
   }
 
   @Test
+  public void testDumpMethod() {
+    assertDoesNotThrow(() -> NullProfiler.dump(null));
+  }
+
+  @Test
   public void testConstructorIsPrivate() throws NoSuchMethodException {
     Constructor<NullProfiler> constructor = NullProfiler.class.getDeclaredConstructor();
     assertTrue(Modifier.isPrivate(constructor.getModifiers()));
