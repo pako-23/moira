@@ -162,4 +162,146 @@ public class ProfilerDumpTest {
     assertEquals(2, lines.size());
     assertEquals(expected, lines);
   }
+
+  @Test
+  public void testComputeConflictsNoConflicts() {
+    final ReadWriteSet set = new ReadWriteSet(1);
+
+    dump.registerTest("TestA");
+    dump.registerTest("TestB");
+    dump.registerTest("TestC");
+    dump.registerTest("TestD");
+    dump.computeConflicts(set);
+
+    assertFalse(dump.iterator().hasNext());
+  }
+
+  @Test
+  public void testComputeConflictsWriteAfterWrite() {
+    final ReadWriteSet set = new ReadWriteSet(1);
+
+    dump.registerTest("TestA");
+    dump.registerTest("TestB");
+    dump.registerTest("TestC");
+    dump.registerTest("TestD");
+
+    set.update(1, ReadWriteSet.WRITE);
+    set.update(3, ReadWriteSet.WRITE);
+    dump.computeConflicts(set);
+
+    assertFalse(dump.iterator().hasNext());
+  }
+
+  @Test
+  public void testComputeConflictsReadAfterRead() {
+    final ReadWriteSet set = new ReadWriteSet(1);
+
+    dump.registerTest("TestA");
+    dump.registerTest("TestB");
+    dump.registerTest("TestC");
+    dump.registerTest("TestD");
+
+    set.update(1, ReadWriteSet.READ);
+    set.update(3, ReadWriteSet.READ);
+    dump.computeConflicts(set);
+
+    assertFalse(dump.iterator().hasNext());
+  }
+
+  @Test
+  public void testComputeConflictsReadAfterWrite() {
+    final ReadWriteSet set = new ReadWriteSet(1);
+
+    dump.registerTest("TestA");
+    dump.registerTest("TestB");
+    dump.registerTest("TestC");
+    dump.registerTest("TestD");
+
+    set.update(1, ReadWriteSet.WRITE);
+    set.update(3, ReadWriteSet.READ);
+    dump.computeConflicts(set);
+
+    ProfilerDump.Iterator it = dump.iterator();
+    assertTrue(it.hasNext());
+    assertEquals(3, it.getDependant());
+    assertEquals(1, it.getDependee());
+    it.next();
+    assertFalse(it.hasNext());
+  }
+
+  @Test
+  public void testComputeConflictsReadAfterWriteInverted() {
+    final ReadWriteSet set = new ReadWriteSet(1);
+
+    dump.registerTest("TestA");
+    dump.registerTest("TestB");
+    dump.registerTest("TestC");
+    dump.registerTest("TestD");
+
+    set.update(1, ReadWriteSet.READ);
+    set.update(3, ReadWriteSet.WRITE);
+    dump.computeConflicts(set);
+
+    ProfilerDump.Iterator it = dump.iterator();
+    assertTrue(it.hasNext());
+    assertEquals(1, it.getDependant());
+    assertEquals(3, it.getDependee());
+    it.next();
+    assertFalse(it.hasNext());
+  }
+
+  @Test
+  public void testComputeConflictsReadAfterWriteRewritten() {
+    final ReadWriteSet set = new ReadWriteSet(1);
+
+    dump.registerTest("TestA");
+    dump.registerTest("TestB");
+    dump.registerTest("TestC");
+    dump.registerTest("TestD");
+
+    set.update(1, ReadWriteSet.WRITE);
+    set.update(3, ReadWriteSet.WRITE);
+    set.update(3, ReadWriteSet.READ);
+    dump.computeConflicts(set);
+    assertFalse(dump.iterator().hasNext());
+  }
+
+  @Test
+  public void testComputeConflictsReadAfterWriteRewrittenBoth() {
+    final ReadWriteSet set = new ReadWriteSet(1);
+
+    dump.registerTest("TestA");
+    dump.registerTest("TestB");
+    dump.registerTest("TestC");
+    dump.registerTest("TestD");
+
+    set.update(1, ReadWriteSet.WRITE);
+    set.update(1, ReadWriteSet.READ);
+    set.update(3, ReadWriteSet.WRITE);
+    set.update(3, ReadWriteSet.READ);
+    dump.computeConflicts(set);
+    assertFalse(dump.iterator().hasNext());
+  }
+
+  @Test
+  public void testComputeConflictsReadAfterReadRewritten() {
+    final ReadWriteSet set = new ReadWriteSet(1);
+
+    dump.registerTest("TestA");
+    dump.registerTest("TestB");
+    dump.registerTest("TestC");
+    dump.registerTest("TestD");
+
+    set.update(1, ReadWriteSet.READ);
+    set.update(3, ReadWriteSet.WRITE);
+    set.update(3, ReadWriteSet.READ);
+    dump.computeConflicts(set);
+
+    ProfilerDump.Iterator it = dump.iterator();
+    assertTrue(it.hasNext());
+    assertEquals(1, it.getDependant());
+    assertEquals(3, it.getDependee());
+    it.next();
+    assertFalse(it.hasNext());
+  }
 }

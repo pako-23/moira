@@ -69,9 +69,9 @@ public class ProfilerDump {
       if ((set.get(i) & ReadWriteSet.WRITE) == 0) continue;
 
       for (int j = set.min(); j < set.max(); ++j) {
-        if ((set.get(j) & ReadWriteSet.READ_BEFORE_WRITE) == 0 || i == j) continue;
+        if (i == j || (set.get(j) & ReadWriteSet.READ_BEFORE_WRITE) == 0) continue;
 
-        registerDependency(i, j);
+        registerDependency(j, i);
       }
     }
   }
