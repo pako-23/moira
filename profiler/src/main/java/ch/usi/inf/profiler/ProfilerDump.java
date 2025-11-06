@@ -65,13 +65,13 @@ public class ProfilerDump {
   }
 
   public void computeConflicts(final ReadWriteSet set) {
-    for (int i = set.min(); i < set.max(); ++i) {
-      if ((set.get(i) & ReadWriteSet.WRITE) == 0) continue;
+    for (int i = 0; i < set.size(); ++i) {
+      if ((set.getMask(i) & ReadWriteSet.WRITE) == 0) continue;
 
-      for (int j = set.min(); j < set.max(); ++j) {
-        if (i == j || (set.get(j) & ReadWriteSet.READ_BEFORE_WRITE) == 0) continue;
+      for (int j = 0; j < set.size(); ++j) {
+        if (i == j || (set.getMask(j) & ReadWriteSet.READ_BEFORE_WRITE) == 0) continue;
 
-        registerDependency(j, i);
+        registerDependency(set.getTest(j), set.getTest(i));
       }
     }
   }

@@ -5,55 +5,61 @@ public class ReadWriteSet {
   public static byte WRITE = 0x2;
   public static byte READ_BEFORE_WRITE = 0x4;
 
-  private int base;
-  private int capacity;
-  private int length;
-  private byte items[];
+  private static int INITIAL_CAPACITY = 4;
 
-  public ReadWriteSet(int base) {
-    this.base = base;
-    this.capacity = 16;
-    this.length = 0;
-    this.items = new byte[this.capacity];
+  private int size;
+  private byte masks[];
+  private int tests[];
+
+  public ReadWriteSet() {
+    this.size = 0;
+    this.masks = new byte[INITIAL_CAPACITY];
+    this.tests = new int[INITIAL_CAPACITY];
   }
 
-  public int min() {
-    return base;
+  public int size() {
+    return size;
   }
 
-  public int max() {
-    return base + length;
+  public byte getMask(int i) {
+    return masks[i];
   }
 
-  public byte get(int item) {
-    return items[item - base];
+  public int getTest(int i) {
+    return tests[i];
   }
 
-  public void update(int item, byte event) {
-    int index = item - base;
+  public void update(int test, byte event) {
+    int i;
 
-    if (index >= capacity) {
-      grow(index);
+    if (size == 0) {
+      i = 0;
+      tests[i] = test;
+      ++size;
+    } else if (tests[size - 1] == test) {
+      i = size - 1;
+    } else {
+      i = size;
+      if (i == masks.length) grow();
+      tests[i] = test;
+      ++size;
     }
 
-    if (length <= index) {
-      length = index + 1;
-    }
-
-    if (items[index] == 0 && event == READ) items[index] |= READ_BEFORE_WRITE;
-
-    items[index] |= event;
+    if (masks[i] == 0 && event == READ) masks[i] |= READ_BEFORE_WRITE;
+    masks[i] |= event;
   }
 
-  private void grow(int min) {
-    int newCapacity = this.capacity << 1;
+  private void grow() {
+    int capacity = masks.length << 1;
+    byte[] masks = new byte[capacity];
+    int[] tests = new int[capacity];
 
-    while (min >= newCapacity) newCapacity <<= 1;
+    for (int i = 0; i < size; ++i) {
+      masks[i] = this.masks[i];
+      tests[i] = this.tests[i];
+    }
 
-    byte[] items = new byte[newCapacity];
-    for (int i = 0; i < length; ++i) items[i] = this.items[i];
-
-    this.items = items;
-    this.capacity = newCapacity;
+    this.masks = masks;
+    this.tests = tests;
   }
 }

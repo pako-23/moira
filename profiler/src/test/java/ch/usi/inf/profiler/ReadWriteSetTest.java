@@ -8,36 +8,37 @@ public class ReadWriteSetTest {
 
   @Test
   public void createSet() {
-    ReadWriteSet set = new ReadWriteSet(0);
+    ReadWriteSet set = new ReadWriteSet();
 
-    assertEquals(0, set.min());
-    assertEquals(0, set.max());
+    assertEquals(0, set.size());
   }
 
   @Test
   public void createSetBase() {
-    ReadWriteSet set = new ReadWriteSet(10);
+    ReadWriteSet set = new ReadWriteSet();
 
-    assertEquals(10, set.min());
-    assertEquals(10, set.max());
+    set.update(10, ReadWriteSet.WRITE);
+    assertEquals(1, set.size());
+    assertEquals(10, set.getTest(0));
+    assertEquals(ReadWriteSet.WRITE, set.getMask(0));
   }
 
   @Test
   public void readUpdate() {
     int[] updated = new int[] {10, 11, 13, 18};
-    singleEventActions(10, updated, ReadWriteSet.READ);
+    singleEventActions(updated, ReadWriteSet.READ);
   }
 
   @Test
   public void writeUpdate() {
     int[] updated = new int[] {10, 11, 13, 18};
-    singleEventActions(10, updated, ReadWriteSet.WRITE);
+    singleEventActions(updated, ReadWriteSet.WRITE);
   }
 
   @Test
   public void readBeforeWriteUpdate() {
     int[] updated = new int[] {10, 11, 13, 18};
-    ReadWriteSet set = new ReadWriteSet(7);
+    ReadWriteSet set = new ReadWriteSet();
 
     for (int i = 0; i < updated.length; ++i) {
       if (i % 2 == 0) {
@@ -47,18 +48,14 @@ public class ReadWriteSetTest {
       }
     }
 
-    assertEquals(7, set.min());
-    assertEquals(updated[updated.length - 1] + 1, set.max());
+    assertEquals(updated.length, set.size());
 
-    for (int it = set.min(), i = 0; it < set.max(); ++it) {
-      if (it != updated[i]) {
-        assertEquals(0, set.get(it));
-      } else if (i % 2 == 0) {
-        assertEquals(ReadWriteSet.READ_BEFORE_WRITE | ReadWriteSet.READ, set.get(it));
-        ++i;
+    for (int i = 0; i < set.size(); ++i) {
+      assertEquals(updated[i], set.getTest(i));
+      if (i % 2 == 0) {
+        assertEquals(ReadWriteSet.READ_BEFORE_WRITE | ReadWriteSet.READ, set.getMask(i));
       } else {
-        assertEquals(ReadWriteSet.WRITE, set.get(it));
-        ++i;
+        assertEquals(ReadWriteSet.WRITE, set.getMask(i));
       }
     }
   }
@@ -66,55 +63,56 @@ public class ReadWriteSetTest {
   @Test
   public void multipleEvents() {
     int base = 3;
-    ReadWriteSet set = new ReadWriteSet(base);
+    ReadWriteSet set = new ReadWriteSet();
 
     for (int i = 0; i < 5; ++i) {
       set.update(base + i, ReadWriteSet.READ);
       set.update(base + i, ReadWriteSet.WRITE);
     }
 
-    assertEquals(base, set.min());
-    assertEquals(base + 5, set.max());
+    assertEquals(5, set.size());
 
     int expected = ReadWriteSet.READ_BEFORE_WRITE | ReadWriteSet.READ | ReadWriteSet.WRITE;
     for (int i = 0; i < 5; ++i) {
-      assertEquals(expected, set.get(base + i));
+      assertEquals(base + i, set.getTest(i));
+      assertEquals(expected, set.getMask(i));
     }
   }
 
   @Test
   public void resize() {
-    int[] updated = new int[] {0, 8, 16, 20, 33};
-    singleEventActions(0, updated, ReadWriteSet.READ);
+    int[] updated = new int[40];
+
+    for (int i = 0; i < updated.length; ++i) updated[i] = 10 + i;
+
+    singleEventActions(updated, ReadWriteSet.READ);
   }
 
   @Test
-  public void resizeLongSkip() {
-    int[] updated = new int[] {0, 8, 16, 128};
-    singleEventActions(0, updated, ReadWriteSet.READ);
+  public void multipleResize() {
+    int[] updated = new int[140];
+
+    for (int i = 0; i < updated.length; ++i) updated[i] = 2 * i;
+
+    singleEventActions(updated, ReadWriteSet.READ);
   }
 
-  private void singleEventActions(int base, int[] updated, byte event) {
-    ReadWriteSet set = new ReadWriteSet(base);
+  private void singleEventActions(int[] updated, byte event) {
+    ReadWriteSet set = new ReadWriteSet();
 
     for (int item : updated) {
       set.update(item, event);
     }
 
-    assertEquals(updated[0], set.min());
-    assertEquals(updated[updated.length - 1] + 1, set.max());
+    assertEquals(updated.length, set.size());
 
-    for (int it = set.min(), i = 0; it < set.max(); ++it) {
-      if (it != updated[i]) {
-        assertEquals(0, set.get(it));
-        continue;
-      } else if (event == ReadWriteSet.READ) {
-        assertEquals(ReadWriteSet.READ_BEFORE_WRITE | ReadWriteSet.READ, set.get(it));
+    for (int i = 0; i < set.size(); ++i) {
+      assertEquals(updated[i], set.getTest(i));
+      if (event == ReadWriteSet.READ) {
+        assertEquals(ReadWriteSet.READ_BEFORE_WRITE | ReadWriteSet.READ, set.getMask(i));
       } else {
-        assertEquals(event, set.get(it));
+        assertEquals(event, set.getMask(i));
       }
-
-      ++i;
     }
   }
 }

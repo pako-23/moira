@@ -56,7 +56,7 @@ public class ObjectProfiler {
 
     synchronized (staticMapping) {
       suspended.set(true);
-      ReadWriteSet set = staticMapping.getOrPut(field, () -> new ReadWriteSet(runningTest));
+      ReadWriteSet set = staticMapping.getOrPut(field, () -> new ReadWriteSet());
       set.update(runningTest, event);
       suspended.set(false);
     }
@@ -79,7 +79,7 @@ public class ObjectProfiler {
 
     synchronized (objectMapping) {
       suspended.set(true);
-      ReadWriteSet set = objectMapping.getOrPut(object, () -> new ReadWriteSet(runningTest));
+      ReadWriteSet set = objectMapping.getOrPut(object, () -> new ReadWriteSet());
       set.update(runningTest, event);
       suspended.set(false);
     }
@@ -93,7 +93,7 @@ public class ObjectProfiler {
 
     synchronized (arrayMapping) {
       suspended.set(true);
-      ReadWriteSet set = arrayMapping.getOrPut(array, () -> new ReadWriteSet(runningTest));
+      ReadWriteSet set = arrayMapping.getOrPut(array, () -> new ReadWriteSet());
       set.update(runningTest, event);
       suspended.set(false);
     }

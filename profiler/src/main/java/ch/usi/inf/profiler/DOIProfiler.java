@@ -58,7 +58,7 @@ public class DOIProfiler {
 
     synchronized (staticMapping) {
       suspended.set(true);
-      ReadWriteSet set = staticMapping.getOrPut(field, () -> new ReadWriteSet(runningTest));
+      ReadWriteSet set = staticMapping.getOrPut(field, () -> new ReadWriteSet());
       set.update(runningTest, event);
       suspended.set(false);
     }
@@ -102,7 +102,7 @@ public class DOIProfiler {
       Map<String, ReadWriteSet> fieldMapping =
           objectMapping.getOrPut(
               object, () -> MapBuilder.<String, ReadWriteSet>builder().initialCapacity(4).build());
-      ReadWriteSet set = fieldMapping.getOrPut(field, () -> new ReadWriteSet(runningTest));
+      ReadWriteSet set = fieldMapping.getOrPut(field, () -> new ReadWriteSet());
       set.update(runningTest, event);
       suspended.set(false);
     }
@@ -118,7 +118,7 @@ public class DOIProfiler {
       suspended.set(true);
       Map<Integer, ReadWriteSet> mapping =
           arrayMapping.getOrPut(array, () -> new ArrayMap<>(Array.getLength(array)));
-      ReadWriteSet set = mapping.getOrPut(index, () -> new ReadWriteSet(runningTest));
+      ReadWriteSet set = mapping.getOrPut(index, () -> new ReadWriteSet());
       set.update(runningTest, event);
       suspended.set(false);
     }

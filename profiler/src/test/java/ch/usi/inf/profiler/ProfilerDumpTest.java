@@ -165,7 +165,7 @@ public class ProfilerDumpTest {
 
   @Test
   public void testComputeConflictsNoConflicts() {
-    final ReadWriteSet set = new ReadWriteSet(1);
+    final ReadWriteSet set = new ReadWriteSet();
 
     dump.registerTest("TestA");
     dump.registerTest("TestB");
@@ -178,7 +178,7 @@ public class ProfilerDumpTest {
 
   @Test
   public void testComputeConflictsWriteAfterWrite() {
-    final ReadWriteSet set = new ReadWriteSet(1);
+    final ReadWriteSet set = new ReadWriteSet();
 
     dump.registerTest("TestA");
     dump.registerTest("TestB");
@@ -194,7 +194,7 @@ public class ProfilerDumpTest {
 
   @Test
   public void testComputeConflictsReadAfterRead() {
-    final ReadWriteSet set = new ReadWriteSet(1);
+    final ReadWriteSet set = new ReadWriteSet();
 
     dump.registerTest("TestA");
     dump.registerTest("TestB");
@@ -210,7 +210,7 @@ public class ProfilerDumpTest {
 
   @Test
   public void testComputeConflictsReadAfterWrite() {
-    final ReadWriteSet set = new ReadWriteSet(1);
+    final ReadWriteSet set = new ReadWriteSet();
 
     dump.registerTest("TestA");
     dump.registerTest("TestB");
@@ -231,7 +231,7 @@ public class ProfilerDumpTest {
 
   @Test
   public void testComputeConflictsReadAfterWriteInverted() {
-    final ReadWriteSet set = new ReadWriteSet(1);
+    final ReadWriteSet set = new ReadWriteSet();
 
     dump.registerTest("TestA");
     dump.registerTest("TestB");
@@ -252,7 +252,7 @@ public class ProfilerDumpTest {
 
   @Test
   public void testComputeConflictsReadAfterWriteRewritten() {
-    final ReadWriteSet set = new ReadWriteSet(1);
+    final ReadWriteSet set = new ReadWriteSet();
 
     dump.registerTest("TestA");
     dump.registerTest("TestB");
@@ -268,7 +268,7 @@ public class ProfilerDumpTest {
 
   @Test
   public void testComputeConflictsReadAfterWriteRewrittenBoth() {
-    final ReadWriteSet set = new ReadWriteSet(1);
+    final ReadWriteSet set = new ReadWriteSet();
 
     dump.registerTest("TestA");
     dump.registerTest("TestB");
@@ -285,7 +285,7 @@ public class ProfilerDumpTest {
 
   @Test
   public void testComputeConflictsReadAfterReadRewritten() {
-    final ReadWriteSet set = new ReadWriteSet(1);
+    final ReadWriteSet set = new ReadWriteSet();
 
     dump.registerTest("TestA");
     dump.registerTest("TestB");
