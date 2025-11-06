@@ -39,3 +39,7 @@ doi-conflicts.txt doi-traces.txt: testsuite classpath
 
 %-profile.svg: %-traces.txt
 	@$(top_srcdir)/experiments/FlameGraph/stackcollapse-ljp.awk $^ | $(top_srcdir)/experiments/FlameGraph/flamegraph.pl > $@
+
+.PHONY: clean
+clean:
+	rm -f doi-conflicts.txt doi-profile.svg obj-conflicts.txt obj-profile.svg

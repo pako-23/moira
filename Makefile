@@ -12,6 +12,9 @@ $(EXPERIMENTS_DIR)/jhipster-registry: MVN_HOME=apache-maven-3.6.1
 .PHONY: all
 all: | java-versions mvn-versions
 
+.PHONY: clean-experiments
+clean-experiments:
+
 $(EXPERIMENTS_DIR):
 	@mkdir $(EXPERIMENTS_DIR)
 
@@ -32,6 +35,12 @@ experiment-$(1): agent/build/libs/agent.jar profiler/build/libs/profiler.jar $(E
 	$(MAKE) -C $(EXPERIMENTS_DIR)/$(1) all
 
 all: experiment-$(1)
+
+.PHONY: clean-$(1)
+clean-$(1):
+	$(MAKE) -C $(EXPERIMENTS_DIR)/$(1) clean
+
+clean-experiments: clean-$(1)
 endef
 
 $(foreach s,$(SUBJECTS),$(eval $(call experiment,$(s))))
