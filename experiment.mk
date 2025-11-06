@@ -20,7 +20,7 @@ testsuite: | target
 	@find target/ -name 'TEST*.xml' -print0 | xargs -0 sed -n -e 's/^<testsuite .* name="\([^"]*\)".*$$/\1/p' | sort -u > testsuite
 
 obj-conflicts.txt obj-traces.txt: testsuite classpath
-	@$(JAVA_HOME)/bin/java -cp $$(cat classpath):target/classes/:target/test-classes/ \
+	$(JAVA_HOME)/bin/java -cp $$(cat classpath):target/classes/:target/test-classes/ \
 		-javaagent:$(top_srcdir)/agent/build/libs/agent.jar=ObjectProfiler \
 		-agentpath:$(top_srcdir)/experiments//lightweight-java-profiler/build-64/liblagent.so \
 		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar:$(top_srcdir)/profiler/build/libs/profiler.jar \
@@ -29,7 +29,7 @@ obj-conflicts.txt obj-traces.txt: testsuite classpath
 	@mv traces.txt obj-traces.txt
 
 doi-conflicts.txt doi-traces.txt: testsuite classpath
-	@$(JAVA_HOME)/bin/java -cp $$(cat classpath):target/classes/:target/test-classes/ \
+	$(JAVA_HOME)/bin/java -cp $$(cat classpath):target/classes/:target/test-classes/ \
 		-javaagent:$(top_srcdir)/agent/build/libs/agent.jar=DOIProfiler \
 		-agentpath:$(top_srcdir)/experiments//lightweight-java-profiler/build-64/liblagent.so \
 		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar:$(top_srcdir)/profiler/build/libs/profiler.jar \
