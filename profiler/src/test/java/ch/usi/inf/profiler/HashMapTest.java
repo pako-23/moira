@@ -353,4 +353,36 @@ public class HashMapTest {
     assertTrue(valuesFound.contains("Value2"));
     assertTrue(valuesFound.contains("Value3"));
   }
+
+  @Test
+  public void testContainsFound() {
+    final String key = "somekey";
+    Map<String, String> map = MapBuilder.<String, String>builder().initialCapacity(4).build();
+
+    map.getOrPut(key, () -> "Value1");
+    assertTrue(map.contains(key));
+  }
+
+  @Test
+  public void testContainsNotFound() {
+    Map<String, String> map = MapBuilder.<String, String>builder().initialCapacity(4).build();
+
+    assertFalse(map.contains("somekey"));
+  }
+
+  @Test
+  public void testContainsCollectedKey() {
+    String key = new String("I will be collected");
+    Map<String, String> map =
+        MapBuilder.<String, String>builder().initialCapacity(4).weakKeys().build();
+
+    map.getOrPut(key, () -> "Value1");
+    WeakReference<String> weakKey = new WeakReference<>(key);
+    key = null;
+    while (weakKey.get() != null) {
+      System.gc();
+    }
+
+    for (int i = 0; i < 10; ++i) assertFalse(map.contains(new String("I will be collected")));
+  }
 }

@@ -3,14 +3,14 @@ package ch.usi.inf.profiler;
 public class MapBuilder<K, V> {
   private static final int DEFAULT_INITIAL_CAPACITY = 1 << 4;
 
-  private KeyDeletionCallback<V> keyDeletionCallaback;
+  private KeyDeletionCallback<V> keyDeletionCallback;
   private Equivalence<K> equivalence;
   private HashFunction<K> hashFunction;
   private int initialCapacity;
   private ReferenceStrength keyReferenceStrength;
 
   private MapBuilder() {
-    keyDeletionCallaback =
+    keyDeletionCallback =
         (value) -> {
           return;
         };
@@ -53,7 +53,7 @@ public class MapBuilder<K, V> {
   }
 
   public MapBuilder<K, V> keyDeletionCallback(KeyDeletionCallback<V> callback) {
-    this.keyDeletionCallaback = callback;
+    this.keyDeletionCallback = callback;
     return this;
   }
 
@@ -70,7 +70,7 @@ public class MapBuilder<K, V> {
   }
 
   public KeyDeletionCallback<V> getKeyDeletionCallback() {
-    return keyDeletionCallaback;
+    return keyDeletionCallback;
   }
 
   public ReferenceStrength getKeyReferenceStrength() {
@@ -97,6 +97,7 @@ public class MapBuilder<K, V> {
       this.reference = reference;
     }
 
+    @Override
     public K get() {
       return reference;
     }
@@ -109,6 +110,7 @@ public class MapBuilder<K, V> {
       this.reference = new java.lang.ref.WeakReference<>(reference);
     }
 
+    @Override
     public K get() {
       return reference.get();
     }
@@ -135,17 +137,21 @@ public class MapBuilder<K, V> {
     private Reference<K>[] keys;
     private V[] values;
     private int[] hashes;
+    private int insertions;
+    private int gcCounter;
     private final KeyDeletionCallback<V> keyDeletionCallback;
     private final HashFunction<K> hashFunction;
     private final Equivalence<K> equivalence;
     private final ReferenceStrength keyReferenceStrength;
 
-    public HashMap(MapBuilder<K, V> builder) {
+    public HashMap(final MapBuilder<K, V> builder) {
       capacity = builder.getInitialCapacity();
       size = 0;
       keys = newKeys(capacity);
       values = newValues(capacity);
       hashes = new int[capacity];
+      insertions = 0;
+      gcCounter = 0;
       keyDeletionCallback = builder.getKeyDeletionCallback();
       hashFunction = builder.getHashFunction();
       equivalence = builder.getEquivalence();
@@ -153,7 +159,15 @@ public class MapBuilder<K, V> {
     }
 
     @Override
-    public V getOrPut(K key, ValueProducer<V> producer) {
+    public boolean contains(final K key) {
+      int hash = hashFunction.compute(key);
+      int index = keyIndex(key, hash);
+
+      return keys[index] != null && keys[index].get() != null;
+    }
+
+    @Override
+    public V getOrPut(final K key, final ValueProducer<V> producer) {
       int hash = hashFunction.compute(key);
       int index = keyIndex(key, hash);
 
@@ -238,12 +252,12 @@ public class MapBuilder<K, V> {
     }
 
     @SuppressWarnings("unchecked")
-    private Reference<K>[] newKeys(int capacity) {
+    private Reference<K>[] newKeys(final int capacity) {
       return (Reference<K>[]) new Reference[capacity];
     }
 
     @SuppressWarnings("unchecked")
-    private V[] newValues(int capacity) {
+    private V[] newValues(final int capacity) {
       return (V[]) new Object[capacity];
     }
 

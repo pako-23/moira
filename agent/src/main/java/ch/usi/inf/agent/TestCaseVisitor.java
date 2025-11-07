@@ -15,10 +15,9 @@ class TestCaseVisitor extends AdviceAdapter {
     "(Ljava/lang/String;)V", "()V",
   };
 
-  private boolean isTestMethod;
+  private boolean instrument;
   private Label tryBegin;
-  private final String className;
-  private final String methodName;
+  private final String testCase;
 
   public TestCaseVisitor(
       MethodVisitor mv,
@@ -28,43 +27,43 @@ class TestCaseVisitor extends AdviceAdapter {
       final String methodName,
       final String description) {
     super(Opcodes.ASM9, mv, access, methodName, description);
-    this.isTestMethod = false;
-    if (isJunit3TestCase) isTestMethod = methodName.startsWith("test");
-
-    this.className = className;
-    this.methodName = methodName;
+    this.instrument = false;
+    if (isJunit3TestCase) instrument = methodName.startsWith("test");
+    this.testCase = className + "#" + methodName;
   }
 
   public void visitCode() {
     super.visitCode();
-    if (isTestMethod) {
+    if (instrument) {
       tryBegin = new Label();
       mv.visitLabel(tryBegin);
     }
   }
 
   protected void onMethodEnter() {
-    if (isTestMethod) {
-      mv.visitLdcInsn(className + "#" + methodName);
+    if (instrument) {
+      mv.visitLdcInsn(testCase);
       mv.visitMethodInsn(
           Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[0], methodDescs[0], false);
     }
   }
 
   protected void onMethodExit(int opcode) {
-    if (isTestMethod && opcode != Opcodes.ATHROW) {
+    if (instrument && opcode != Opcodes.ATHROW) {
       mv.visitMethodInsn(
           Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[1], methodDescs[1], false);
     }
   }
 
   public AnnotationVisitor visitAnnotation(String descriptor, boolean visible) {
-    if (descriptor.equals("Lorg/junit/Test;")) isTestMethod = true;
+    if (descriptor.equals("Lorg/junit/Test;")) instrument = true;
+    if (Agent.testsFilter != null && !Agent.testsFilter.contains(testCase)) instrument = false;
+
     return mv.visitAnnotation(descriptor, visible);
   }
 
   public void visitMaxs(int maxStack, int maxLocals) {
-    if (isTestMethod) {
+    if (instrument) {
       Label tryEnd = new Label();
       mv.visitTryCatchBlock(tryBegin, tryEnd, tryEnd, null);
       mv.visitLabel(tryEnd);

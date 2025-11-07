@@ -43,6 +43,33 @@ class ArrayMapTest {
   }
 
   @Test
+  public void testContainsFound() {
+    final int key = 3;
+    final String initialValue = "InitialValue";
+    String result = map.getOrPut(key, () -> initialValue);
+
+    assertEquals(initialValue, result);
+    assertTrue(map.contains(key));
+  }
+
+  @Test
+  public void testContainsNotFound() {
+    final int key = 3;
+    final String initialValue = "InitialValue";
+    String result = map.getOrPut(key, () -> initialValue);
+
+    assertEquals(initialValue, result);
+    assertFalse(map.contains(key + 1));
+  }
+
+  @Test
+  public void testContainsEmpty() {
+    final int key = 3;
+
+    assertFalse(map.contains(key));
+  }
+
+  @Test
   public void testIteratorEmptyMap() {
     final Map.Iterator<Integer, String> it = map.iterator();
 

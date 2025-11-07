@@ -21,20 +21,22 @@ testsuite: | target
 
 obj-conflicts.txt obj-traces.txt: testsuite classpath
 	$(JAVA_HOME)/bin/java -cp $$(cat classpath):target/classes/:target/test-classes/ \
-		-javaagent:$(top_srcdir)/agent/build/libs/agent.jar=ObjectProfiler \
+		-javaagent:$(top_srcdir)/agent/build/libs/agent.jar \
 		-agentpath:$(top_srcdir)/experiments//lightweight-java-profiler/build-64/liblagent.so \
-		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar:$(top_srcdir)/profiler/build/libs/profiler.jar \
+		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar \
+		-Dagent.profiler.name=ObjectProfiler \
+		-Dagent.profiler.filename=obj-conflicts.txt \
 		org.junit.runner.JUnitCore $$(cat testsuite | tr '\n' ' ')
-	@mv conflicts obj-conflicts.txt
 	@mv traces.txt obj-traces.txt
 
-doi-conflicts.txt doi-traces.txt: testsuite classpath
+doi-conflicts.txt doi-traces.txt: testsuite classpath obj-conflicts.txt
 	$(JAVA_HOME)/bin/java -cp $$(cat classpath):target/classes/:target/test-classes/ \
-		-javaagent:$(top_srcdir)/agent/build/libs/agent.jar=DOIProfiler \
-		-agentpath:$(top_srcdir)/experiments//lightweight-java-profiler/build-64/liblagent.so \
-		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar:$(top_srcdir)/profiler/build/libs/profiler.jar \
+		-javaagent:$(top_srcdir)/agent/build/libs/agent.jar \
+		-agentpath:$(top_srcdir)/experiments/lightweight-java-profiler/build-64/liblagent.so \
+		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar \
+		-Dagent.profiler.name=DOIProfiler \
+		-Dagent.profiler.filename=doi-conflicts.txt \
 		org.junit.runner.JUnitCore $$(cat testsuite | tr '\n' ' ')
-	@mv conflicts doi-conflicts.txt
 	@mv traces.txt doi-traces.txt
 
 %-profile.svg: %-traces.txt

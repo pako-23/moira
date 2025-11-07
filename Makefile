@@ -18,11 +18,8 @@ clean-experiments:
 $(EXPERIMENTS_DIR):
 	@mkdir $(EXPERIMENTS_DIR)
 
-agent/build/libs/agent.jar: $(shell find agent/ -name *.java)
+agent/build/libs/agent.jar: $(shell find agent/ -name *.java) $(shell find profiler/ -name *.java)
 	./gradlew agent:build
-
-profiler/build/libs/profiler.jar: $(shell find profiler/ -name *.java)
-	./gradlew profiler:build
 
 define experiment =
 $(EXPERIMENTS_DIR)/$(1):
@@ -31,7 +28,7 @@ $(EXPERIMENTS_DIR)/$(1):
 	cd $$@ && git -c advice.detachedHead=false checkout $$(COMMIT)
 
 .PHONY: experiment-$(1)
-experiment-$(1): agent/build/libs/agent.jar profiler/build/libs/profiler.jar $(EXPERIMENTS_DIR)/lightweight-java-profiler/build-64/liblagent.so | $(EXPERIMENTS_DIR)/$(1) $(EXPERIMENTS_DIR)/FlameGraph
+experiment-$(1): agent/build/libs/agent.jar $(EXPERIMENTS_DIR)/lightweight-java-profiler/build-64/liblagent.so | $(EXPERIMENTS_DIR)/$(1) $(EXPERIMENTS_DIR)/FlameGraph
 	$(MAKE) -C $(EXPERIMENTS_DIR)/$(1) all
 
 all: experiment-$(1)

@@ -1,8 +1,8 @@
 package ch.usi.inf.profiler;
 
 public class ArrayMap<V> implements Map<Integer, V> {
-  private V map[];
-  private int capacity;
+  private final V map[];
+  private final int capacity;
 
   public ArrayMap(final int capacity) {
     map = newMap(capacity);
@@ -19,7 +19,13 @@ public class ArrayMap<V> implements Map<Integer, V> {
     return capacity;
   }
 
-  public V getOrPut(Integer key, ValueProducer<V> producer) {
+  @Override
+  public boolean contains(final Integer key) {
+    return map[key] != null;
+  }
+
+  @Override
+  public V getOrPut(final Integer key, final ValueProducer<V> producer) {
     V value = map[key];
 
     if (value == null) {
@@ -30,12 +36,13 @@ public class ArrayMap<V> implements Map<Integer, V> {
     return value;
   }
 
+  @Override
   public Map.Iterator<Integer, V> iterator() {
     return new Iterator();
   }
 
   @SuppressWarnings("unchecked")
-  private V[] newMap(int capacity) {
+  private V[] newMap(final int capacity) {
     return (V[]) new Object[capacity];
   }
 

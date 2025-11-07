@@ -4,6 +4,7 @@ plugins {
 }
 
 dependencies {
+    implementation(project(":profiler"))
     implementation("org.ow2.asm:asm:9.8")
     implementation("org.ow2.asm:asm-commons:9.8")
 }
@@ -15,6 +16,7 @@ java {
 }
 
 tasks.withType<Jar>().configureEach {
+    dependsOn(":profiler:jar")
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
     manifest {
