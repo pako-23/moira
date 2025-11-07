@@ -186,7 +186,7 @@ public class ObjectProfilerTest {
 
   @Test
   public void testGCObjectDependency() {
-    Object[] objects = new Object[512];
+    Object[] objects = new Object[1024];
 
     ObjectProfiler.enterTestMethod(TEST_NAME[0]);
     for (int i = 0; i < objects.length; ++i) {
@@ -210,7 +210,7 @@ public class ObjectProfilerTest {
 
   @Test
   public void testGCArrayDependency() {
-    int[][] items = new int[512][];
+    int[][] items = new int[1024][];
 
     ObjectProfiler.enterTestMethod(TEST_NAME[0]);
     for (int i = 0; i < items.length; ++i) {
