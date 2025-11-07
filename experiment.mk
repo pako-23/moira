@@ -22,23 +22,28 @@ testsuite: | target
 	@find target/ -name 'TEST*.xml' -print0 | xargs -0 sed -n -e 's/^<testsuite .* name="\([^"]*\)".*$$/\1/p' | sort -u > testsuite
 
 obj-conflicts.txt $(if $(ENABLE_PROFILE),obj-traces.txt,): testsuite classpath
+	start_time="$$(date -u +%s)" ; \
 	$(JAVA_HOME)/bin/java -cp $$(cat classpath):target/classes/:target/test-classes/ \
 		-javaagent:$(top_srcdir)/agent/build/libs/agent.jar \
 		$(if $(ENABLE_PROFILE),-agentpath:$(top_srcdir)/experiments//lightweight-java-profiler/build-64/liblagent.so,) \
 		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar \
 		-Dagent.profiler.name=ObjectProfiler \
 		-Dagent.profiler.filename=obj-conflicts.txt \
-		org.junit.runner.JUnitCore $$(cat testsuite | tr '\n' ' ')
+		org.junit.runner.JUnitCore $$(cat testsuite | tr '\n' ' ') && \
+	echo "obj-profiler: $$(expr "$$(date -u +%s)" - "$$start_time")" >> running-times
 	$(if $(ENABLE_PROFILE),@mv traces.txt obj-traces.txt,)
 
 doi-conflicts.txt $(if $(ENABLE_PROFILE),doi-traces.txt,): testsuite classpath obj-conflicts.txt
+	start_time="$$(date -u +%s)" ; \
 	$(JAVA_HOME)/bin/java -cp $$(cat classpath):target/classes/:target/test-classes/ \
 		-javaagent:$(top_srcdir)/agent/build/libs/agent.jar \
 		$(if $(ENABLE_PROFILE),-agentpath:$(top_srcdir)/experiments/lightweight-java-profiler/build-64/liblagent.so,) \
 		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar \
 		-Dagent.profiler.name=DOIProfiler \
 		-Dagent.profiler.filename=doi-conflicts.txt \
-		org.junit.runner.JUnitCore $$(cat testsuite | tr '\n' ' ')
+		-Dagent.profiler.filter.filename=obj-conflicts.txt \
+		org.junit.runner.JUnitCore $$(cat testsuite | tr '\n' ' ') && \
+	echo "doi-profiler: $$(expr "$$(date -u +%s)" - "$$start_time")" >> running-times
 	$(ifeq $(ENABLE_PROFILE),@mv traces.txt doi-traces.txt,)
 
 %-profile.svg: %-traces.txt
@@ -46,6 +51,7 @@ doi-conflicts.txt $(if $(ENABLE_PROFILE),doi-traces.txt,): testsuite classpath o
 
 .PHONY: clean
 clean:
+	- rm -f running-times
 	- rm -f doi-conflicts.txt
 	- rm -f doi-profile.svg
 	- rm -f obj-conflicts.txt
