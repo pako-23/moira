@@ -26,7 +26,7 @@ public class DOIProfiler {
             .initialCapacity(1 << 10)
             .weakKeys()
             .keyDeletionCallback(DOIProfiler::fieldMappingDump)
-            .hashFunction(object -> System.identityHashCode(object))
+            .hashFunction(System::identityHashCode)
             .equivalence((first, second) -> first == second)
             .build();
     objectMapping =
@@ -34,7 +34,7 @@ public class DOIProfiler {
             .initialCapacity(1 << 10)
             .weakKeys()
             .keyDeletionCallback(DOIProfiler::fieldMappingDump)
-            .hashFunction(object -> System.identityHashCode(object))
+            .hashFunction(System::identityHashCode)
             .equivalence((first, second) -> first == second)
             .build();
   }
@@ -57,10 +57,9 @@ public class DOIProfiler {
   private static void staticFieldEvent(final String field, final byte event) {
     int runningTest = DOIProfiler.runningTest;
     if (runningTest < 0) return;
-    if (suspension.isSuspended()) return;
+    if (suspension.suspend()) return;
 
     synchronized (staticMapping) {
-      suspend();
       ReadWriteSet set = staticMapping.getOrPut(field, () -> new ReadWriteSet());
       set.update(runningTest, event);
       resume();
@@ -98,10 +97,9 @@ public class DOIProfiler {
     int runningTest = DOIProfiler.runningTest;
     if (runningTest < 0) return;
     if (object == null) return;
-    if (suspension.isSuspended()) return;
+    if (suspension.suspend()) return;
 
     synchronized (objectMapping) {
-      suspend();
       Map<String, ReadWriteSet> fieldMapping =
           objectMapping.getOrPut(
               object, () -> MapBuilder.<String, ReadWriteSet>builder().initialCapacity(4).build());
@@ -115,10 +113,9 @@ public class DOIProfiler {
     int runningTest = DOIProfiler.runningTest;
     if (array == null) return;
     if (runningTest < 0) return;
-    if (suspension.isSuspended()) return;
+    if (suspension.suspend()) return;
 
     synchronized (arrayMapping) {
-      suspend();
       Map<Integer, ReadWriteSet> mapping =
           arrayMapping.getOrPut(array, () -> new ArrayMap<>(Array.getLength(array)));
       ReadWriteSet set = mapping.getOrPut(index, () -> new ReadWriteSet());

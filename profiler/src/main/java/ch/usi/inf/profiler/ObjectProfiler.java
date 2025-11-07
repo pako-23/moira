@@ -24,16 +24,16 @@ public class ObjectProfiler {
         MapBuilder.<Object, ReadWriteSet>builder()
             .initialCapacity(1 << 10)
             .weakKeys()
-            .keyDeletionCallback(set -> dump.computeConflicts(set))
-            .hashFunction(object -> System.identityHashCode(object))
+            .keyDeletionCallback(ObjectProfiler::computeConflicts)
+            .hashFunction(System::identityHashCode)
             .equivalence((first, second) -> first == second)
             .build();
     objectMapping =
         MapBuilder.<Object, ReadWriteSet>builder()
             .initialCapacity(1 << 10)
             .weakKeys()
-            .keyDeletionCallback(set -> dump.computeConflicts(set))
-            .hashFunction(object -> System.identityHashCode(object))
+            .keyDeletionCallback(ObjectProfiler::computeConflicts)
+            .hashFunction(System::identityHashCode)
             .equivalence((first, second) -> first == second)
             .build();
   }
@@ -46,6 +46,10 @@ public class ObjectProfiler {
     suspension.resume();
   }
 
+  private static void computeConflicts(final ReadWriteSet set) {
+    dump.computeConflicts(set);
+  }
+
   public static void dump(final String fileName) throws FileNotFoundException {
     mappingDump(staticMapping);
     mappingDump(arrayMapping);
@@ -56,10 +60,9 @@ public class ObjectProfiler {
   private static void staticFieldEvent(final String field, final byte event) {
     int runningTest = ObjectProfiler.runningTest;
     if (runningTest < 0) return;
-    if (suspension.isSuspended()) return;
+    if (suspension.suspend()) return;
 
     synchronized (staticMapping) {
-      suspend();
       ReadWriteSet set = staticMapping.getOrPut(field, () -> new ReadWriteSet());
       set.update(runningTest, event);
       resume();
@@ -70,10 +73,9 @@ public class ObjectProfiler {
     int runningTest = ObjectProfiler.runningTest;
     if (runningTest < 0) return;
     if (object == null) return;
-    if (suspension.isSuspended()) return;
+    if (suspension.suspend()) return;
 
     synchronized (objectMapping) {
-      suspend();
       ReadWriteSet set = objectMapping.getOrPut(object, () -> new ReadWriteSet());
       set.update(runningTest, event);
       resume();
@@ -84,10 +86,9 @@ public class ObjectProfiler {
     int runningTest = ObjectProfiler.runningTest;
     if (array == null) return;
     if (runningTest < 0) return;
-    if (suspension.isSuspended()) return;
+    if (suspension.suspend()) return;
 
     synchronized (arrayMapping) {
-      suspend();
       ReadWriteSet set = arrayMapping.getOrPut(array, () -> new ReadWriteSet());
       set.update(runningTest, event);
       resume();

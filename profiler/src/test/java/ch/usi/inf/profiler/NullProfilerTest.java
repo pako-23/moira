@@ -15,6 +15,16 @@ public class NullProfilerTest {
   private static final String DUMMY_TEST_NAME = "MyTest";
 
   @Test
+  public void testSuspend() {
+    assertDoesNotThrow(() -> NullProfiler.suspend());
+  }
+
+  @Test
+  public void testResume() {
+    assertDoesNotThrow(() -> NullProfiler.resume());
+  }
+
+  @Test
   public void testWriteStaticField() {
     assertDoesNotThrow(() -> NullProfiler.writeStaticField(DUMMY_FIELD));
   }

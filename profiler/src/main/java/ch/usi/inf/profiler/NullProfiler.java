@@ -3,6 +3,10 @@ package ch.usi.inf.profiler;
 public final class NullProfiler {
   private NullProfiler() {}
 
+  public static void suspend() {}
+
+  public static void resume() {}
+
   public static void writeStaticField(String field) {}
 
   public static void writeArrayElement(Object array, int index) {}
