@@ -186,23 +186,23 @@ public class ObjectProfilerTest {
 
   @Test
   public void testGCObjectDependency() {
-    Object object = null;
+    Object[] objects = new Object[512];
 
     ObjectProfiler.enterTestMethod(TEST_NAME[0]);
-    for (int i = 0; i < 512; ++i) {
-      object = new Object();
-      ObjectProfiler.writeObjectField(object, FIELD);
-      WeakReference<Object> reference = new WeakReference<>(object);
-      object = null;
-      while (reference.get() != null) {
-        System.gc();
-      }
+    for (int i = 0; i < objects.length; ++i) {
+      objects[i] = new Object();
+      ObjectProfiler.writeObjectField(objects[i], FIELD);
     }
     ObjectProfiler.exitTestMethod();
 
-    object = new Object();
+    WeakReference<Object> reference = new WeakReference<>(objects);
+    objects = null;
+    while (reference.get() != null) {
+      System.gc();
+    }
+
     ObjectProfiler.enterTestMethod(TEST_NAME[1]);
-    ObjectProfiler.readObjectField(object, FIELD);
+    ObjectProfiler.readObjectField(new Object(), FIELD);
     ObjectProfiler.exitTestMethod();
 
     assertEquals(0, makeDump("object-gc-dependency").size());
@@ -210,23 +210,23 @@ public class ObjectProfilerTest {
 
   @Test
   public void testGCArrayDependency() {
-    int[] items = null;
+    int[][] items = new int[512][];
 
     ObjectProfiler.enterTestMethod(TEST_NAME[0]);
-    for (int i = 0; i < 512; ++i) {
-      items = new int[10];
+    for (int i = 0; i < items.length; ++i) {
+      items[i] = new int[10];
       ObjectProfiler.writeArrayElement(items, INDEX);
-      WeakReference<Object> reference = new WeakReference<>(items);
-      items = null;
-      while (reference.get() != null) {
-        System.gc();
-      }
     }
     ObjectProfiler.exitTestMethod();
 
-    items = new int[10];
+    WeakReference<Object> reference = new WeakReference<>(items);
+    items = null;
+    while (reference.get() != null) {
+      System.gc();
+    }
+
     ObjectProfiler.enterTestMethod(TEST_NAME[1]);
-    ObjectProfiler.readArrayElement(items, INDEX);
+    ObjectProfiler.readArrayElement(new int[10], INDEX);
     ObjectProfiler.exitTestMethod();
 
     assertEquals(0, makeDump("array-gc-dependency").size());

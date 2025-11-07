@@ -174,23 +174,23 @@ public class DOIProfilerTest {
 
   @Test
   public void testGCObjectDependency() {
-    Object object = null;
+    Object[] objects = new Object[512];
 
     DOIProfiler.enterTestMethod(TEST_NAME[0]);
-    for (int i = 0; i < 512; ++i) {
-      object = new Object();
-      DOIProfiler.writeObjectField(object, FIELD);
-      WeakReference<Object> reference = new WeakReference<>(object);
-      object = null;
-      while (reference.get() != null) {
-        System.gc();
-      }
+    for (int i = 0; i < objects.length; ++i) {
+      objects[i] = new Object();
+      ObjectProfiler.writeObjectField(objects[i], FIELD);
     }
     DOIProfiler.exitTestMethod();
 
-    object = new Object();
+    WeakReference<Object> reference = new WeakReference<>(objects);
+    objects = null;
+    while (reference.get() != null) {
+      System.gc();
+    }
+
     DOIProfiler.enterTestMethod(TEST_NAME[1]);
-    DOIProfiler.readObjectField(object, FIELD);
+    DOIProfiler.readObjectField(new Object(), FIELD);
     DOIProfiler.exitTestMethod();
 
     assertEquals(0, makeDump("object-gc-dependency").size());
@@ -198,23 +198,23 @@ public class DOIProfilerTest {
 
   @Test
   public void testGCArrayDependency() {
-    int[] items = null;
+    int[][] items = new int[512][];
 
     DOIProfiler.enterTestMethod(TEST_NAME[0]);
     for (int i = 0; i < 512; ++i) {
-      items = new int[10];
+      items[i] = new int[10];
       DOIProfiler.writeArrayElement(items, INDEX);
-      WeakReference<Object> reference = new WeakReference<>(items);
-      items = null;
-      while (reference.get() != null) {
-        System.gc();
-      }
     }
     DOIProfiler.exitTestMethod();
 
-    items = new int[10];
+    WeakReference<Object> reference = new WeakReference<>(items);
+    items = null;
+    while (reference.get() != null) {
+      System.gc();
+    }
+
     DOIProfiler.enterTestMethod(TEST_NAME[1]);
-    DOIProfiler.readArrayElement(items, INDEX);
+    DOIProfiler.readArrayElement(new int[10], INDEX);
     DOIProfiler.exitTestMethod();
 
     assertEquals(0, makeDump("array-gc-dependency").size());
