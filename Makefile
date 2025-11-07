@@ -1,6 +1,6 @@
 SUBJECTS := jhipster-registry
-
 EXPERIMENTS_DIR := experiments
+PROFILE ?= no
 
 $(EXPERIMENTS_DIR)/jhipster-registry: REPO=jhipster/jhipster-registry
 $(EXPERIMENTS_DIR)/jhipster-registry: REPODIR=jhipster-registry
@@ -29,7 +29,7 @@ $(EXPERIMENTS_DIR)/$(1):
 
 .PHONY: experiment-$(1)
 experiment-$(1): agent/build/libs/agent.jar $(EXPERIMENTS_DIR)/lightweight-java-profiler/build-64/liblagent.so | $(EXPERIMENTS_DIR)/$(1) $(EXPERIMENTS_DIR)/FlameGraph
-	$(MAKE) -C $(EXPERIMENTS_DIR)/$(1) all
+	$(MAKE) -C $(EXPERIMENTS_DIR)/$(1) PROFILE=$(PROFILE) all
 
 all: experiment-$(1)
 
