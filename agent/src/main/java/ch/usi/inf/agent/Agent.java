@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 
 public class Agent {
   public static String PROFILER = "ch/usi/inf/profiler/NullProfiler";
-  public static Map<String, Void> testsFilter = null;
+  public static Map<String, Boolean> testsFilter = null;
   private static String fileName = "conflicts";
 
   public static void premain(String agentArgs, Instrumentation inst) {
@@ -55,7 +55,7 @@ public class Agent {
   }
 
   private static void initializeTestsFilter(final String fileName) {
-    testsFilter = MapBuilder.<String, Void>builder().build();
+    testsFilter = MapBuilder.<String, Boolean>builder().build();
 
     try (Stream<String> lines = Files.lines(Paths.get(fileName))) {
       lines.forEach(Agent::registerTestFilter);
@@ -67,6 +67,6 @@ public class Agent {
 
   private static void registerTestFilter(final String line) {
     final String[] tests = line.split(" ");
-    for (final String test : tests) testsFilter.getOrPut(test, () -> null);
+    for (final String test : tests) testsFilter.getOrPut(test, () -> true);
   }
 }

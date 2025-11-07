@@ -186,7 +186,7 @@ public class ObjectProfilerTest {
 
   @Test
   public void testGCObjectDependency() {
-    Object[] objects = new Object[1024];
+    Object[] objects = new Object[1000];
 
     ObjectProfiler.enterTestMethod(TEST_NAME[0]);
     for (int i = 0; i < objects.length; ++i) {
@@ -201,8 +201,12 @@ public class ObjectProfilerTest {
       System.gc();
     }
 
+    objects = new Object[1000];
     ObjectProfiler.enterTestMethod(TEST_NAME[1]);
-    ObjectProfiler.readObjectField(new Object(), FIELD);
+    for (int i = 0; i < objects.length; ++i) {
+      objects[i] = new Object();
+      ObjectProfiler.readObjectField(objects[i], FIELD);
+    }
     ObjectProfiler.exitTestMethod();
 
     assertEquals(0, makeDump("object-gc-dependency").size());
@@ -210,7 +214,7 @@ public class ObjectProfilerTest {
 
   @Test
   public void testGCArrayDependency() {
-    int[][] items = new int[1024][];
+    int[][] items = new int[1000][];
 
     ObjectProfiler.enterTestMethod(TEST_NAME[0]);
     for (int i = 0; i < items.length; ++i) {
@@ -225,8 +229,12 @@ public class ObjectProfilerTest {
       System.gc();
     }
 
+    items = new int[1000][];
     ObjectProfiler.enterTestMethod(TEST_NAME[1]);
-    ObjectProfiler.readArrayElement(new int[10], INDEX);
+    for (int i = 0; i < items.length; ++i) {
+      items[i] = new int[10];
+      ObjectProfiler.readArrayElement(items[i], INDEX);
+    }
     ObjectProfiler.exitTestMethod();
 
     assertEquals(0, makeDump("array-gc-dependency").size());
@@ -234,7 +242,7 @@ public class ObjectProfilerTest {
 
   @Test
   public void testManyObjects() {
-    Object[] objects = new Object[1024];
+    Object[] objects = new Object[1000];
 
     for (int i = 0; i < objects.length; ++i) objects[i] = new Object();
 

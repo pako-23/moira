@@ -137,8 +137,6 @@ public class MapBuilder<K, V> {
     private Reference<K>[] keys;
     private V[] values;
     private int[] hashes;
-    private int insertions;
-    private int gcCounter;
     private final KeyDeletionCallback<V> keyDeletionCallback;
     private final HashFunction<K> hashFunction;
     private final Equivalence<K> equivalence;
@@ -150,8 +148,6 @@ public class MapBuilder<K, V> {
       keys = newKeys(capacity);
       values = newValues(capacity);
       hashes = new int[capacity];
-      insertions = 0;
-      gcCounter = 0;
       keyDeletionCallback = builder.getKeyDeletionCallback();
       hashFunction = builder.getHashFunction();
       equivalence = builder.getEquivalence();
@@ -172,10 +168,10 @@ public class MapBuilder<K, V> {
       int index = keyIndex(key, hash);
 
       if (keys[index] == null) {
-        if (2 * size >= capacity) {
-          rehash();
+        if (2 * size >= capacity && rehash()) {
           index = keyIndex(key, hash);
         }
+
         hashes[index] = hash;
         keys[index] = keyReferenceStrength.create(key);
         values[index] = producer.produce();
@@ -200,29 +196,41 @@ public class MapBuilder<K, V> {
       return size;
     }
 
-    private void rehash() {
-      int capacity = this.capacity;
-      this.capacity <<= 1;
+    private boolean rehash() {
+      this.size = 0;
+      for (int i = 0; i < this.capacity; ++i) {
+        if (this.keys[i] == null || this.keys[i].get() == null) continue;
+
+        ++this.size;
+      }
+
+      if (3 * this.size < this.capacity) return false;
 
       Reference<K>[] keys = this.keys;
       V[] values = this.values;
       int[] hashes = this.hashes;
+      int capacity = this.capacity;
 
+      this.capacity <<= 1;
       this.keys = newKeys(this.capacity);
       this.values = newValues(this.capacity);
       this.hashes = new int[this.capacity];
 
       for (int i = 0; i < capacity; ++i) {
-        if (keys[i] == null) continue;
+        if (keys[i] == null) {
+          continue;
+        }
 
         int index = keyIndex(keys[i].get(), hashes[i]);
         this.keys[index] = keys[i];
         this.values[index] = values[i];
         this.hashes[index] = hashes[i];
       }
+
+      return true;
     }
 
-    private int keyIndex(K key, int hash) {
+    private int keyIndex(final K key, int hash) {
       hash &= capacity - 1;
       if (keys[hash] == null) return hash;
 

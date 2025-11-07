@@ -385,4 +385,31 @@ public class HashMapTest {
 
     for (int i = 0; i < 10; ++i) assertFalse(map.contains(new String("I will be collected")));
   }
+
+  @Test
+  public void testCompaction() {
+    Object[] objects = null;
+    Map<Object, Integer> map =
+        MapBuilder.<Object, Integer>builder()
+            .initialCapacity(64)
+            .weakKeys()
+            .equivalence((first, second) -> first == second)
+            .build();
+
+    for (int i = 0; i < 10; ++i) {
+      objects = new Object[2048];
+      for (int j = 0; j < objects.length; ++j) {
+        objects[j] = new Object();
+        map.getOrPut(objects[j], () -> 2);
+      }
+
+      WeakReference<Object> reference = new WeakReference<>(objects);
+      objects = null;
+      while (reference.get() != null) {
+        System.gc();
+      }
+
+      assertEquals(4096, map.capacity());
+    }
+  }
 }
