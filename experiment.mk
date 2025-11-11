@@ -7,7 +7,7 @@ define mvn_exec
 @if test -f mvnw; then \
 	JAVA_HOME=$(JAVA_HOME) ./mvnw $(1); \
 else \
-	JAVA_HOME=$(JAVA_HOME) $$(MVN_HOME)/bin/mvn $(1); \
+	JAVA_HOME=$(JAVA_HOME) $(MVN_HOME)/bin/mvn $(1); \
 fi
 endef
 
@@ -23,7 +23,7 @@ testsuite: | target
 
 obj-conflicts.txt $(if $(ENABLE_PROFILE),obj-traces.txt,): testsuite classpath
 	start_time="$$(date -u +%s)" ; \
-	$(JAVA_HOME)/bin/java -cp $$(cat classpath):target/classes/:target/test-classes/ \
+	$(JAVA_HOME)/bin/java -Xss2m -cp $$(cat classpath):target/classes/:target/test-classes/ \
 		-javaagent:$(top_srcdir)/agent/build/libs/agent.jar \
 		$(if $(ENABLE_PROFILE),-agentpath:$(top_srcdir)/experiments//lightweight-java-profiler/build-64/liblagent.so,) \
 		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar \
@@ -35,7 +35,7 @@ obj-conflicts.txt $(if $(ENABLE_PROFILE),obj-traces.txt,): testsuite classpath
 
 doi-conflicts.txt $(if $(ENABLE_PROFILE),doi-traces.txt,): testsuite classpath obj-conflicts.txt
 	start_time="$$(date -u +%s)" ; \
-	$(JAVA_HOME)/bin/java -cp $$(cat classpath):target/classes/:target/test-classes/ \
+	$(JAVA_HOME)/bin/java -Xss2m -cp $$(cat classpath):target/classes/:target/test-classes/ \
 		-javaagent:$(top_srcdir)/agent/build/libs/agent.jar \
 		$(if $(ENABLE_PROFILE),-agentpath:$(top_srcdir)/experiments/lightweight-java-profiler/build-64/liblagent.so,) \
 		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar \
