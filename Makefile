@@ -28,8 +28,8 @@ experiment_repo = $(word 2,$(subst $(comma), ,$(1)))
 experiment_repodir = $(EXPERIMENTS_DIR)/$(word 2,$(subst /, ,$(call experiment_repo,$(1))))
 experiment_commit = $(word 3,$(subst $(comma), ,$(1)))
 experiment_subdir = $(if $(filter .,$(word 4,$(subst $(comma), ,$(1)))),,$(word 4,$(subst $(comma), ,$(1)))/)
-experiment_java = $(word 5,$(subst $(comma), ,$(1)))
-experiment_mvn = $(word 6,$(subst $(comma), ,$(1)))
+experiment_java = $(EXPERIMENTS_DIR)/$(word 5,$(subst $(comma), ,$(1)))
+experiment_mvn = $(EXPERIMENTS_DIR)/$(word 6,$(subst $(comma), ,$(1)))
 
 define experiment =
 
@@ -42,16 +42,18 @@ $(call experiment_repodir,$(1)):
 endif
 
 $(call experiment_repodir,$(1))/$(call experiment_subdir,$(1))Makefile: | $(call experiment_repodir,$(1))
-	printf "top_srcdir = $(PWD)\n" > $$@
-	printf "JAVA_HOME = $(PWD)/$(EXPERIMENTS_DIR)/$(call experiment_java,$(1))\n" >> $$@
-	printf "MVN_HOME = $(PWD)/$(EXPERIMENTS_DIR)/$(call experiment_mvn,$(1))\n" >> $$@
-	printf "include $(PWD)/experiment.mk\n" >> $$@
+	@printf "top_srcdir = $(PWD)\n" > $$@
+	@printf "JAVA_HOME = $(PWD)/$(call experiment_java,$(1))\n" >> $$@
+	@printf "MVN_HOME = $(PWD)/$(call experiment_mvn,$(1))\n" >> $$@
+	@printf "include $(PWD)/experiment.mk\n" >> $$@
 
 .PHONY: run-$(call experiment_id,$(1))
 run-$(call experiment_id,$(1)): $(call experiment_repodir,$(1))/$(call experiment_subdir,$(1))Makefile \
 	agent/build/libs/agent.jar \
 	$(if $(filter yes,$(PROFILE)),$(EXPERIMENTS_DIR)/lightweight-java-profiler/build-64/liblagent.so,) | \
 	$(call experiment_repodir,$(1)) \
+	$(call experiment_java,$(1)) \
+	$(call experiment_mvn,$(1)) \
 	$(if $(filter yes,$(PROFILE)),$(EXPERIMENTS_DIR)/FlameGraph,)
 	$(MAKE) -C $(call experiment_repodir,$(1))/$(call experiment_subdir,$(1)) PROFILE=$(PROFILE) all
 
