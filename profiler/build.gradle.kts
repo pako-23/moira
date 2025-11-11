@@ -1,3 +1,3 @@
 plugins {
-    id("java-lib")
+    id("testdep.java-conventions")
 }

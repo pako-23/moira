@@ -1,4 +1,4 @@
-rootProject.name = "java-testdep"
+rootProject.name = "testdep"
 
 pluginManagement {
     repositories {

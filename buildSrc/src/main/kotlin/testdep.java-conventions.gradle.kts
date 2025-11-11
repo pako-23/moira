@@ -1,7 +1,8 @@
 plugins {
-    id("java-library")
-    jacoco
+    java
     id("com.diffplug.spotless")
+    id("jacoco-report-aggregation")
+    jacoco
 }
 
 dependencies {
@@ -25,12 +26,10 @@ tasks.named<Test>("test") {
     testLogging {
         events("passed")
     }
-
-    finalizedBy(tasks.jacocoTestReport)
 }
 
 tasks.jacocoTestReport {
-    dependsOn(tasks.test)
+    enabled = false
 }
 
 spotless {

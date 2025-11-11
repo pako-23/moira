@@ -1,11 +1,11 @@
 plugins {
-    id("java-lib")
+    id("testdep.java-conventions")
 }
 
 dependencies {
     implementation(project(":profiler"))
-    implementation("org.ow2.asm:asm:9.8")
     implementation("org.ow2.asm:asm-commons:9.8")
+    implementation("org.ow2.asm:asm:9.8")
 }
 
 tasks.withType<Jar>().configureEach {
