@@ -1,18 +1,11 @@
 plugins {
-    id("java-library")
-    id("com.diffplug.spotless") version "8.0.0"
+    id("java-lib")
 }
 
 dependencies {
     implementation(project(":profiler"))
     implementation("org.ow2.asm:asm:9.8")
     implementation("org.ow2.asm:asm-commons:9.8")
-}
-
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(8))
-    }
 }
 
 tasks.withType<Jar>().configureEach {
@@ -33,12 +26,4 @@ tasks.withType<Jar>().configureEach {
             if (it.isDirectory) it else zipTree(it)
         }
     )
-}
-
-spotless {
-    java {
-        googleJavaFormat()
-        removeUnusedImports()
-        importOrder()
-    }
 }
