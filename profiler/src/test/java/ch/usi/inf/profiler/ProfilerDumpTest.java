@@ -19,7 +19,7 @@ public class ProfilerDumpTest {
   private ProfilerDump dump;
 
   @BeforeEach
-  public void setUp() {
+  public void setup() {
     dump = new ProfilerDump();
   }
 

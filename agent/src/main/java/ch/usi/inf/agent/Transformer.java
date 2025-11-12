@@ -42,9 +42,9 @@ class Transformer implements ClassFileTransformer {
   }
 
   private byte[] instrument(byte[] bytes) {
-    ClassReader cr = new ClassReader(bytes);
-    ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
-    cr.accept(new ClassInstrumentation(cw), ClassReader.EXPAND_FRAMES);
-    return cw.toByteArray();
+    final ClassReader reader = new ClassReader(bytes);
+    final ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS);
+    reader.accept(new ClassMangler(writer), ClassReader.EXPAND_FRAMES);
+    return writer.toByteArray();
   }
 }

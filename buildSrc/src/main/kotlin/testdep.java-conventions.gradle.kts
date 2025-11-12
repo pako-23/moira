@@ -7,6 +7,8 @@ plugins {
 
 dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
+    testImplementation("org.mockito:mockito-inline:4.2.0")
+    testImplementation("org.mockito:mockito-junit-jupiter:4.2.0")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

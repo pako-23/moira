@@ -23,7 +23,7 @@ public class DOIProfilerTest {
   private static final String[] TEST_NAME = new String[] {"DOIMyTest", "DOIMyTest2"};
 
   @BeforeEach
-  public void setUp() {
+  public void setup() {
     DOIProfiler.setup();
     DOIProfiler.resume();
   }

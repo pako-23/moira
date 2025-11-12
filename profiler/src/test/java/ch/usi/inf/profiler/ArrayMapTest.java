@@ -7,13 +7,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class ArrayMapTest {
+public class ArrayMapTest {
 
   private static final int TEST_CAPACITY = 10;
   private ArrayMap<String> map;
 
   @BeforeEach
-  public void setUp() {
+  public void setup() {
     map = new ArrayMap<>(TEST_CAPACITY);
   }
 

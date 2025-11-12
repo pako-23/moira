@@ -23,7 +23,7 @@ public class ObjectProfilerTest {
   private static final String[] TEST_NAME = new String[] {"MyTest", "MyTest2"};
 
   @BeforeEach
-  public void setUp() {
+  public void setup() {
     ObjectProfiler.setup();
     ObjectProfiler.resume();
   }
