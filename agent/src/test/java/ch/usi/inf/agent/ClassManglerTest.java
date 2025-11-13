@@ -30,21 +30,22 @@ public class ClassManglerTest {
   private ClassMangler mangler;
 
   private static final int VERSION = Opcodes.V1_8;
+  private static final String OBJECT_SUPER = "java/lang/Object";
   private static final String CLASS_NAME = "com/example/Example";
   private static final String METHOD_NAME = "method";
   private static final String METHOD_DESCRIPTION = "()V";
 
   @BeforeEach
   public void setup() {
-    MockitoAnnotations.initMocks(this);
+    MockitoAnnotations.openMocks(this);
     mangler = new ClassMangler(classVisitorMock);
   }
 
   @ParameterizedTest
   @ValueSource(ints = {Opcodes.ACC_ENUM, Opcodes.ACC_INTERFACE})
   public void testVisitFilteredClass(final int access) {
-    mangler.visit(VERSION, access, CLASS_NAME, null, "", null);
-    verify(classVisitorMock).visit(VERSION, access, CLASS_NAME, null, "", null);
+    mangler.visit(VERSION, access, CLASS_NAME, null, OBJECT_SUPER, null);
+    verify(classVisitorMock).visit(VERSION, access, CLASS_NAME, null, OBJECT_SUPER, null);
     when(classVisitorMock.visitMethod(
             Opcodes.ACC_PUBLIC, METHOD_NAME, METHOD_DESCRIPTION, null, null))
         .thenReturn(methodVisitorMock);
@@ -55,8 +56,10 @@ public class ClassManglerTest {
 
   private static Stream<Arguments> testVisitMangledClassParams() {
     return Stream.of(
-        Arguments.of(Opcodes.ACC_PUBLIC, ""),
-        Arguments.of(Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT, ""),
+        Arguments.of(Opcodes.ACC_PUBLIC, null),
+        Arguments.of(Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT, null),
+        Arguments.of(Opcodes.ACC_PUBLIC, OBJECT_SUPER),
+        Arguments.of(Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT, OBJECT_SUPER),
         Arguments.of(Opcodes.ACC_PUBLIC, "com/example/Super"),
         Arguments.of(Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT, "com/example/Super"));
   }
@@ -98,11 +101,16 @@ public class ClassManglerTest {
 
         final MethodVisitor result =
             mangler.visitMethod(Opcodes.ACC_PUBLIC, METHOD_NAME, METHOD_DESCRIPTION, null, null);
-        assertEquals(1, fieldAccessMock.constructed().size());
-        assertEquals(fieldAccessMangler.get(0), fieldAccessMock.constructed().get(0));
         assertNotNull(result);
-        assertEquals(1, testCaseMock.constructed().size());
-        assertSame(result, testCaseMock.constructed().get(0));
+        assertEquals(1, fieldAccessMock.constructed().size());
+        if (superName == null) {
+          assertEquals(0, testCaseMock.constructed().size());
+          assertSame(result, fieldAccessMock.constructed().get(0));
+        } else {
+          assertEquals(fieldAccessMangler.get(0), fieldAccessMock.constructed().get(0));
+          assertEquals(1, testCaseMock.constructed().size());
+          assertSame(result, testCaseMock.constructed().get(0));
+        }
       }
     }
   }
@@ -111,9 +119,16 @@ public class ClassManglerTest {
   @ValueSource(
       ints = {Opcodes.ACC_ABSTRACT, Opcodes.ACC_BRIDGE, Opcodes.ACC_SYNTHETIC, Opcodes.ACC_NATIVE})
   public void testVisitMangledClassFilteredMethod(final int access) {
-    mangler.visit(VERSION, Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT, CLASS_NAME, null, "", null);
+    mangler.visit(
+        VERSION, Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT, CLASS_NAME, null, OBJECT_SUPER, null);
     verify(classVisitorMock)
-        .visit(VERSION, Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT, CLASS_NAME, null, "", null);
+        .visit(
+            VERSION,
+            Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT,
+            CLASS_NAME,
+            null,
+            OBJECT_SUPER,
+            null);
 
     when(classVisitorMock.visitMethod(access, METHOD_NAME, METHOD_DESCRIPTION, null, null))
         .thenReturn(methodVisitorMock);
@@ -124,8 +139,9 @@ public class ClassManglerTest {
 
   @Test
   public void testVisitNullMethodVisitor() {
-    mangler.visit(VERSION, Opcodes.ACC_PUBLIC, CLASS_NAME, null, "", null);
-    verify(classVisitorMock).visit(VERSION, Opcodes.ACC_PUBLIC, CLASS_NAME, null, "", null);
+    mangler.visit(VERSION, Opcodes.ACC_PUBLIC, CLASS_NAME, null, OBJECT_SUPER, null);
+    verify(classVisitorMock)
+        .visit(VERSION, Opcodes.ACC_PUBLIC, CLASS_NAME, null, OBJECT_SUPER, null);
     when(classVisitorMock.visitMethod(
             Opcodes.ACC_PUBLIC, METHOD_NAME, METHOD_DESCRIPTION, null, null))
         .thenReturn(null);
@@ -142,8 +158,9 @@ public class ClassManglerTest {
         "java/security/SecureClassLoader"
       })
   public void testVisitSuspendedClass(final String className) {
-    mangler.visit(VERSION, Opcodes.ACC_PUBLIC, className, null, "", null);
-    verify(classVisitorMock).visit(VERSION, Opcodes.ACC_PUBLIC, className, null, "", null);
+    mangler.visit(VERSION, Opcodes.ACC_PUBLIC, className, null, OBJECT_SUPER, null);
+    verify(classVisitorMock)
+        .visit(VERSION, Opcodes.ACC_PUBLIC, className, null, OBJECT_SUPER, null);
 
     try (MockedConstruction<SuspendMangler> mocked =
         mockConstruction(

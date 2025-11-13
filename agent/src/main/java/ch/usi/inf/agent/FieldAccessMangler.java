@@ -29,7 +29,7 @@ public class FieldAccessMangler extends MethodVisitor {
   public FieldAccessMangler(MethodVisitor mv, final String superName, final String methodName) {
     super(Opcodes.ASM9, mv);
     isInitialized = methodName.equals("<init>");
-    this.superName = superName == null ? "java/lang/Object" : superName;
+    this.superName = superName;
   }
 
   @Override
@@ -82,8 +82,10 @@ public class FieldAccessMangler extends MethodVisitor {
       final String name,
       final String descriptor,
       final boolean isInterface) {
-    if (opcode == Opcodes.INVOKESPECIAL && owner.equals(superName) && name.equals("<init>"))
-      isInitialized = true;
+    if (opcode == Opcodes.INVOKESPECIAL
+        && superName != null
+        && owner.equals(superName)
+        && name.equals("<init>")) isInitialized = true;
     mv.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
   }
 

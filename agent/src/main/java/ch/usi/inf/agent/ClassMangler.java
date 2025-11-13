@@ -56,12 +56,9 @@ public class ClassMangler extends ClassVisitor {
 
     if (suspend) return new SuspendMangler(visitor, access, name, description);
 
-    return new TestCaseMangler(
-        new FieldAccessMangler(visitor, superName, name),
-        superName,
-        access,
-        className,
-        name,
-        description);
+    visitor = new FieldAccessMangler(visitor, superName, name);
+    if (superName != null)
+      visitor = new TestCaseMangler(visitor, superName, access, className, name, description);
+    return visitor;
   }
 }
