@@ -40,6 +40,7 @@ public class TestCaseMangler extends AdviceAdapter {
     this.testCase = className + "#" + methodName;
   }
 
+  @Override
   public void visitCode() {
     super.visitCode();
     if (instrument) {
@@ -48,7 +49,8 @@ public class TestCaseMangler extends AdviceAdapter {
     }
   }
 
-  protected void onMethodEnter() {
+  @Override
+  public void onMethodEnter() {
     if (instrument) {
       mv.visitLdcInsn(testCase);
       mv.visitMethodInsn(
@@ -56,13 +58,15 @@ public class TestCaseMangler extends AdviceAdapter {
     }
   }
 
-  protected void onMethodExit(int opcode) {
+  @Override
+  public void onMethodExit(int opcode) {
     if (instrument && opcode != Opcodes.ATHROW) {
       mv.visitMethodInsn(
           Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[1], methodDescriptions[1], false);
     }
   }
 
+  @Override
   public AnnotationVisitor visitAnnotation(String descriptor, boolean visible) {
     if (descriptor.equals("Lorg/junit/Test;")) instrument = true;
     if (testsFilter != null && !testsFilter.contains(testCase)) instrument = false;
@@ -70,9 +74,10 @@ public class TestCaseMangler extends AdviceAdapter {
     return mv.visitAnnotation(descriptor, visible);
   }
 
+  @Override
   public void visitMaxs(int maxStack, int maxLocals) {
     if (instrument) {
-      Label tryEnd = new Label();
+      final Label tryEnd = new Label();
       mv.visitTryCatchBlock(tryBegin, tryEnd, tryEnd, null);
       mv.visitLabel(tryEnd);
       mv.visitFrame(F_NEW, 0, null, 1, new Object[] {"java/lang/Throwable"});
@@ -98,5 +103,9 @@ public class TestCaseMangler extends AdviceAdapter {
       System.err.println("Warning: failed to read tests filter: " + e.getMessage());
       testsFilter = null;
     }
+  }
+
+  public static void clearTestsFilter() {
+    testsFilter = null;
   }
 }

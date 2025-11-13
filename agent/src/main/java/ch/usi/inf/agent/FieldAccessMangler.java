@@ -28,7 +28,7 @@ public class FieldAccessMangler extends MethodVisitor {
 
   public FieldAccessMangler(MethodVisitor mv, final String superName, final String methodName) {
     super(Opcodes.ASM9, mv);
-    isInitialized = methodName.equals("<init>");
+    isInitialized = !methodName.equals("<init>");
     this.superName = superName;
   }
 
@@ -92,12 +92,7 @@ public class FieldAccessMangler extends MethodVisitor {
   @Override
   public void visitFieldInsn(
       final int opcode, final String owner, final String name, final String description) {
-    if (isInitialized) {
-      mv.visitFieldInsn(opcode, owner, name, description);
-      return;
-    }
-
-    if (opcode == Opcodes.PUTFIELD) {
+    if (opcode == Opcodes.PUTFIELD && isInitialized) {
       switch (Type.getType(description).getSort()) {
         case Type.LONG:
         case Type.DOUBLE:
@@ -116,7 +111,7 @@ public class FieldAccessMangler extends MethodVisitor {
       mv.visitMethodInsn(
           Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[2], methodDescriptions[2], false);
 
-    } else if (opcode == Opcodes.GETFIELD) {
+    } else if (opcode == Opcodes.GETFIELD && isInitialized) {
       mv.visitInsn(Opcodes.DUP);
       mv.visitLdcInsn(name);
       mv.visitMethodInsn(
