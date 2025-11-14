@@ -1,3 +1,6 @@
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
+
 plugins {
     java
     id("com.diffplug.spotless")
@@ -25,8 +28,20 @@ jacoco {
 tasks.named<Test>("test") {
     useJUnitPlatform()
 
+    maxParallelForks = Runtime.getRuntime().availableProcessors()
+
     testLogging {
-        events("passed")
+        events(TestLogEvent.FAILED)
+        exceptionFormat = TestExceptionFormat.SHORT
+
+        debug {
+            events(TestLogEvent.FAILED, TestLogEvent.SKIPPED, TestLogEvent.STARTED)
+            exceptionFormat = TestExceptionFormat.FULL
+        }
+
+        info {
+            events(TestLogEvent.FAILED, TestLogEvent.SKIPPED)
+        }
     }
 }
 

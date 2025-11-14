@@ -37,7 +37,7 @@ class Transformer implements ClassFileTransformer {
       return instrument(classFileBuffer);
     } catch (Throwable t) {
       t.printStackTrace();
-      return classFileBuffer;
+      return null;
     }
   }
 

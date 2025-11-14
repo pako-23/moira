@@ -6,6 +6,7 @@ dependencies {
     implementation("org.ow2.asm:asm-commons:9.8")
     implementation("org.ow2.asm:asm:9.8")
     implementation(project(":profiler"))
+    testImplementation("org.ow2.asm:asm-util:9.8")
 }
 
 tasks.withType<Jar>().configureEach {
