@@ -93,16 +93,16 @@ public class TestCaseMangler extends AdviceAdapter {
     testsFilter = MapBuilder.<String, Void>builder().build();
 
     try (Stream<String> lines = Files.lines(Paths.get(fileName))) {
-      lines.forEach(
-          line -> {
-            final String[] tests = line.split(" ");
-            for (final String test : tests)
-              if (!test.isEmpty()) testsFilter.getOrPut(test, () -> null);
-          });
+      lines.forEach(TestCaseMangler::registerTest);
     } catch (IOException e) {
       System.err.println("Warning: failed to read tests filter: " + e.getMessage());
       testsFilter = null;
     }
+  }
+
+  private static void registerTest(final String line) {
+    final String[] tests = line.split(" ");
+    for (final String test : tests) if (!test.isEmpty()) testsFilter.getOrPut(test, () -> null);
   }
 
   public static void clearTestsFilter() {
