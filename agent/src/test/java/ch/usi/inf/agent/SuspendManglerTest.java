@@ -31,24 +31,18 @@ public class SuspendManglerTest {
   }
 
   @Test
-  public void testVisitCode() {
+  public void testOnMethodEnter() {
     try (MockedConstruction<Label> mocked = mockConstruction(Label.class)) {
-      mangler.visitCode();
+      mangler.onMethodEnter();
       final List<Label> labels = mocked.constructed();
       assertEquals(1, labels.size());
       final InOrder order = inOrder(methodVisitorMock);
-      order.verify(methodVisitorMock).visitCode();
       order.verify(methodVisitorMock).visitLabel(labels.get(0));
+      order
+          .verify(methodVisitorMock)
+          .visitMethodInsn(Opcodes.INVOKESTATIC, Agent.PROFILER, "suspend", "()V", false);
       order.verifyNoMoreInteractions();
     }
-  }
-
-  @Test
-  public void testOnMethodEnter() {
-    mangler.onMethodEnter();
-    verify(methodVisitorMock)
-        .visitMethodInsn(Opcodes.INVOKESTATIC, Agent.PROFILER, "suspend", "()V", false);
-    verifyNoMoreInteractions(methodVisitorMock);
   }
 
   @ParameterizedTest
@@ -69,12 +63,14 @@ public class SuspendManglerTest {
   @Test
   public void testVisitMaxs() {
     try (MockedConstruction<Label> mocked = mockConstruction(Label.class)) {
-      mangler.visitCode();
+      mangler.onMethodEnter();
 
       assertEquals(1, mocked.constructed().size());
       final InOrder order = inOrder(methodVisitorMock);
-      order.verify(methodVisitorMock).visitCode();
       order.verify(methodVisitorMock).visitLabel(mocked.constructed().get(0));
+      order
+          .verify(methodVisitorMock)
+          .visitMethodInsn(Opcodes.INVOKESTATIC, Agent.PROFILER, "suspend", "()V", false);
       order.verifyNoMoreInteractions();
 
       mangler.visitMaxs(10, 12);

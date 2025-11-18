@@ -21,14 +21,9 @@ public final class SuspendMangler extends AdviceAdapter {
   }
 
   @Override
-  public void visitCode() {
-    super.visitCode();
+  public void onMethodEnter() {
     tryBegin = new Label();
     mv.visitLabel(tryBegin);
-  }
-
-  @Override
-  public void onMethodEnter() {
     mv.visitMethodInsn(
         Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[0], methodDescriptions[0], false);
   }
