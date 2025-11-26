@@ -28,8 +28,9 @@ public class ObjectProfilerTest {
     ObjectProfiler.resume();
   }
 
-  private List<String> makeDump(final String fileName) {
+  private List<String> makeDump(String fileName) {
     List<String> lines = null;
+    fileName = "obj-prof-" + fileName;
 
     try {
       File file = new File(fileName);
@@ -45,12 +46,7 @@ public class ObjectProfilerTest {
   }
 
   @Test
-  public void testEnterTestMethod() {
-    ObjectProfiler.enterTestMethod(TEST_NAME[0]);
-  }
-
-  @Test
-  public void testExitTestMethod() {
+  public void testEnterExitTestMethod() {
     ObjectProfiler.enterTestMethod(TEST_NAME[0]);
     ObjectProfiler.exitTestMethod();
   }
@@ -76,6 +72,7 @@ public class ObjectProfilerTest {
     ObjectProfiler.writeStaticField(FIELD);
     ObjectProfiler.readObjectField(OBJECT, FIELD);
     ObjectProfiler.writeObjectField(OBJECT, FIELD);
+    ObjectProfiler.exitTestMethod();
     assertEquals(0, makeDump("suspended").size());
   }
 
@@ -86,6 +83,7 @@ public class ObjectProfilerTest {
     ObjectProfiler.writeArrayElement(null, INDEX);
     ObjectProfiler.readObjectField(null, FIELD);
     ObjectProfiler.writeObjectField(null, FIELD);
+    ObjectProfiler.exitTestMethod();
     assertEquals(0, makeDump("null-objects").size());
   }
 

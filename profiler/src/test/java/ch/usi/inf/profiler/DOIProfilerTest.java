@@ -28,8 +28,9 @@ public class DOIProfilerTest {
     DOIProfiler.resume();
   }
 
-  private List<String> makeDump(final String fileName) {
+  private List<String> makeDump(String fileName) {
     List<String> lines = null;
+    fileName = "doi-prof-" + fileName;
 
     try {
       File file = new File(fileName);
@@ -45,12 +46,7 @@ public class DOIProfilerTest {
   }
 
   @Test
-  public void testEnterTestMethod() {
-    DOIProfiler.enterTestMethod(TEST_NAME[0]);
-  }
-
-  @Test
-  public void testExitTestMethod() {
+  public void testEnterExitTestMethod() {
     DOIProfiler.enterTestMethod(TEST_NAME[0]);
     DOIProfiler.exitTestMethod();
   }
@@ -76,6 +72,7 @@ public class DOIProfilerTest {
     DOIProfiler.writeStaticField(FIELD);
     DOIProfiler.readObjectField(OBJECT, FIELD);
     DOIProfiler.writeObjectField(OBJECT, FIELD);
+    DOIProfiler.exitTestMethod();
     assertEquals(0, makeDump("suspended").size());
   }
 
@@ -86,6 +83,7 @@ public class DOIProfilerTest {
     DOIProfiler.writeArrayElement(null, INDEX);
     DOIProfiler.readObjectField(null, FIELD);
     DOIProfiler.writeObjectField(null, FIELD);
+    DOIProfiler.exitTestMethod();
     assertEquals(0, makeDump("null-objects").size());
   }
 

@@ -28,15 +28,15 @@ public class TestCaseMangler extends AdviceAdapter {
   private final String testCase;
 
   public TestCaseMangler(
-      MethodVisitor mv,
-      final String superName,
+      final MethodVisitor mv,
+      final boolean isJUnit3TestCase,
       final int access,
       final String className,
       final String methodName,
       final String description) {
     super(Opcodes.ASM9, mv, access, methodName, description);
-    this.instrument = false;
-    if (superName.equals("junit/framework/TestCase")) instrument = methodName.startsWith("test");
+    instrument =
+        isJUnit3TestCase && methodName.startsWith("test") && (access & Opcodes.ACC_PUBLIC) != 0;
     this.testCase = className + "#" + methodName;
   }
 

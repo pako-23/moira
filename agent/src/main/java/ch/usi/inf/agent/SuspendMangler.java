@@ -16,7 +16,7 @@ public final class SuspendMangler extends AdviceAdapter {
   private Label tryBegin;
 
   public SuspendMangler(
-      MethodVisitor mv, int access, final String methodName, final String description) {
+      final MethodVisitor mv, final int access, final String methodName, final String description) {
     super(Opcodes.ASM9, mv, access, methodName, description);
   }
 

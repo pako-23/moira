@@ -26,7 +26,8 @@ public class FieldAccessMangler extends MethodVisitor {
   private boolean isInitialized;
   private String superName;
 
-  public FieldAccessMangler(MethodVisitor mv, final String superName, final String methodName) {
+  public FieldAccessMangler(
+      final MethodVisitor mv, final String superName, final String methodName) {
     super(Opcodes.ASM9, mv);
     isInitialized = !methodName.equals("<init>");
     this.superName = superName;

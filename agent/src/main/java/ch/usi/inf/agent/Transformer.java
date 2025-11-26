@@ -34,14 +34,14 @@ class Transformer implements ClassFileTransformer {
     }
 
     try {
-      return instrument(classFileBuffer);
+      return instrument(loader, classFileBuffer);
     } catch (Throwable t) {
       t.printStackTrace();
       return null;
     }
   }
 
-  private byte[] instrument(byte[] bytes) {
+  private byte[] instrument(final ClassLoader loader, final byte[] bytes) {
     final ClassReader reader = new ClassReader(bytes);
     final ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS);
     reader.accept(new ClassMangler(writer), ClassReader.EXPAND_FRAMES);

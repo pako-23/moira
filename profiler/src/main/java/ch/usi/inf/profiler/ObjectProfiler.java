@@ -9,6 +9,7 @@ public class ObjectProfiler {
   private static Map<Object, ReadWriteSet> arrayMapping;
   private static Map<Object, ReadWriteSet> objectMapping;
   private static volatile int runningTest = -1;
+  private static volatile int stackDepth = 0;
 
   static {
     setup();
@@ -129,10 +130,11 @@ public class ObjectProfiler {
   }
 
   public static void enterTestMethod(final String test) {
-    runningTest = dump.registerTest(test);
+    if (runningTest == -1) runningTest = dump.registerTest(test);
+    ++stackDepth;
   }
 
   public static void exitTestMethod() {
-    runningTest = -1;
+    if (--stackDepth == 0) runningTest = -1;
   }
 }

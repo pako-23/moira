@@ -65,32 +65,49 @@ public class ProfilerDumpTest {
     dump.registerTest("B");
     dump.registerTest("C");
 
+    byte[][] matrix = new byte[3][3];
+    byte[][] expected = new byte[3][3];
+
     dump.registerDependency(0, 2);
     dump.registerDependency(1, 0);
     dump.registerDependency(1, 2);
 
+    expected[0][2] = 1;
+    expected[1][0] = 1;
+    expected[1][2] = 1;
+
     ProfilerDump.Iterator iterator = dump.iterator();
     assertTrue(iterator.hasNext());
-    assertEquals(0, iterator.getDependant());
-    assertEquals(2, iterator.getDependee());
+
+    matrix[iterator.getDependant()][iterator.getDependee()] = 1;
 
     iterator.next();
     assertTrue(iterator.hasNext());
-    assertEquals(0, iterator.getDependee());
-    assertEquals(1, iterator.getDependant());
+    matrix[iterator.getDependant()][iterator.getDependee()] = 1;
 
     iterator.next();
     assertTrue(iterator.hasNext());
-    assertEquals(2, iterator.getDependee());
-    assertEquals(1, iterator.getDependant());
+    matrix[iterator.getDependant()][iterator.getDependee()] = 1;
 
     iterator.next();
     assertFalse(iterator.hasNext());
+
+    for (int i = 0; i < matrix.length; ++i)
+      for (int j = 0; j < matrix[i].length; ++j)
+        assertEquals(
+            expected[i][j],
+            matrix[i][j],
+            String.format(
+                "expected[%d][%d] = %d, matrix[%d][%d] = %d",
+                i, j, expected[i][j], i, j, matrix[i][j]));
   }
 
   @Test
   public void testGrowDump() {
     int capacity = 200;
+    byte[][] matrix = new byte[capacity][capacity];
+    byte[][] expected = new byte[capacity][capacity];
+
     for (int i = 0; i < capacity; ++i) {
       dump.registerTest("Test" + i);
     }
@@ -98,6 +115,7 @@ public class ProfilerDumpTest {
     for (int i = 0; i < capacity; i += 2) {
       for (int j = 0; j < i; j += 2) {
         dump.registerDependency(i, j);
+        expected[i][j] = 1;
       }
     }
 
@@ -110,17 +128,25 @@ public class ProfilerDumpTest {
     }
 
     ProfilerDump.Iterator iterator = dump.iterator();
-    assertTrue(iterator.hasNext());
 
     for (int i = 0; i < capacity; i += 2) {
       for (int j = 0; j < i; j += 2) {
-        assertEquals(i, iterator.getDependant());
-        assertEquals(j, iterator.getDependee());
+        assertTrue(iterator.hasNext());
+        matrix[iterator.getDependant()][iterator.getDependee()] = 1;
         iterator.next();
       }
     }
 
     assertFalse(iterator.hasNext());
+
+    for (int i = 0; i < matrix.length; ++i)
+      for (int j = 0; j < matrix[i].length; ++j)
+        assertEquals(
+            expected[i][j],
+            matrix[i][j],
+            String.format(
+                "expected[%d][%d] = %d, matrix[%d][%d] = %d",
+                i, j, expected[i][j], i, j, matrix[i][j]));
   }
 
   private List<String> makeDump(final String fileName) {
@@ -129,6 +155,7 @@ public class ProfilerDumpTest {
     try {
       File file = new File(fileName);
       file.deleteOnExit();
+
       dump.dump(fileName);
       lines =
           Files.readAllLines(Paths.get(fileName)).stream().sorted().collect(Collectors.toList());

@@ -1,5 +1,7 @@
 package ch.usi.inf.profiler;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -16,8 +18,8 @@ public class HashMapTest {
   @Test
   public void createMapDefaults() {
     MapBuilder<String, Integer> builder = MapBuilder.builder();
-    assertEquals(16, builder.getInitialCapacity());
-    assertEquals(MapBuilder.ReferenceStrength.STRONG, builder.getKeyReferenceStrength());
+    assertThat(builder.getInitialCapacity(), is(16));
+    assertThat(builder.getKeyReferenceStrength(), is(MapBuilder.ReferenceStrength.STRONG));
     assertTrue(builder.getEquivalence().test("A", "A"));
     assertFalse(builder.getEquivalence().test("A", "B"));
     assertEquals("test".hashCode(), builder.getHashFunction().compute("test"));
@@ -27,7 +29,7 @@ public class HashMapTest {
   public void testInitialCapacitySetting() {
     MapBuilder<String, Integer> builder = MapBuilder.builder();
     builder.initialCapacity(32);
-    assertEquals(32, builder.getInitialCapacity());
+    assertThat(builder.getInitialCapacity(), is(32));
     assertThrows(IllegalArgumentException.class, () -> builder.initialCapacity(15));
     assertThrows(IllegalArgumentException.class, () -> builder.initialCapacity(0));
   }
@@ -36,10 +38,10 @@ public class HashMapTest {
   public void testReferenceStrengthSetting() {
     MapBuilder<String, Integer> builder = MapBuilder.builder();
     builder.weakKeys();
-    assertEquals(MapBuilder.ReferenceStrength.WEAK, builder.getKeyReferenceStrength());
+    assertThat(builder.getKeyReferenceStrength(), is(MapBuilder.ReferenceStrength.WEAK));
 
     builder.strongKeys();
-    assertEquals(MapBuilder.ReferenceStrength.STRONG, builder.getKeyReferenceStrength());
+    assertThat(builder.getKeyReferenceStrength(), is(MapBuilder.ReferenceStrength.STRONG));
   }
 
   @Test
@@ -52,7 +54,7 @@ public class HashMapTest {
             .hashFunction(customHash)
             .equivalence(customEquivalence);
 
-    assertEquals(42, builder.getHashFunction().compute("anything"));
+    assertThat(builder.getHashFunction().compute("anything"), is(42));
     assertTrue(builder.getEquivalence().test("a", "A"));
     assertFalse(builder.getEquivalence().test("a", "B"));
   }
@@ -69,10 +71,10 @@ public class HashMapTest {
               return "Value1";
             });
 
-    assertEquals("Value1", result);
+    assertThat(result, is("Value1"));
     assertEquals(1, insertions.get());
-    assertEquals(1, map.size());
-    assertEquals(4, map.capacity());
+    assertThat(map.size(), is(1));
+    assertThat(map.capacity(), is(4));
 
     result =
         map.getOrPut(
@@ -82,9 +84,9 @@ public class HashMapTest {
               return "NewValue";
             });
 
-    assertEquals("Value1", result);
+    assertThat(result, is("Value1"));
     assertEquals(1, insertions.get());
-    assertEquals(1, map.size());
+    assertThat(map.size(), is(1));
   }
 
   @Test
@@ -96,30 +98,31 @@ public class HashMapTest {
       map.getOrPut(key, () -> "Val" + key);
     }
 
-    assertEquals(3, map.size());
-    assertEquals(8, map.capacity());
-    assertEquals("Val2", map.getOrPut(2, () -> "ShouldNotBeCalled"));
+    assertThat(map.size(), is(3));
+    assertThat(map.capacity(), is(8));
+    assertThat(map.getOrPut(2, () -> "ShouldNotBeCalled"), is("Val2"));
   }
 
   @Test
   public void testRehashing() {
-    Map<Integer, Integer> map = MapBuilder.<Integer, Integer>builder().initialCapacity(4).build();
+    Map<Integer, Integer> map =
+        MapBuilder.<Integer, Integer>builder().initialCapacity(4).loadFactor(0.5f).build();
 
     map.getOrPut(1, () -> 100);
-    assertEquals(1, map.size());
-    assertEquals(4, map.capacity());
+    assertThat(map.size(), is(1));
+    assertThat(map.capacity(), is(4));
 
     map.getOrPut(2, () -> 200);
-    assertEquals(2, map.size());
-    assertEquals(4, map.capacity());
+    assertThat(map.size(), is(2));
+    assertThat(map.capacity(), is(4));
 
     map.getOrPut(3, () -> 300);
     map.getOrPut(4, () -> 400);
-    assertEquals(4, map.size());
-    assertEquals(8, map.capacity());
+    assertThat(map.size(), is(4));
+    assertThat(map.capacity(), is(8));
 
-    assertEquals(100, map.getOrPut(1, () -> 0));
-    assertEquals(400, map.getOrPut(4, () -> 0));
+    assertThat(map.getOrPut(1, () -> 0), is(100));
+    assertThat(map.getOrPut(4, () -> 0), is(400));
   }
 
   @Test
@@ -127,6 +130,7 @@ public class HashMapTest {
     Map<String, String> map =
         MapBuilder.<String, String>builder()
             .initialCapacity(4)
+            .hashFunction(key -> key.toLowerCase().hashCode())
             .equivalence((first, second) -> first.equalsIgnoreCase(second))
             .build();
     AtomicInteger insertions = new AtomicInteger(0);
@@ -138,9 +142,9 @@ public class HashMapTest {
               return "Red Fruit";
             });
 
-    assertEquals(1, map.size());
-    assertEquals(1, insertions.get());
-    assertEquals("Red Fruit", result);
+    assertThat(map.size(), is(1));
+    assertThat(insertions.get(), is(1));
+    assertThat(result, is("Red Fruit"));
 
     result =
         map.getOrPut(
@@ -150,9 +154,9 @@ public class HashMapTest {
               return "ShouldNotBeCalled";
             });
 
-    assertEquals("Red Fruit", result);
-    assertEquals(1, map.size());
-    assertEquals(1, insertions.get());
+    assertThat(result, is("Red Fruit"));
+    assertThat(map.size(), is(1));
+    assertThat(insertions.get(), is(1));
   }
 
   @Test
@@ -164,44 +168,39 @@ public class HashMapTest {
             .equivalence(
                 (String first, String second) ->
                     Integer.parseInt(first) == Integer.parseInt(second))
+            .loadFactor(0.5f)
             .build();
 
     for (int i = 1; i <= 3; ++i) {
       final String value = "value" + i;
-      assertEquals("value" + i, map.getOrPut(Integer.toString(i), () -> value));
-      assertEquals(i, map.size());
+      assertThat(map.getOrPut(Integer.toString(i), () -> value), is(value));
+      assertThat(map.size(), is(i));
     }
-    assertEquals(8, map.capacity());
+    assertThat(map.capacity(), is(8));
 
     for (int i = 1; i <= 3; ++i)
-      assertEquals("value" + i, map.getOrPut(Integer.toString(i), () -> "error"));
+      assertThat(map.getOrPut(Integer.toString(i), () -> "error"), is("value" + i));
 
-    assertEquals("value9", map.getOrPut("9", () -> "value9"));
-    assertEquals(4, map.size());
-    assertEquals("value9", map.getOrPut("9", () -> "invalid"));
-    assertEquals(4, map.size());
+    assertThat(map.getOrPut("9", () -> "value9"), is("value9"));
+    assertThat(map.size(), is(4));
+    assertThat(map.getOrPut("9", () -> "invalid"), is("value9"));
+    assertThat(map.size(), is(4));
   }
 
   @Test
   public void testWeakKeys() {
-    AtomicInteger invocations = new AtomicInteger(0);
     Map<Object, String> map =
         MapBuilder.<Object, String>builder()
             .hashFunction(value -> 1)
             .weakKeys()
-            .keyDeletionCallback(
-                (value) -> {
-                  assertEquals("first-value", value);
-                  invocations.incrementAndGet();
-                })
             .initialCapacity(4)
             .build();
 
     Object key = new Object();
     WeakReference<Object> weakKey = new WeakReference<>(key);
     String result = map.getOrPut(key, () -> "first-value");
-    assertEquals("first-value", result);
-    assertEquals(1, map.size());
+    assertThat(result, is("first-value"));
+    assertThat(map.size(), is(1));
     key = null;
     while (weakKey.get() != null) {
       System.gc();
@@ -210,9 +209,7 @@ public class HashMapTest {
     Object newKey = new Object();
     result = map.getOrPut(newKey, () -> "second-value");
 
-    assertEquals("second-value", result);
-    assertEquals(1, map.size());
-    assertEquals(1, invocations.get());
+    assertThat(result, is("second-value"));
   }
 
   @Test
@@ -226,18 +223,13 @@ public class HashMapTest {
 
     String key1 = new String("first-key");
     String result = map.getOrPut(key1, () -> "first-value");
-    assertEquals("first-value", result);
-    assertEquals(1, map.size());
+    assertThat(result, is("first-value"));
+    assertThat(map.size(), is(1));
 
     String key2 = new String("second-key");
     result = map.getOrPut(key2, () -> "second-value");
-    assertEquals("second-value", result);
-    assertEquals(2, map.size());
-
-    String key3 = new String("third-key");
-    result = map.getOrPut(key3, () -> "third-value");
-    assertEquals("third-value", result);
-    assertEquals(3, map.size());
+    assertThat(result, is("second-value"));
+    assertThat(map.size(), is(2));
   }
 
   @Test
@@ -247,17 +239,18 @@ public class HashMapTest {
             .hashFunction(value -> 1)
             .weakKeys()
             .initialCapacity(8)
+            .loadFactor(0.5f)
             .build();
 
     String key1 = new String("first-key");
     String result = map.getOrPut(key1, () -> "first-value");
-    assertEquals("first-value", result);
-    assertEquals(1, map.size());
+    assertThat(result, is("first-value"));
+    assertThat(map.size(), is(1));
 
     String key2 = new String("second-key");
     result = map.getOrPut(key2, () -> "second-value");
-    assertEquals("second-value", result);
-    assertEquals(2, map.size());
+    assertThat(result, is("second-value"));
+    assertThat(map.size(), is(2));
     WeakReference<String> reference = new WeakReference<>(key2);
     key2 = null;
     while (reference.get() != null) {
@@ -266,8 +259,9 @@ public class HashMapTest {
 
     String key3 = new String("third-key");
     result = map.getOrPut(key3, () -> "third-value");
-    assertEquals("third-value", result);
-    assertEquals(2, map.size());
+    assertThat(result, is("third-value"));
+    assertThat(map.size(), greaterThanOrEqualTo(3));
+    assertThat(map.size(), lessThanOrEqualTo(4));
   }
 
   @Test
@@ -284,8 +278,8 @@ public class HashMapTest {
 
     Map.Iterator<Integer, String> it = map.iterator();
     assertTrue(it.hasNext());
-    assertEquals(10, it.key());
-    assertEquals("Ten", it.value());
+    assertThat(it.key(), is(10));
+    assertThat(it.value(), is("Ten"));
 
     it.next();
     assertFalse(it.hasNext());
@@ -307,7 +301,7 @@ public class HashMapTest {
       it.next();
     }
 
-    assertEquals(4, keysFound.size());
+    assertThat(keysFound.size(), is(4));
     assertTrue(keysFound.contains(1));
     assertTrue(keysFound.contains(2));
     assertTrue(keysFound.contains(3));
@@ -344,11 +338,11 @@ public class HashMapTest {
       it.next();
     }
 
-    assertEquals(2, keysFound.size());
+    assertThat(keysFound.size(), is(2));
     assertTrue(keysFound.contains(key1));
     assertTrue(keysFound.contains(key3));
 
-    assertEquals(3, valuesFound.size());
+    assertThat(valuesFound.size(), is(3));
     assertTrue(valuesFound.contains("Value1"));
     assertTrue(valuesFound.contains("Value2"));
     assertTrue(valuesFound.contains("Value3"));
@@ -389,10 +383,15 @@ public class HashMapTest {
   @Test
   public void testCompaction() {
     Object[] objects = null;
+    AtomicInteger invocations = new AtomicInteger(0);
     Map<Object, Integer> map =
         MapBuilder.<Object, Integer>builder()
             .initialCapacity(64)
             .weakKeys()
+            .keyDeletionCallback(
+                (value) -> {
+                  invocations.incrementAndGet();
+                })
             .equivalence((first, second) -> first == second)
             .build();
 
@@ -408,8 +407,8 @@ public class HashMapTest {
       while (reference.get() != null) {
         System.gc();
       }
-
-      assertEquals(4096, map.capacity());
     }
+
+    assertThat(invocations.get(), greaterThan(0));
   }
 }

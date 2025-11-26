@@ -1,13 +1,18 @@
 package ch.usi.inf.profiler;
 
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+
 public class MapBuilder<K, V> {
   private static final int DEFAULT_INITIAL_CAPACITY = 1 << 4;
+  private static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
   private KeyDeletionCallback<V> keyDeletionCallback;
   private Equivalence<K> equivalence;
   private HashFunction<K> hashFunction;
   private int initialCapacity;
   private ReferenceStrength keyReferenceStrength;
+  private float loadFactor;
 
   private MapBuilder() {
     keyDeletionCallback =
@@ -18,6 +23,7 @@ public class MapBuilder<K, V> {
     hashFunction = (key) -> key.hashCode();
     initialCapacity = DEFAULT_INITIAL_CAPACITY;
     keyReferenceStrength = ReferenceStrength.STRONG;
+    loadFactor = DEFAULT_LOAD_FACTOR;
   }
 
   public static <K, V> MapBuilder<K, V> builder() {
@@ -57,6 +63,15 @@ public class MapBuilder<K, V> {
     return this;
   }
 
+  public MapBuilder<K, V> loadFactor(final float loadFactor) {
+    this.loadFactor = loadFactor;
+    return this;
+  }
+
+  public float getLoadFactor() {
+    return loadFactor;
+  }
+
   public int getInitialCapacity() {
     return initialCapacity;
   }
@@ -86,187 +101,275 @@ public class MapBuilder<K, V> {
     public void apply(V value);
   }
 
-  private interface Reference<K> {
-    public K get();
+  private interface Entry<K, V> {
+    public Entry<K, V> getNext();
+
+    public K getKey();
+
+    public V getValue();
+
+    public int getHash();
+
+    public void setNext(final Entry<K, V> next);
+
+    public void setValue(final V value);
   }
 
-  private static class StrongReference<K> implements Reference<K> {
-    private final K reference;
+  private static class StrongEntry<K, V> implements Entry<K, V> {
+    private final K key;
+    private final int hash;
+    private V value;
+    private Entry<K, V> next;
 
-    public StrongReference(K reference) {
-      this.reference = reference;
+    public StrongEntry(final K key, final int hash) {
+      this.key = key;
+      this.value = null;
+      this.hash = hash;
+      this.next = null;
     }
 
     @Override
-    public K get() {
-      return reference;
-    }
-  }
-
-  private static class WeakReference<K> implements Reference<K> {
-    private final java.lang.ref.WeakReference<K> reference;
-
-    public WeakReference(K reference) {
-      this.reference = new java.lang.ref.WeakReference<>(reference);
+    public Entry<K, V> getNext() {
+      return next;
     }
 
     @Override
-    public K get() {
-      return reference.get();
+    public K getKey() {
+      return key;
+    }
+
+    @Override
+    public V getValue() {
+      return value;
+    }
+
+    @Override
+    public int getHash() {
+      return hash;
+    }
+
+    @Override
+    public void setNext(final Entry<K, V> next) {
+      this.next = next;
+    }
+
+    @Override
+    public void setValue(final V value) {
+      this.value = value;
+    }
+  }
+
+  private static class WeakEntry<K, V> extends WeakReference<Object> implements Entry<K, V> {
+    private final int hash;
+    private V value;
+    private Entry<K, V> next;
+
+    public WeakEntry(final K key, final int hash, final ReferenceQueue<Object> queue) {
+      super(key, queue);
+      this.hash = hash;
+      this.value = null;
+      this.next = null;
+    }
+
+    @Override
+    public Entry<K, V> getNext() {
+      return next;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public K getKey() {
+      return (K) get();
+    }
+
+    @Override
+    public V getValue() {
+      return value;
+    }
+
+    @Override
+    public int getHash() {
+      return hash;
+    }
+
+    @Override
+    public void setNext(final Entry<K, V> next) {
+      this.next = next;
+    }
+
+    @Override
+    public void setValue(final V value) {
+      this.value = value;
     }
   }
 
   public enum ReferenceStrength {
     STRONG {
-      public <K> Reference<K> create(K object) {
-        return new StrongReference<K>(object);
+      @Override
+      public <K, V> Entry<K, V> create(
+          final K key, final int hash, final ReferenceQueue<Object> queue) {
+        return new StrongEntry<K, V>(key, hash);
       }
     },
     WEAK {
-      public <K> Reference<K> create(K object) {
-        return new WeakReference<K>(object);
+      @Override
+      public <K, V> Entry<K, V> create(
+          final K key, final int hash, final ReferenceQueue<Object> queue) {
+        return new WeakEntry<K, V>(key, hash, queue);
       }
     };
 
-    public abstract <K> Reference<K> create(K object);
+    public abstract <K, V> Entry<K, V> create(
+        final K key, final int hash, final ReferenceQueue<Object> queue);
   }
 
   private class HashMap implements Map<K, V> {
-    private int capacity;
     private int size;
-    private Reference<K>[] keys;
-    private V[] values;
-    private int[] hashes;
+    private final float loadFactor;
+    private int threshold;
+    private Entry<K, V>[] table;
     private final KeyDeletionCallback<V> keyDeletionCallback;
     private final HashFunction<K> hashFunction;
     private final Equivalence<K> equivalence;
-    private final ReferenceStrength keyReferenceStrength;
+    private final ReferenceStrength referenceStrength;
+    private final ReferenceQueue<Object> queue;
 
     public HashMap(final MapBuilder<K, V> builder) {
-      capacity = builder.getInitialCapacity();
+      int capacity = builder.getInitialCapacity();
       size = 0;
-      keys = newKeys(capacity);
-      values = newValues(capacity);
-      hashes = new int[capacity];
+      loadFactor = builder.getLoadFactor();
+      threshold = (int) (capacity * loadFactor);
+      table = newTable(builder.getInitialCapacity());
       keyDeletionCallback = builder.getKeyDeletionCallback();
       hashFunction = builder.getHashFunction();
       equivalence = builder.getEquivalence();
-      keyReferenceStrength = builder.getKeyReferenceStrength();
+      referenceStrength = builder.getKeyReferenceStrength();
+      queue = referenceStrength == ReferenceStrength.STRONG ? null : new ReferenceQueue<>();
     }
 
     @Override
     public boolean contains(final K key) {
-      int hash = hashFunction.compute(key);
-      int index = keyIndex(key, hash);
+      int hash = hash(key);
 
-      return keys[index] != null && keys[index].get() != null;
+      return search(key, hash) != null;
+    }
+
+    private Entry<K, V> search(final K key, final int hash) {
+      int index = indexFor(hash, table.length);
+
+      for (Entry<K, V> node = table[index]; node != null; node = node.getNext()) {
+        if (node.getKey() != null && node.getHash() == hash && equivalence.test(node.getKey(), key))
+          return node;
+      }
+
+      return null;
     }
 
     @Override
     public V getOrPut(final K key, final ValueProducer<V> producer) {
-      int hash = hashFunction.compute(key);
-      int index = keyIndex(key, hash);
+      int hash = hash(key);
+      Entry<K, V> node = search(key, hash);
+      if (node != null) return node.getValue();
 
-      if (keys[index] == null) {
-        if (2 * size >= capacity && rehash()) {
-          index = keyIndex(key, hash);
-        }
+      reclaim();
+      int index = indexFor(hash, table.length);
+      node = referenceStrength.create(key, hash, queue);
+      node.setNext(table[index]);
+      node.setValue(producer.produce());
+      table[index] = node;
 
-        hashes[index] = hash;
-        keys[index] = keyReferenceStrength.create(key);
-        values[index] = producer.produce();
-        ++size;
-      } else if (keys[index].get() == null) {
-        keyDeletionCallback.apply(values[index]);
-        hashes[index] = hash;
-        keys[index] = keyReferenceStrength.create(key);
-        values[index] = producer.produce();
+      if (++size > threshold) {
+        rehash();
+        node = table[indexFor(hash, table.length)];
       }
 
-      return values[index];
+      return node.getValue();
     }
 
     @Override
     public int capacity() {
-      return capacity;
+      return table.length;
     }
 
     @Override
     public int size() {
+      reclaim();
       return size;
     }
 
-    private boolean rehash() {
-      this.size = 0;
-      for (int i = 0; i < this.capacity; ++i) {
-        if (this.keys[i] == null || this.keys[i].get() == null) continue;
+    private void rehash() {
+      int length = table.length << 1;
+      final Entry<K, V>[] table = newTable(length);
+      transfer(this.table, table);
+      this.table = table;
+      this.threshold = (int) (length * loadFactor);
+    }
 
-        ++this.size;
-      }
-
-      if (3 * this.size < this.capacity) return false;
-
-      Reference<K>[] keys = this.keys;
-      V[] values = this.values;
-      int[] hashes = this.hashes;
-      int capacity = this.capacity;
-
-      this.capacity <<= 1;
-      this.keys = newKeys(this.capacity);
-      this.values = newValues(this.capacity);
-      this.hashes = new int[this.capacity];
-
-      for (int i = 0; i < capacity; ++i) {
-        if (keys[i] == null) {
-          continue;
+    private void transfer(final Entry<K, V>[] source, final Entry<K, V>[] destination) {
+      for (int i = 0; i < source.length; ++i) {
+        Entry<K, V> node = source[i];
+        source[i] = null;
+        while (node != null) {
+          Entry<K, V> next = node.getNext();
+          if (node.getKey() == null) {
+            keyDeletionCallback.apply(node.getValue());
+            node.setNext(null);
+            node.setValue(null);
+            --size;
+          } else {
+            int index = indexFor(node.getHash(), destination.length);
+            node.setNext(destination[index]);
+            destination[index] = node;
+          }
+          node = next;
         }
-
-        int index = keyIndex(keys[i].get(), hashes[i]);
-        this.keys[index] = keys[i];
-        this.values[index] = values[i];
-        this.hashes[index] = hashes[i];
       }
-
-      return true;
     }
 
-    private int keyIndex(final K key, int hash) {
-      hash &= capacity - 1;
-      if (keys[hash] == null) return hash;
+    private int indexFor(final int hash, final int length) {
+      return hash & (length - 1);
+    }
 
-      K keyValue = keys[hash].get();
-      if (keyValue == null || equivalence.test(key, keyValue)) return hash;
+    private int hash(final K key) {
+      int hash = hashFunction.compute(key);
+      hash ^= (hash >>> 20) ^ (hash >>> 12);
+      return hash ^ (hash >>> 7) ^ (hash >>> 4);
+    }
 
-      int g = hash(hash) | 1;
+    @SuppressWarnings("unchecked")
+    private Entry<K, V>[] newTable(final int length) {
+      return (Entry<K, V>[]) new Entry[length];
+    }
+
+    @SuppressWarnings("unchecked")
+    private Entry<K, V> pollEntry() {
+      return (Entry<K, V>) queue.poll();
+    }
+
+    private void reclaim() {
+      if (queue == null) return;
+
       while (true) {
-        hash = (hash + g) & (capacity - 1);
-        if (keys[hash] == null) return hash;
-        keyValue = keys[hash].get();
-        if (keyValue == null || equivalence.test(key, keyValue)) return hash;
+        Entry<K, V> node = pollEntry();
+        if (node == null) break;
+        if (node.getValue() == null) continue;
+        keyDeletionCallback.apply(node.getValue());
+        int index = indexFor(node.getHash(), table.length);
+        Entry<K, V> prev = table[index];
+        Entry<K, V> p = prev;
+        while (p != node) {
+          Entry<K, V> next = p.getNext();
+          if (p == node) {
+            if (prev == node) table[index] = next;
+            else prev.setNext(next);
+            node.setValue(null);
+            --size;
+            break;
+          }
+          prev = p;
+          p = next;
+        }
       }
-    }
-
-    private int hash(int hash) {
-      hash *= 0xcc9e2d51;
-      hash = (hash << 15) | (hash >> 17);
-      hash *= 0x1b873593;
-      hash = (hash << 13) | (hash >> 19);
-      hash ^= hash >> 16;
-      hash *= 0x85ebca6b;
-      hash ^= hash >> 13;
-      hash *= 0xc2b2ae35;
-      hash ^= hash >> 16;
-      return hash;
-    }
-
-    @SuppressWarnings("unchecked")
-    private Reference<K>[] newKeys(final int capacity) {
-      return (Reference<K>[]) new Reference[capacity];
-    }
-
-    @SuppressWarnings("unchecked")
-    private V[] newValues(final int capacity) {
-      return (V[]) new Object[capacity];
     }
 
     @Override
@@ -276,6 +379,7 @@ public class MapBuilder<K, V> {
 
     private class Iterator implements Map.Iterator<K, V> {
       private int index;
+      private Entry<K, V> node;
 
       public Iterator() {
         index = 0;
@@ -283,28 +387,31 @@ public class MapBuilder<K, V> {
       }
 
       private void advance() {
-        while (hasNext() && keys[index] == null) {
-          ++index;
-        }
+        while (hasNext() && table[index] == null) ++index;
+
+        if (hasNext()) node = table[index];
       }
 
       @Override
       public boolean hasNext() {
-        return index < capacity;
+        return index < table.length;
       }
 
       @Override
       public V value() {
-        return values[index];
+        return node.getValue();
       }
 
       @Override
       public K key() {
-        return keys[index].get();
+        return node.getKey();
       }
 
       @Override
       public void next() {
+        node = node.getNext();
+        if (node != null) return;
+
         ++index;
         advance();
       }

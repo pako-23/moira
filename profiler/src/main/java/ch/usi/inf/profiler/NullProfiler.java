@@ -7,19 +7,19 @@ public final class NullProfiler {
 
   public static void resume() {}
 
-  public static void writeStaticField(String field) {}
+  public static void writeStaticField(final String field) {}
 
-  public static void writeArrayElement(Object array, int index) {}
+  public static void writeArrayElement(final Object array, final int index) {}
 
-  public static void writeObjectField(Object object, String field) {}
+  public static void writeObjectField(final Object object, final String field) {}
 
-  public static void readStaticField(String field) {}
+  public static void readStaticField(final String field) {}
 
-  public static void readArrayElement(Object array, int index) {}
+  public static void readArrayElement(final Object array, final int index) {}
 
-  public static void readObjectField(Object object, String field) {}
+  public static void readObjectField(final Object object, final String field) {}
 
-  public static void enterTestMethod(String test) {}
+  public static void enterTestMethod(final String test) {}
 
   public static void exitTestMethod() {}
 
