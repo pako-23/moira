@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
-import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -22,6 +21,7 @@ public class TestCaseMangler extends AdviceAdapter {
   };
 
   private static Map<String, Void> testsFilter = null;
+  private static TestDetector detector = new TestDetector();
 
   private boolean instrument;
   private Label tryBegin;
@@ -29,15 +29,29 @@ public class TestCaseMangler extends AdviceAdapter {
 
   public TestCaseMangler(
       final MethodVisitor mv,
-      final boolean isJUnit3TestCase,
+      final String superName,
       final int access,
       final String className,
       final String methodName,
       final String description) {
     super(Opcodes.ASM9, mv, access, methodName, description);
-    instrument =
-        isJUnit3TestCase && methodName.startsWith("test") && (access & Opcodes.ACC_PUBLIC) != 0;
     this.testCase = className + "#" + methodName;
+
+    instrument =
+        isJUint3TestMethod(superName, access, className, methodName, description)
+            || detector.isJUint4TestMethod(className, methodName, description);
+    if (testsFilter != null && testsFilter.contains(testCase)) instrument = false;
+  }
+
+  private boolean isJUint3TestMethod(
+      final String superName,
+      final int access,
+      final String className,
+      final String methodName,
+      final String description) {
+    return detector.isJUnit3TestClass(superName, className)
+        && ((methodName.startsWith("test") && (access & Opcodes.ACC_PUBLIC) != 0)
+            || (methodName.equals("runTest") && description.equals("()V")));
   }
 
   @Override
@@ -64,14 +78,6 @@ public class TestCaseMangler extends AdviceAdapter {
       mv.visitMethodInsn(
           Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[1], methodDescriptions[1], false);
     }
-  }
-
-  @Override
-  public AnnotationVisitor visitAnnotation(String descriptor, boolean visible) {
-    if (descriptor.equals("Lorg/junit/Test;")) instrument = true;
-    if (testsFilter != null && !testsFilter.contains(testCase)) instrument = false;
-
-    return mv.visitAnnotation(descriptor, visible);
   }
 
   @Override

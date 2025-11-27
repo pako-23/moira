@@ -126,6 +126,38 @@ public class HashMapTest {
   }
 
   @Test
+  public void testMultipleRehashes() {
+    final Map<String, String> map = MapBuilder.<String, String>builder().build();
+    final String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    final int size = 400;
+
+    final String[] keys = new String[size];
+    final String[] values = new String[size];
+
+    for (int i = 0; i < size; ++i) {
+      final StringBuilder builder = new StringBuilder(i + 1);
+      for (int j = 0; j < i + 1; ++j) builder.append(alphabet.charAt(j % alphabet.length()));
+      keys[i] = builder.toString();
+      builder.setLength(0);
+
+      for (int j = 0; j < i + 1; ++j) builder.append(alphabet.charAt((j + 4) % alphabet.length()));
+      values[i] = builder.toString();
+    }
+
+    for (int i = 0; i < size; ++i) {
+      final String value = values[i];
+      assertThat(map.getOrPut(keys[i], () -> value), is(value));
+    }
+
+    assertThat(map.size(), is(size));
+    assertThat(map.capacity(), is(1024));
+    for (int i = 0; i < size; ++i) {
+      assertTrue(map.contains(keys[i]));
+      assertThat(map.get(keys[i]), is(sameInstance(values[i])));
+    }
+  }
+
+  @Test
   public void testCustomEquivalence() {
     Map<String, String> map =
         MapBuilder.<String, String>builder()
@@ -260,8 +292,8 @@ public class HashMapTest {
     String key3 = new String("third-key");
     result = map.getOrPut(key3, () -> "third-value");
     assertThat(result, is("third-value"));
-    assertThat(map.size(), greaterThanOrEqualTo(3));
-    assertThat(map.size(), lessThanOrEqualTo(4));
+    assertThat(map.size(), greaterThanOrEqualTo(2));
+    assertThat(map.size(), lessThanOrEqualTo(3));
   }
 
   @Test

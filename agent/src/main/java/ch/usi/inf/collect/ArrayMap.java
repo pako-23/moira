@@ -25,6 +25,11 @@ public class ArrayMap<V> implements Map<Integer, V> {
   }
 
   @Override
+  public V get(final Integer key) {
+    return map[key];
+  }
+
+  @Override
   public V getOrPut(final Integer key, final ValueProducer<V> producer) {
     V value = map[key];
 

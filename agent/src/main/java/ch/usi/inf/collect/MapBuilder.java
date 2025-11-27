@@ -258,11 +258,21 @@ public class MapBuilder<K, V> {
       int index = indexFor(hash, table.length);
 
       for (Entry<K, V> node = table[index]; node != null; node = node.getNext()) {
-        if (node.getKey() != null && node.getHash() == hash && equivalence.test(node.getKey(), key))
+        if (node.getKey() != null
+            && node.getHash() == hash
+            && equivalence.test(node.getKey(), key)) {
           return node;
+        }
       }
 
       return null;
+    }
+
+    @Override
+    public V get(final K key) {
+      final Entry<K, V> node = search(key, hash(key));
+      if (node == null) return null;
+      return node.getValue();
     }
 
     @Override
@@ -278,10 +288,7 @@ public class MapBuilder<K, V> {
       node.setValue(producer.produce());
       table[index] = node;
 
-      if (++size > threshold) {
-        rehash();
-        node = table[indexFor(hash, table.length)];
-      }
+      if (++size > threshold) rehash();
 
       return node.getValue();
     }
@@ -299,10 +306,10 @@ public class MapBuilder<K, V> {
 
     private void rehash() {
       int length = table.length << 1;
-      final Entry<K, V>[] table = newTable(length);
-      transfer(this.table, table);
-      this.table = table;
+      final Entry<K, V>[] table = this.table;
       this.threshold = (int) (length * loadFactor);
+      this.table = newTable(length);
+      transfer(table, this.table);
     }
 
     private void transfer(final Entry<K, V>[] source, final Entry<K, V>[] destination) {
@@ -357,7 +364,7 @@ public class MapBuilder<K, V> {
         int index = indexFor(node.getHash(), table.length);
         Entry<K, V> prev = table[index];
         Entry<K, V> p = prev;
-        while (p != node) {
+        while (p != null) {
           Entry<K, V> next = p.getNext();
           if (p == node) {
             if (prev == node) table[index] = next;

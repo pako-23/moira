@@ -20,9 +20,11 @@ public interface Map<K, V> {
 
   public int size();
 
-  public boolean contains(K key);
+  public boolean contains(final K key);
 
-  public V getOrPut(K key, ValueProducer<V> producer);
+  public V get(final K key);
+
+  public V getOrPut(final K key, final ValueProducer<V> producer);
 
   public Iterator<K, V> iterator();
 }
