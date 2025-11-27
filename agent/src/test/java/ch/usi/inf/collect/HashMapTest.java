@@ -1,4 +1,4 @@
-package ch.usi.inf.profiler;
+package ch.usi.inf.collect;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;

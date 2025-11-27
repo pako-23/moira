@@ -17,6 +17,5 @@ dependencyResolutionManagement {
     }
 }
 
-include("profiler")
 include("agent")
 include("runner")

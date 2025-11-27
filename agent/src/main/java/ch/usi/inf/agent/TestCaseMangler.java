@@ -1,7 +1,7 @@
 package ch.usi.inf.agent;
 
-import ch.usi.inf.profiler.Map;
-import ch.usi.inf.profiler.MapBuilder;
+import ch.usi.inf.collect.Map;
+import ch.usi.inf.collect.MapBuilder;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;

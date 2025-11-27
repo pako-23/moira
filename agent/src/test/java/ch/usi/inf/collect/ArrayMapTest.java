@@ -1,4 +1,4 @@
-package ch.usi.inf.profiler;
+package ch.usi.inf.collect;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

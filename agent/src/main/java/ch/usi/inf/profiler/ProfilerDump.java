@@ -1,5 +1,7 @@
 package ch.usi.inf.profiler;
 
+import ch.usi.inf.collect.Map;
+import ch.usi.inf.collect.MapBuilder;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 

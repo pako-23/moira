@@ -1,4 +1,4 @@
-package ch.usi.inf.profiler;
+package ch.usi.inf.collect;
 
 @FunctionalInterface
 public interface HashFunction<K> {

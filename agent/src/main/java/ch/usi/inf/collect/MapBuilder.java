@@ -1,4 +1,4 @@
-package ch.usi.inf.profiler;
+package ch.usi.inf.collect;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;

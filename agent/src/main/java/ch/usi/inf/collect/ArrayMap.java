@@ -1,4 +1,4 @@
-package ch.usi.inf.profiler;
+package ch.usi.inf.collect;
 
 public class ArrayMap<V> implements Map<Integer, V> {
   private final V map[];

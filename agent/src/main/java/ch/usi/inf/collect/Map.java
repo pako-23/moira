@@ -1,4 +1,4 @@
-package ch.usi.inf.profiler;
+package ch.usi.inf.collect;
 
 public interface Map<K, V> {
   @FunctionalInterface

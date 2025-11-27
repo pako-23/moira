@@ -1,14 +1,15 @@
 package ch.usi.inf.profiler;
 
+import ch.usi.inf.collect.Map;
+import ch.usi.inf.collect.MapBuilder;
 import java.io.FileNotFoundException;
-import java.lang.reflect.Array;
 
-public class DOIProfiler {
+public class ObjectProfiler {
   private static ThreadSuspension suspension;
   private static ProfilerDump dump;
   private static Map<String, ReadWriteSet> staticMapping;
-  private static Map<Object, Map<Integer, ReadWriteSet>> arrayMapping;
-  private static Map<Object, Map<String, ReadWriteSet>> objectMapping;
+  private static Map<Object, ReadWriteSet> arrayMapping;
+  private static Map<Object, ReadWriteSet> objectMapping;
   private static volatile int runningTest = -1;
   private static volatile int stackDepth = 0;
 
@@ -16,35 +17,28 @@ public class DOIProfiler {
     setup();
   }
 
-  private DOIProfiler() {}
+  private ObjectProfiler() {}
 
   public static void setup() {
     suspension = new ThreadSuspension();
     dump = new ProfilerDump();
     staticMapping = MapBuilder.<String, ReadWriteSet>builder().initialCapacity(64).build();
     arrayMapping =
-        MapBuilder.<Object, Map<Integer, ReadWriteSet>>builder()
+        MapBuilder.<Object, ReadWriteSet>builder()
             .initialCapacity(1 << 10)
             .weakKeys()
-            .keyDeletionCallback(DOIProfiler::fieldMappingDump)
+            .keyDeletionCallback(ObjectProfiler::computeConflicts)
             .hashFunction(System::identityHashCode)
             .equivalence((first, second) -> first == second)
             .build();
     objectMapping =
-        MapBuilder.<Object, Map<String, ReadWriteSet>>builder()
+        MapBuilder.<Object, ReadWriteSet>builder()
             .initialCapacity(1 << 10)
             .weakKeys()
-            .keyDeletionCallback(DOIProfiler::fieldMappingDump)
+            .keyDeletionCallback(ObjectProfiler::computeConflicts)
             .hashFunction(System::identityHashCode)
             .equivalence((first, second) -> first == second)
             .build();
-  }
-
-  public static void dump(final String fileName) throws FileNotFoundException {
-    fieldMappingDump(staticMapping);
-    arrayMappingDump();
-    objectMappingDump();
-    dump.dump(fileName);
   }
 
   public static void suspend() {
@@ -55,8 +49,19 @@ public class DOIProfiler {
     suspension.resume();
   }
 
+  private static void computeConflicts(final ReadWriteSet set) {
+    dump.computeConflicts(set);
+  }
+
+  public static void dump(final String fileName) throws FileNotFoundException {
+    mappingDump(staticMapping);
+    mappingDump(arrayMapping);
+    mappingDump(objectMapping);
+    dump.dump(fileName);
+  }
+
   private static void staticFieldEvent(final String field, final byte event) {
-    int runningTest = DOIProfiler.runningTest;
+    int runningTest = ObjectProfiler.runningTest;
     if (runningTest < 0) return;
     if (suspension.suspend()) return;
 
@@ -67,25 +72,33 @@ public class DOIProfiler {
     }
   }
 
-  private static void arrayMappingDump() {
-    Map.Iterator<?, Map<Integer, ReadWriteSet>> it = arrayMapping.iterator();
+  private static void objectEvent(final Object object, final byte event) {
+    int runningTest = ObjectProfiler.runningTest;
+    if (runningTest < 0) return;
+    if (object == null) return;
+    if (suspension.suspend()) return;
 
-    while (it.hasNext()) {
-      fieldMappingDump(it.value());
-      it.next();
+    synchronized (objectMapping) {
+      ReadWriteSet set = objectMapping.getOrPut(object, () -> new ReadWriteSet());
+      set.update(runningTest, event);
+      resume();
     }
   }
 
-  private static void objectMappingDump() {
-    Map.Iterator<?, Map<String, ReadWriteSet>> it = objectMapping.iterator();
+  private static void arrayEvent(final Object array, final byte event) {
+    int runningTest = ObjectProfiler.runningTest;
+    if (array == null) return;
+    if (runningTest < 0) return;
+    if (suspension.suspend()) return;
 
-    while (it.hasNext()) {
-      fieldMappingDump(it.value());
-      it.next();
+    synchronized (arrayMapping) {
+      ReadWriteSet set = arrayMapping.getOrPut(array, () -> new ReadWriteSet());
+      set.update(runningTest, event);
+      resume();
     }
   }
 
-  private static void fieldMappingDump(final Map<?, ReadWriteSet> mapping) {
+  private static void mappingDump(final Map<?, ReadWriteSet> mapping) {
     Map.Iterator<?, ReadWriteSet> it = mapping.iterator();
 
     while (it.hasNext()) {
@@ -94,47 +107,16 @@ public class DOIProfiler {
     }
   }
 
-  private static void objectEvent(final Object object, final String field, final byte event) {
-    int runningTest = DOIProfiler.runningTest;
-    if (runningTest < 0) return;
-    if (object == null) return;
-    if (suspension.suspend()) return;
-
-    synchronized (objectMapping) {
-      Map<String, ReadWriteSet> fieldMapping =
-          objectMapping.getOrPut(
-              object, () -> MapBuilder.<String, ReadWriteSet>builder().initialCapacity(4).build());
-      ReadWriteSet set = fieldMapping.getOrPut(field, () -> new ReadWriteSet());
-      set.update(runningTest, event);
-      resume();
-    }
-  }
-
-  private static void arrayEvent(final Object array, final int index, final byte event) {
-    int runningTest = DOIProfiler.runningTest;
-    if (array == null) return;
-    if (runningTest < 0) return;
-    if (suspension.suspend()) return;
-
-    synchronized (arrayMapping) {
-      Map<Integer, ReadWriteSet> mapping =
-          arrayMapping.getOrPut(array, () -> new ArrayMap<>(Array.getLength(array)));
-      ReadWriteSet set = mapping.getOrPut(index, () -> new ReadWriteSet());
-      set.update(runningTest, event);
-      resume();
-    }
-  }
-
   public static void writeStaticField(final String field) {
     staticFieldEvent(field, ReadWriteSet.WRITE);
   }
 
   public static void writeArrayElement(final Object array, final int index) {
-    arrayEvent(array, index, ReadWriteSet.WRITE);
+    arrayEvent(array, ReadWriteSet.WRITE);
   }
 
   public static void writeObjectField(final Object object, final String field) {
-    objectEvent(object, field, ReadWriteSet.WRITE);
+    objectEvent(object, ReadWriteSet.WRITE);
   }
 
   public static void readStaticField(final String field) {
@@ -142,11 +124,11 @@ public class DOIProfiler {
   }
 
   public static void readArrayElement(final Object array, final int index) {
-    arrayEvent(array, index, ReadWriteSet.READ);
+    arrayEvent(array, ReadWriteSet.READ);
   }
 
   public static void readObjectField(final Object object, final String field) {
-    objectEvent(object, field, ReadWriteSet.READ);
+    objectEvent(object, ReadWriteSet.READ);
   }
 
   public static void enterTestMethod(final String test) {
