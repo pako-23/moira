@@ -2,10 +2,7 @@ package ch.usi.inf.collect;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.ref.WeakReference;
 import java.util.HashSet;
@@ -20,9 +17,23 @@ public class HashMapTest {
     MapBuilder<String, Integer> builder = MapBuilder.builder();
     assertThat(builder.getInitialCapacity(), is(16));
     assertThat(builder.getKeyReferenceStrength(), is(MapBuilder.ReferenceStrength.STRONG));
-    assertTrue(builder.getEquivalence().test("A", "A"));
-    assertFalse(builder.getEquivalence().test("A", "B"));
-    assertEquals("test".hashCode(), builder.getHashFunction().compute("test"));
+    assertThat(builder.getHashFunction().compute("test"), is("test".hashCode()));
+  }
+
+  @Test
+  public void testStrongReferenceStrengthEquivalence() {
+    Equivalence<String> equivalence = MapBuilder.ReferenceStrength.STRONG.defaultEquivalence();
+    assertThat(equivalence.test("A", "B"), is(false));
+    assertThat(equivalence.test("A", "A"), is(true));
+  }
+
+  @Test
+  public void testWeakReferenceStrengthEquivalence() {
+    String first = new String("A");
+    String second = new String("A");
+    Equivalence<String> equivalence = MapBuilder.ReferenceStrength.WEAK.defaultEquivalence();
+    assertThat(equivalence.test(first, second), is(false));
+    assertThat(equivalence.test(first, first), is(true));
   }
 
   @Test
@@ -45,18 +56,13 @@ public class HashMapTest {
   }
 
   @Test
-  public void testCustomHashFunctionAndEquivalence() {
+  public void testCustomHashFunction() {
     HashFunction<String> customHash = key -> 42;
-    Equivalence<String> customEquivalence = (first, second) -> first.equalsIgnoreCase(second);
-
     MapBuilder<String, Integer> builder =
-        MapBuilder.<String, Integer>builder()
-            .hashFunction(customHash)
-            .equivalence(customEquivalence);
+        MapBuilder.<String, Integer>builder().hashFunction(customHash);
 
     assertThat(builder.getHashFunction().compute("anything"), is(42));
-    assertTrue(builder.getEquivalence().test("a", "A"));
-    assertFalse(builder.getEquivalence().test("a", "B"));
+    assertThat(builder.getHashFunction().compute("something else"), is(42));
   }
 
   @Test
@@ -72,7 +78,7 @@ public class HashMapTest {
             });
 
     assertThat(result, is("Value1"));
-    assertEquals(1, insertions.get());
+    assertThat(insertions.get(), is(1));
     assertThat(map.size(), is(1));
     assertThat(map.capacity(), is(4));
 
@@ -85,7 +91,7 @@ public class HashMapTest {
             });
 
     assertThat(result, is("Value1"));
-    assertEquals(1, insertions.get());
+    assertThat(insertions.get(), is(1));
     assertThat(map.size(), is(1));
   }
 
@@ -152,43 +158,9 @@ public class HashMapTest {
     assertThat(map.size(), is(size));
     assertThat(map.capacity(), is(1024));
     for (int i = 0; i < size; ++i) {
-      assertTrue(map.contains(keys[i]));
+      assertThat(map.contains(keys[i]), is(true));
       assertThat(map.get(keys[i]), is(sameInstance(values[i])));
     }
-  }
-
-  @Test
-  public void testCustomEquivalence() {
-    Map<String, String> map =
-        MapBuilder.<String, String>builder()
-            .initialCapacity(4)
-            .hashFunction(key -> key.toLowerCase().hashCode())
-            .equivalence((first, second) -> first.equalsIgnoreCase(second))
-            .build();
-    AtomicInteger insertions = new AtomicInteger(0);
-    String result =
-        map.getOrPut(
-            "Apple",
-            () -> {
-              insertions.incrementAndGet();
-              return "Red Fruit";
-            });
-
-    assertThat(map.size(), is(1));
-    assertThat(insertions.get(), is(1));
-    assertThat(result, is("Red Fruit"));
-
-    result =
-        map.getOrPut(
-            "apple",
-            () -> {
-              insertions.incrementAndGet();
-              return "ShouldNotBeCalled";
-            });
-
-    assertThat(result, is("Red Fruit"));
-    assertThat(map.size(), is(1));
-    assertThat(insertions.get(), is(1));
   }
 
   @Test
@@ -196,10 +168,7 @@ public class HashMapTest {
     Map<String, String> map =
         MapBuilder.<String, String>builder()
             .initialCapacity(4)
-            .hashFunction((String key) -> Integer.parseInt(key))
-            .equivalence(
-                (String first, String second) ->
-                    Integer.parseInt(first) == Integer.parseInt(second))
+            .hashFunction((String key) -> 1)
             .loadFactor(0.5f)
             .build();
 
@@ -298,35 +267,36 @@ public class HashMapTest {
 
   @Test
   public void testEmptyMapHasNoNext() {
-    Map<Integer, String> map = MapBuilder.<Integer, String>builder().build();
-    Map.Iterator<Integer, String> it = map.iterator();
-    assertFalse(it.hasNext());
+    final Map<Integer, String> map = MapBuilder.<Integer, String>builder().build();
+    final Map.Iterator<Integer, String> it = map.iterator();
+    assertThat(it.hasNext(), is(false));
   }
 
   @Test
   public void testSingleEntryIteration() {
-    Map<Integer, String> map = MapBuilder.<Integer, String>builder().build();
+    final Map<Integer, String> map = MapBuilder.<Integer, String>builder().build();
     map.getOrPut(10, () -> "Ten");
 
-    Map.Iterator<Integer, String> it = map.iterator();
-    assertTrue(it.hasNext());
+    final Map.Iterator<Integer, String> it = map.iterator();
+    assertThat(it.hasNext(), is(true));
     assertThat(it.key(), is(10));
     assertThat(it.value(), is("Ten"));
 
     it.next();
-    assertFalse(it.hasNext());
+    assertThat(it.hasNext(), is(false));
   }
 
   @Test
   public void testMultipleEntryIteration() {
-    Map<Integer, String> map = MapBuilder.<Integer, String>builder().initialCapacity(4).build();
+    final Map<Integer, String> map =
+        MapBuilder.<Integer, String>builder().initialCapacity(4).build();
     map.getOrPut(1, () -> "A");
     map.getOrPut(2, () -> "B");
     map.getOrPut(3, () -> "C");
     map.getOrPut(4, () -> "D");
 
-    Map.Iterator<Integer, String> it = map.iterator();
-    Set<Integer> keysFound = new HashSet<>();
+    final Map.Iterator<Integer, String> it = map.iterator();
+    final Set<Integer> keysFound = new HashSet<>();
 
     while (it.hasNext()) {
       keysFound.add(it.key());
@@ -334,82 +304,82 @@ public class HashMapTest {
     }
 
     assertThat(keysFound.size(), is(4));
-    assertTrue(keysFound.contains(1));
-    assertTrue(keysFound.contains(2));
-    assertTrue(keysFound.contains(3));
-    assertTrue(keysFound.contains(4));
+    assertThat(keysFound.contains(1), is(true));
+    assertThat(keysFound.contains(2), is(true));
+    assertThat(keysFound.contains(3), is(true));
+    assertThat(keysFound.contains(4), is(true));
   }
 
   @Test
   public void testWeakKeyEvictionDuringIteration() {
-    String key1 = "Keep me Strong";
+    final String key1 = "Keep me Strong";
     String key2 = new String("I will be collected");
-    String key3 = "Keep me also Strong";
-
-    Map<String, String> map =
+    final String key3 = "Keep me also Strong";
+    final Map<String, String> map =
         MapBuilder.<String, String>builder().initialCapacity(4).weakKeys().build();
 
     map.getOrPut(key1, () -> "Value1");
     map.getOrPut(key2, () -> "Value2");
     map.getOrPut(key3, () -> "Value3");
 
-    WeakReference<String> weakKey = new WeakReference<>(key2);
+    final WeakReference<String> weakKey = new WeakReference<>(key2);
     key2 = null;
     while (weakKey.get() != null) {
       System.gc();
     }
 
-    Map.Iterator<String, String> it = map.iterator();
-    Set<String> valuesFound = new HashSet<>();
-    Set<String> keysFound = new HashSet<>();
+    final Map.Iterator<String, String> it = map.iterator();
+    final Set<String> valuesFound = new HashSet<>();
+    final Set<String> keysFound = new HashSet<>();
 
     while (it.hasNext()) {
-      String key = it.key();
+      final String key = it.key();
       if (key != null) keysFound.add(key);
       valuesFound.add(it.value());
       it.next();
     }
 
     assertThat(keysFound.size(), is(2));
-    assertTrue(keysFound.contains(key1));
-    assertTrue(keysFound.contains(key3));
+    assertThat(keysFound.contains(key1), is(true));
+    assertThat(keysFound.contains(key3), is(true));
 
     assertThat(valuesFound.size(), is(3));
-    assertTrue(valuesFound.contains("Value1"));
-    assertTrue(valuesFound.contains("Value2"));
-    assertTrue(valuesFound.contains("Value3"));
+    assertThat(valuesFound.contains("Value1"), is(true));
+    assertThat(valuesFound.contains("Value2"), is(true));
+    assertThat(valuesFound.contains("Value3"), is(true));
   }
 
   @Test
   public void testContainsFound() {
     final String key = "somekey";
-    Map<String, String> map = MapBuilder.<String, String>builder().initialCapacity(4).build();
+    final Map<String, String> map = MapBuilder.<String, String>builder().initialCapacity(4).build();
 
     map.getOrPut(key, () -> "Value1");
-    assertTrue(map.contains(key));
+    assertThat(map.contains(key), is(true));
   }
 
   @Test
   public void testContainsNotFound() {
-    Map<String, String> map = MapBuilder.<String, String>builder().initialCapacity(4).build();
+    final Map<String, String> map = MapBuilder.<String, String>builder().initialCapacity(4).build();
 
-    assertFalse(map.contains("somekey"));
+    assertThat(map.contains("somekey"), is(false));
   }
 
   @Test
   public void testContainsCollectedKey() {
     String key = new String("I will be collected");
-    Map<String, String> map =
+    final Map<String, String> map =
         MapBuilder.<String, String>builder().initialCapacity(4).weakKeys().build();
 
     map.getOrPut(key, () -> "Value1");
-    WeakReference<String> weakKey = new WeakReference<>(key);
+    final WeakReference<String> weakKey = new WeakReference<>(key);
     key = null;
     while (weakKey.get() != null) {
       System.gc();
     }
 
-    for (int i = 0; i < 10; ++i) assertFalse(map.contains(new String("I will be collected")));
+    for (int i = 0; i < 10; ++i)
+      assertThat(map.contains(new String("I will be collected")), is(false));
   }
 
   @Test
@@ -424,7 +394,6 @@ public class HashMapTest {
                 (value) -> {
                   invocations.incrementAndGet();
                 })
-            .equivalence((first, second) -> first == second)
             .build();
 
     for (int i = 0; i < 10; ++i) {

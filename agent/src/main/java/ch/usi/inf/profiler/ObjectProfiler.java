@@ -5,6 +5,8 @@ import ch.usi.inf.collect.MapBuilder;
 import java.io.FileNotFoundException;
 
 public class ObjectProfiler {
+  private static final int DEFAULT_CONCURRENCY_LEVEL = 16;
+
   private static ThreadSuspension suspension;
   private static ProfilerDump dump;
   private static Map<String, ReadWriteSet> staticMapping;
@@ -25,19 +27,19 @@ public class ObjectProfiler {
     staticMapping = MapBuilder.<String, ReadWriteSet>builder().initialCapacity(64).build();
     arrayMapping =
         MapBuilder.<Object, ReadWriteSet>builder()
+            .concurrencyLevel(DEFAULT_CONCURRENCY_LEVEL)
             .initialCapacity(1 << 10)
             .weakKeys()
             .keyDeletionCallback(ObjectProfiler::computeConflicts)
             .hashFunction(System::identityHashCode)
-            .equivalence((first, second) -> first == second)
             .build();
     objectMapping =
         MapBuilder.<Object, ReadWriteSet>builder()
+            .concurrencyLevel(DEFAULT_CONCURRENCY_LEVEL)
             .initialCapacity(1 << 10)
             .weakKeys()
             .keyDeletionCallback(ObjectProfiler::computeConflicts)
             .hashFunction(System::identityHashCode)
-            .equivalence((first, second) -> first == second)
             .build();
   }
 
@@ -65,11 +67,11 @@ public class ObjectProfiler {
     if (runningTest < 0) return;
     if (suspension.suspend()) return;
 
-    synchronized (staticMapping) {
-      ReadWriteSet set = staticMapping.getOrPut(field, () -> new ReadWriteSet());
+    final ReadWriteSet set = staticMapping.getOrPut(field, () -> new ReadWriteSet());
+    synchronized (set) {
       set.update(runningTest, event);
-      resume();
     }
+    resume();
   }
 
   private static void objectEvent(final Object object, final byte event) {
@@ -78,11 +80,11 @@ public class ObjectProfiler {
     if (object == null) return;
     if (suspension.suspend()) return;
 
-    synchronized (objectMapping) {
-      ReadWriteSet set = objectMapping.getOrPut(object, () -> new ReadWriteSet());
+    final ReadWriteSet set = objectMapping.getOrPut(object, () -> new ReadWriteSet());
+    synchronized (set) {
       set.update(runningTest, event);
-      resume();
     }
+    resume();
   }
 
   private static void arrayEvent(final Object array, final byte event) {
@@ -91,11 +93,11 @@ public class ObjectProfiler {
     if (runningTest < 0) return;
     if (suspension.suspend()) return;
 
-    synchronized (arrayMapping) {
-      ReadWriteSet set = arrayMapping.getOrPut(array, () -> new ReadWriteSet());
+    final ReadWriteSet set = arrayMapping.getOrPut(array, () -> new ReadWriteSet());
+    synchronized (set) {
       set.update(runningTest, event);
-      resume();
     }
+    resume();
   }
 
   private static void mappingDump(final Map<?, ReadWriteSet> mapping) {

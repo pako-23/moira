@@ -8,29 +8,29 @@ public class MapBuilder<K, V> {
   private static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
   private KeyDeletionCallback<V> keyDeletionCallback;
-  private Equivalence<K> equivalence;
   private HashFunction<K> hashFunction;
   private int initialCapacity;
   private ReferenceStrength keyReferenceStrength;
   private float loadFactor;
+  private int concurrencyLevel;
 
   private MapBuilder() {
     keyDeletionCallback =
         (value) -> {
           return;
         };
-    equivalence = (first, second) -> first.equals(second);
     hashFunction = (key) -> key.hashCode();
     initialCapacity = DEFAULT_INITIAL_CAPACITY;
     keyReferenceStrength = ReferenceStrength.STRONG;
     loadFactor = DEFAULT_LOAD_FACTOR;
+    concurrencyLevel = 1;
   }
 
   public static <K, V> MapBuilder<K, V> builder() {
     return new MapBuilder<K, V>();
   }
 
-  public MapBuilder<K, V> initialCapacity(int initialCapacity) {
+  public MapBuilder<K, V> initialCapacity(final int initialCapacity) {
     if (initialCapacity <= 0 || (initialCapacity & (initialCapacity - 1)) != 0)
       throw new IllegalArgumentException("The initial capacity must be a power of two");
 
@@ -48,17 +48,12 @@ public class MapBuilder<K, V> {
     return this;
   }
 
-  public MapBuilder<K, V> hashFunction(HashFunction<K> hashFunction) {
+  public MapBuilder<K, V> hashFunction(final HashFunction<K> hashFunction) {
     this.hashFunction = hashFunction;
     return this;
   }
 
-  public MapBuilder<K, V> equivalence(Equivalence<K> equivalence) {
-    this.equivalence = equivalence;
-    return this;
-  }
-
-  public MapBuilder<K, V> keyDeletionCallback(KeyDeletionCallback<V> callback) {
+  public MapBuilder<K, V> keyDeletionCallback(final KeyDeletionCallback<V> callback) {
     this.keyDeletionCallback = callback;
     return this;
   }
@@ -68,16 +63,23 @@ public class MapBuilder<K, V> {
     return this;
   }
 
+  public MapBuilder<K, V> concurrencyLevel(final int concurrencyLevel) {
+    if (concurrencyLevel <= 0)
+      throw new IllegalArgumentException("The concurrency level must be greather than 0");
+    this.concurrencyLevel = concurrencyLevel;
+    return this;
+  }
+
+  public int getConcurrencyLevel() {
+    return concurrencyLevel;
+  }
+
   public float getLoadFactor() {
     return loadFactor;
   }
 
   public int getInitialCapacity() {
     return initialCapacity;
-  }
-
-  public Equivalence<K> getEquivalence() {
-    return equivalence;
   }
 
   public HashFunction<K> getHashFunction() {
@@ -93,7 +95,7 @@ public class MapBuilder<K, V> {
   }
 
   public Map<K, V> build() {
-    return new HashMap(this);
+    return new HashMap<>(this);
   }
 
   @FunctionalInterface
@@ -115,11 +117,11 @@ public class MapBuilder<K, V> {
     public void setValue(final V value);
   }
 
-  private static class StrongEntry<K, V> implements Entry<K, V> {
+  private static final class StrongEntry<K, V> implements Entry<K, V> {
     private final K key;
     private final int hash;
-    private V value;
-    private Entry<K, V> next;
+    private volatile V value;
+    private volatile Entry<K, V> next;
 
     public StrongEntry(final K key, final int hash) {
       this.key = key;
@@ -159,10 +161,10 @@ public class MapBuilder<K, V> {
     }
   }
 
-  private static class WeakEntry<K, V> extends WeakReference<Object> implements Entry<K, V> {
+  private static final class WeakEntry<K, V> extends WeakReference<Object> implements Entry<K, V> {
     private final int hash;
-    private V value;
-    private Entry<K, V> next;
+    private volatile V value;
+    private volatile Entry<K, V> next;
 
     public WeakEntry(final K key, final int hash, final ReferenceQueue<Object> queue) {
       super(key, queue);
@@ -206,176 +208,291 @@ public class MapBuilder<K, V> {
   public enum ReferenceStrength {
     STRONG {
       @Override
-      public <K, V> Entry<K, V> create(
-          final K key, final int hash, final ReferenceQueue<Object> queue) {
-        return new StrongEntry<K, V>(key, hash);
+      public <K> Equivalence<K> defaultEquivalence() {
+        return (first, second) -> first.equals(second);
       }
     },
     WEAK {
       @Override
-      public <K, V> Entry<K, V> create(
-          final K key, final int hash, final ReferenceQueue<Object> queue) {
-        return new WeakEntry<K, V>(key, hash, queue);
+      public <K> Equivalence<K> defaultEquivalence() {
+        return (first, second) -> first == second;
       }
     };
 
-    public abstract <K, V> Entry<K, V> create(
-        final K key, final int hash, final ReferenceQueue<Object> queue);
+    public abstract <K> Equivalence<K> defaultEquivalence();
   }
 
-  private class HashMap implements Map<K, V> {
-    private int size;
-    private final float loadFactor;
-    private int threshold;
-    private Entry<K, V>[] table;
-    private final KeyDeletionCallback<V> keyDeletionCallback;
+  private static final class HashMap<K, V> implements Map<K, V> {
+    private abstract static class Segment<K, V> {
+      protected Entry<K, V>[] table;
+      protected int size;
+      private final float loadFactor;
+      private int threshold;
+      private final Equivalence<K> equivalence;
+      protected final KeyDeletionCallback<V> keyDeletionCallback;
+
+      public Segment(final MapBuilder<K, V> builder, int capacity) {
+        table = newTable(builder.getInitialCapacity());
+        size = 0;
+        loadFactor = builder.getLoadFactor();
+        equivalence = builder.getKeyReferenceStrength().defaultEquivalence();
+        threshold = (int) (capacity * loadFactor);
+        keyDeletionCallback = builder.getKeyDeletionCallback();
+      }
+
+      public synchronized boolean contains(final K key, final int hash) {
+        return search(key, hash) != null;
+      }
+
+      public synchronized V get(final K key, final int hash) {
+        final Entry<K, V> entry = search(key, hash);
+        if (entry == null) return null;
+        return entry.getValue();
+      }
+
+      public int capacity() {
+        return table.length;
+      }
+
+      public int size() {
+        return size;
+      }
+
+      public synchronized V getOrPut(final K key, final int hash, final ValueProducer<V> producer) {
+        Entry<K, V> entry = search(key, hash);
+        if (entry != null) return entry.getValue();
+
+        reclaim();
+
+        int index = indexFor(hash, table.length);
+        entry = newEntry(key, hash);
+        entry.setNext(table[index]);
+        entry.setValue(producer.produce());
+        table[index] = entry;
+
+        if (++size > threshold) rehash();
+
+        return entry.getValue();
+      }
+
+      protected abstract Entry<K, V> newEntry(final K key, final int hash);
+
+      protected void reclaim() {}
+
+      private Entry<K, V> search(final K key, final int hash) {
+        final Entry<K, V>[] table = this.table;
+        final int index = indexFor(hash, table.length);
+
+        for (Entry<K, V> entry = table[index]; entry != null; entry = entry.getNext()) {
+          if (entry.getKey() != null
+              && entry.getHash() == hash
+              && equivalence.test(entry.getKey(), key)) {
+            return entry;
+          }
+        }
+
+        return null;
+      }
+
+      private void rehash() {
+        final int capacity = table.length << 1;
+        final Entry<K, V>[] table = this.table;
+        this.threshold = (int) (capacity * loadFactor);
+        this.table = newTable(capacity);
+        transfer(table, this.table);
+      }
+
+      private void transfer(final Entry<K, V>[] source, final Entry<K, V>[] destination) {
+        for (int i = 0; i < source.length; ++i) {
+          Entry<K, V> node = source[i];
+          source[i] = null;
+          while (node != null) {
+            Entry<K, V> next = node.getNext();
+            if (node.getKey() == null) {
+              keyDeletionCallback.apply(node.getValue());
+              node.setNext(null);
+              node.setValue(null);
+              --size;
+            } else {
+              int index = indexFor(node.getHash(), destination.length);
+              node.setNext(destination[index]);
+              destination[index] = node;
+            }
+            node = next;
+          }
+        }
+      }
+
+      @SuppressWarnings("unchecked")
+      private Entry<K, V>[] newTable(final int capacity) {
+        return (Entry<K, V>[]) new Entry[capacity];
+      }
+
+      protected int indexFor(final int hash, final int capacity) {
+        return hash & (capacity - 1);
+      }
+    }
+    ;
+
+    private static final class WeakSegment<K, V> extends Segment<K, V> {
+      private static final int MAX_RECLAIM_BACKOFF = 64;
+      private final ReferenceQueue<Object> queue;
+      private int reclaimInvocations;
+      private int reclaimThreshold;
+
+      public WeakSegment(final MapBuilder<K, V> builder, int capacity) {
+        super(builder, capacity);
+        queue = new ReferenceQueue<>();
+        reclaimInvocations = 0;
+        reclaimThreshold = 1;
+      }
+
+      @Override
+      protected Entry<K, V> newEntry(final K key, final int hash) {
+        return new WeakEntry<>(key, hash, queue);
+      }
+
+      @SuppressWarnings("unchecked")
+      private Entry<K, V> pollEntry() {
+        return (Entry<K, V>) queue.poll();
+      }
+
+      @Override
+      protected void reclaim() {
+        if (++reclaimInvocations < reclaimThreshold) return;
+
+        Entry<K, V> entry = pollEntry();
+        if (entry == null) {
+          reclaimThreshold <<= 1;
+          if (reclaimThreshold > MAX_RECLAIM_BACKOFF) reclaimThreshold = MAX_RECLAIM_BACKOFF;
+          return;
+        }
+
+        reclaimThreshold = 1;
+        do {
+          if (entry.getValue() == null) continue;
+          keyDeletionCallback.apply(entry.getValue());
+          int index = indexFor(entry.getHash(), table.length);
+          Entry<K, V> prev = table[index];
+          Entry<K, V> p = prev;
+          while (p != null) {
+            Entry<K, V> next = p.getNext();
+            if (p == entry) {
+              if (prev == entry) table[index] = next;
+              else prev.setNext(next);
+              entry.setValue(null);
+              --size;
+              break;
+            }
+            prev = p;
+            p = next;
+          }
+        } while ((entry = pollEntry()) != null);
+      }
+    }
+
+    private static final class StrongSegment<K, V> extends Segment<K, V> {
+      public StrongSegment(final MapBuilder<K, V> builder, int capacity) {
+        super(builder, capacity);
+      }
+
+      @Override
+      protected Entry<K, V> newEntry(final K key, final int hash) {
+        return new StrongEntry<>(key, hash);
+      }
+    }
+
     private final HashFunction<K> hashFunction;
-    private final Equivalence<K> equivalence;
-    private final ReferenceStrength referenceStrength;
-    private final ReferenceQueue<Object> queue;
+
+    private final Segment<K, V>[] segments;
+    private final int segmentMask;
+    private final int segmentShift;
 
     public HashMap(final MapBuilder<K, V> builder) {
-      int capacity = builder.getInitialCapacity();
-      size = 0;
-      loadFactor = builder.getLoadFactor();
-      threshold = (int) (capacity * loadFactor);
-      table = newTable(builder.getInitialCapacity());
-      keyDeletionCallback = builder.getKeyDeletionCallback();
       hashFunction = builder.getHashFunction();
-      equivalence = builder.getEquivalence();
-      referenceStrength = builder.getKeyReferenceStrength();
-      queue = referenceStrength == ReferenceStrength.STRONG ? null : new ReferenceQueue<>();
+
+      final int concurrencyLevel = builder.getConcurrencyLevel();
+
+      int segmentShift = 0;
+      int segmentCount = 1;
+      while (segmentCount < concurrencyLevel) {
+        ++segmentShift;
+        segmentCount <<= 1;
+      }
+      segmentMask = segmentCount - 1;
+      this.segmentShift = 32 - segmentShift;
+
+      int segmentCapacity = builder.getInitialCapacity() / segmentCount;
+      if (segmentCapacity * segmentCount < builder.getInitialCapacity()) ++segmentCapacity;
+
+      segments = newSegmentArrau(segmentCount);
+      for (int i = 0; i < segments.length; ++i) segments[i] = newSegment(builder, segmentCapacity);
     }
 
     @Override
     public boolean contains(final K key) {
       int hash = hash(key);
 
-      return search(key, hash) != null;
-    }
-
-    private Entry<K, V> search(final K key, final int hash) {
-      int index = indexFor(hash, table.length);
-
-      for (Entry<K, V> node = table[index]; node != null; node = node.getNext()) {
-        if (node.getKey() != null
-            && node.getHash() == hash
-            && equivalence.test(node.getKey(), key)) {
-          return node;
-        }
-      }
-
-      return null;
+      return segmentFor(hash).contains(key, hash);
     }
 
     @Override
     public V get(final K key) {
-      final Entry<K, V> node = search(key, hash(key));
-      if (node == null) return null;
-      return node.getValue();
+      int hash = hash(key);
+
+      return segmentFor(hash).get(key, hash);
     }
 
     @Override
     public V getOrPut(final K key, final ValueProducer<V> producer) {
       int hash = hash(key);
-      Entry<K, V> node = search(key, hash);
-      if (node != null) return node.getValue();
 
-      reclaim();
-      int index = indexFor(hash, table.length);
-      node = referenceStrength.create(key, hash, queue);
-      node.setNext(table[index]);
-      node.setValue(producer.produce());
-      table[index] = node;
-
-      if (++size > threshold) rehash();
-
-      return node.getValue();
+      return segmentFor(hash).getOrPut(key, hash, producer);
     }
 
     @Override
     public int capacity() {
-      return table.length;
+      int capacity = 0;
+
+      for (int i = 0; i < segments.length; ++i) capacity += segments[i].capacity();
+
+      return capacity;
     }
 
     @Override
     public int size() {
-      reclaim();
+      int size = 0;
+
+      for (int i = 0; i < segments.length; ++i) size += segments[i].size();
+
       return size;
     }
 
-    private void rehash() {
-      int length = table.length << 1;
-      final Entry<K, V>[] table = this.table;
-      this.threshold = (int) (length * loadFactor);
-      this.table = newTable(length);
-      transfer(table, this.table);
-    }
-
-    private void transfer(final Entry<K, V>[] source, final Entry<K, V>[] destination) {
-      for (int i = 0; i < source.length; ++i) {
-        Entry<K, V> node = source[i];
-        source[i] = null;
-        while (node != null) {
-          Entry<K, V> next = node.getNext();
-          if (node.getKey() == null) {
-            keyDeletionCallback.apply(node.getValue());
-            node.setNext(null);
-            node.setValue(null);
-            --size;
-          } else {
-            int index = indexFor(node.getHash(), destination.length);
-            node.setNext(destination[index]);
-            destination[index] = node;
-          }
-          node = next;
-        }
-      }
-    }
-
-    private int indexFor(final int hash, final int length) {
-      return hash & (length - 1);
+    private Segment<K, V> segmentFor(final int hash) {
+      return segments[(hash >>> segmentShift) & segmentMask];
     }
 
     private int hash(final K key) {
-      int hash = hashFunction.compute(key);
-      hash ^= (hash >>> 20) ^ (hash >>> 12);
-      return hash ^ (hash >>> 7) ^ (hash >>> 4);
+      int h = hashFunction.compute(key);
+      h += (h << 15) ^ 0xffffcd7d;
+      h ^= h >>> 10;
+      h += h << 3;
+      h ^= h >>> 6;
+      h += (h << 2) + (h << 14);
+      return h ^ (h >>> 16);
     }
 
     @SuppressWarnings("unchecked")
-    private Entry<K, V>[] newTable(final int length) {
-      return (Entry<K, V>[]) new Entry[length];
+    private Segment<K, V>[] newSegmentArrau(final int capacity) {
+      return (Segment<K, V>[]) new Segment[capacity];
     }
 
-    @SuppressWarnings("unchecked")
-    private Entry<K, V> pollEntry() {
-      return (Entry<K, V>) queue.poll();
-    }
-
-    private void reclaim() {
-      if (queue == null) return;
-
-      while (true) {
-        Entry<K, V> node = pollEntry();
-        if (node == null) break;
-        if (node.getValue() == null) continue;
-        keyDeletionCallback.apply(node.getValue());
-        int index = indexFor(node.getHash(), table.length);
-        Entry<K, V> prev = table[index];
-        Entry<K, V> p = prev;
-        while (p != null) {
-          Entry<K, V> next = p.getNext();
-          if (p == node) {
-            if (prev == node) table[index] = next;
-            else prev.setNext(next);
-            node.setValue(null);
-            --size;
-            break;
-          }
-          prev = p;
-          p = next;
-        }
+    private Segment<K, V> newSegment(final MapBuilder<K, V> builder, final int capacity) {
+      switch (builder.getKeyReferenceStrength()) {
+        case WEAK:
+          return new WeakSegment<>(builder, capacity);
+        default:
+          return new StrongSegment<>(builder, capacity);
       }
     }
 
@@ -385,23 +502,39 @@ public class MapBuilder<K, V> {
     }
 
     private class Iterator implements Map.Iterator<K, V> {
+      private int segment;
       private int index;
       private Entry<K, V> node;
 
       public Iterator() {
+        segment = 0;
         index = 0;
         advance();
       }
 
       private void advance() {
-        while (hasNext() && table[index] == null) ++index;
+        while (index < segments[segment].capacity() && segments[segment].table[index] == null)
+          ++index;
 
-        if (hasNext()) node = table[index];
+        if (index < segments[segment].capacity()) {
+          node = segments[segment].table[index];
+          return;
+        }
+
+        index = 0;
+
+        do {
+          ++segment;
+        } while (segment < segments.length && segments[segment].size() == 0);
+        if (segment == segments.length) return;
+
+        while (segments[segment].table[index] == null) ++index;
+        node = segments[segment].table[index];
       }
 
       @Override
       public boolean hasNext() {
-        return index < table.length;
+        return segment < segments.length;
       }
 
       @Override

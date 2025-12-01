@@ -71,7 +71,7 @@ $(foreach s,$(SUBJECTS),$(eval $(call experiment,$(s))))
 $(EXPERIMENTS_DIR):
 	@mkdir $(EXPERIMENTS_DIR)
 
-agent/build/libs/agent.jar:
+agent/build/libs/agent.jar: $(shell find agent/ -name *.java)
 	./gradlew agent:build
 
 $(EXPERIMENTS_DIR)/jdk8u462-b08: | $(EXPERIMENTS_DIR)

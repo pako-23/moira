@@ -5,7 +5,6 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.stream.Collectors;
-import org.junit.runner.Request;
 import org.junit.runner.Result;
 import org.junit.runner.Runner;
 import org.junit.runner.notification.RunListener;
@@ -58,7 +57,6 @@ public class ScheduleExecutor {
 
   private static void executeSchedule(String... args) {
     Runner runner = new ScheduleRunner(args);
-    Request request = Request.runner(runner);
     Result result = new Result();
     RunListener listener = result.createListener();
     ScheduleListener scheduleListener = new ScheduleListener(args);

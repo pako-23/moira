@@ -7,6 +7,8 @@ import java.io.FileNotFoundException;
 import java.lang.reflect.Array;
 
 public class DOIProfiler {
+  private static final int DEFAULT_CONCURRENCY_LEVEL = 16;
+
   private static ThreadSuspension suspension;
   private static ProfilerDump dump;
   private static Map<String, ReadWriteSet> staticMapping;
@@ -24,22 +26,26 @@ public class DOIProfiler {
   public static void setup() {
     suspension = new ThreadSuspension();
     dump = new ProfilerDump();
-    staticMapping = MapBuilder.<String, ReadWriteSet>builder().initialCapacity(64).build();
+    staticMapping =
+        MapBuilder.<String, ReadWriteSet>builder()
+            .concurrencyLevel(DEFAULT_CONCURRENCY_LEVEL)
+            .initialCapacity(64)
+            .build();
     arrayMapping =
         MapBuilder.<Object, Map<Integer, ReadWriteSet>>builder()
             .initialCapacity(1 << 10)
             .weakKeys()
+            .concurrencyLevel(DEFAULT_CONCURRENCY_LEVEL)
             .keyDeletionCallback(DOIProfiler::fieldMappingDump)
             .hashFunction(System::identityHashCode)
-            .equivalence((first, second) -> first == second)
             .build();
     objectMapping =
         MapBuilder.<Object, Map<String, ReadWriteSet>>builder()
             .initialCapacity(1 << 10)
             .weakKeys()
+            .concurrencyLevel(DEFAULT_CONCURRENCY_LEVEL)
             .keyDeletionCallback(DOIProfiler::fieldMappingDump)
             .hashFunction(System::identityHashCode)
-            .equivalence((first, second) -> first == second)
             .build();
   }
 
@@ -63,11 +69,11 @@ public class DOIProfiler {
     if (runningTest < 0) return;
     if (suspension.suspend()) return;
 
-    synchronized (staticMapping) {
-      ReadWriteSet set = staticMapping.getOrPut(field, () -> new ReadWriteSet());
+    ReadWriteSet set = staticMapping.getOrPut(field, () -> new ReadWriteSet());
+    synchronized (set) {
       set.update(runningTest, event);
-      resume();
     }
+    resume();
   }
 
   private static void arrayMappingDump() {
@@ -103,14 +109,14 @@ public class DOIProfiler {
     if (object == null) return;
     if (suspension.suspend()) return;
 
-    synchronized (objectMapping) {
-      Map<String, ReadWriteSet> fieldMapping =
-          objectMapping.getOrPut(
-              object, () -> MapBuilder.<String, ReadWriteSet>builder().initialCapacity(4).build());
-      ReadWriteSet set = fieldMapping.getOrPut(field, () -> new ReadWriteSet());
+    final Map<String, ReadWriteSet> fieldMapping =
+        objectMapping.getOrPut(
+            object, () -> MapBuilder.<String, ReadWriteSet>builder().initialCapacity(4).build());
+    final ReadWriteSet set = fieldMapping.getOrPut(field, () -> new ReadWriteSet());
+    synchronized (set) {
       set.update(runningTest, event);
-      resume();
     }
+    resume();
   }
 
   private static void arrayEvent(final Object array, final int index, final byte event) {
@@ -119,13 +125,13 @@ public class DOIProfiler {
     if (runningTest < 0) return;
     if (suspension.suspend()) return;
 
-    synchronized (arrayMapping) {
-      Map<Integer, ReadWriteSet> mapping =
-          arrayMapping.getOrPut(array, () -> new ArrayMap<>(Array.getLength(array)));
-      ReadWriteSet set = mapping.getOrPut(index, () -> new ReadWriteSet());
+    final Map<Integer, ReadWriteSet> mapping =
+        arrayMapping.getOrPut(array, () -> new ArrayMap<>(Array.getLength(array)));
+    final ReadWriteSet set = mapping.getOrPut(index, () -> new ReadWriteSet());
+    synchronized (set) {
       set.update(runningTest, event);
-      resume();
     }
+    resume();
   }
 
   public static void writeStaticField(final String field) {

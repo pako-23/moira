@@ -12,6 +12,7 @@ class Transformer implements ClassFileTransformer {
     "java/lang/",
     "java/nio/",
     "ch/usi/inf/agent/",
+    "ch/usi/inf/collect/",
     "ch/usi/inf/profiler/",
     "jdk/",
     "junit/",
