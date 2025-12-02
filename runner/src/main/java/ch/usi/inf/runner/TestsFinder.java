@@ -3,20 +3,24 @@ package ch.usi.inf.runner;
 import java.io.File;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.AbstractList;
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 public class TestsFinder {
-  private final ArrayList<String> tests;
+  private final Set<String> tests;
   private final ClassLoader classLoader;
   private final String prefix;
+  private final boolean classOnly;
 
-  public TestsFinder(final File entry) {
+  public TestsFinder(final File entry, final boolean classOnly) {
     URL[] urls;
-    tests = new ArrayList<>();
+    tests = new HashSet<>();
+    this.classOnly = classOnly;
 
     try {
       urls = new URL[] {entry.toURI().toURL()};
@@ -45,24 +49,37 @@ public class TestsFinder {
       return;
     }
 
-    String className =
+    final String className =
         file.getPath().replaceFirst(prefix, "").replace(".class", "").replace(File.separator, ".");
 
     try {
-      Class<?> clazz = classLoader.loadClass(className);
+      final Class<?> clazz = classLoader.loadClass(className);
 
-      for (final Method method : clazz.getMethods())
-        for (final Annotation annotation : method.getAnnotations())
-          if (annotation.annotationType().getName().equals("org.junit.Test")) {
-            tests.add(clazz.getName() + "#" + method.getName());
-            break;
-          }
+      findJUnit4Tests(clazz);
     } catch (Exception e) {
       return;
     }
   }
 
-  public AbstractList<String> getTests() {
+  private void findJUnit4Tests(final Class<?> clazz) {
+    if (Modifier.isAbstract(clazz.getModifiers())) return;
+
+    for (final Method method : clazz.getMethods())
+      for (final Annotation annotation : method.getAnnotations()) {
+        final boolean isTestMethod = annotation.annotationType().getName().equals("org.junit.Test");
+        if (!isTestMethod) continue;
+
+        if (classOnly) {
+          tests.add(clazz.getName());
+          return;
+        } else {
+          tests.add(clazz.getName() + "#" + method.getName());
+          break;
+        }
+      }
+  }
+
+  public Collection<String> getTests() {
     return tests;
   }
 }
