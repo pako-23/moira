@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    implementation("junit:junit:4.13.2")
+    compileOnly("junit:junit:4.13.2")
     implementation("info.picocli:picocli:4.7.7")
 }
 

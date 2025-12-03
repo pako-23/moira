@@ -1,64 +1,97 @@
 package ch.usi.inf.runner;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.junit.internal.RealSystem;
+import org.junit.internal.TextListener;
 import org.junit.runner.Description;
-import org.junit.runner.Runner;
-import org.junit.runner.notification.RunNotifier;
+import org.junit.runner.JUnitCore;
+import org.junit.runner.Request;
+import org.junit.runner.manipulation.Filter;
 
-public class ScheduleRunner extends Runner {
-  private final List<Method> schedule;
-  private final Map<Class<?>, DelegateRunner> runners;
+public class ScheduleRunner {
+  private final Request request;
 
-  public ScheduleRunner(String... tests) {
-    final DelegateRunnerBuilder builder = new DelegateRunnerBuilder();
-    schedule = new ArrayList<>(tests.length);
-    runners = new HashMap<>(tests.length);
+  public static class TestMethod {
+    private final Class<?> testClass;
+    private final Method method;
 
-    for (final String test : tests) {
-      String[] parts = test.split("#");
-      String className = parts[0];
-      String methodName = parts[1];
+    public TestMethod(final String testClass, final String method) {
+      if (testClass.isEmpty()) throw new IllegalArgumentException("Class name cannot be empty");
+      if (method.isEmpty()) throw new IllegalArgumentException("Method name cannot be empty");
 
       try {
-        Class<?> clazz = Class.forName(className);
-        Method method = clazz.getMethod(methodName);
-
-        if (!runners.containsKey(clazz)) {
-          DelegateRunner runner = builder.delegateRunnerForClass(clazz);
-          if (runner == null) throw new RuntimeException("failed to find runner for test: " + test);
-          runners.put(clazz, runner);
-        }
-
-        schedule.add(method);
-      } catch (ClassNotFoundException e) {
-        throw new RuntimeException("failed to find class for test: " + test);
-      } catch (NoSuchMethodException e) {
-        throw new RuntimeException("failed to find test method: " + test);
+        this.testClass = Class.forName(testClass);
+        this.method = this.testClass.getMethod(method);
+      } catch (final ClassNotFoundException e) {
+        throw new RuntimeException("failed to find class for test class: " + testClass);
+      } catch (final NoSuchMethodException e) {
+        throw new RuntimeException(
+            String.format("failed to find method '%s' for class '%s'", method, testClass));
       }
     }
-  }
 
-  public void run(RunNotifier notifier) {
-    for (final Method testCase : schedule) {
-      Class<?> testClass = testCase.getDeclaringClass();
+    @Override
+    public String toString() {
+      return String.format("%s(%s)", method.getName(), testClass.getName());
+    }
 
-      runners.get(testClass).run(testCase, notifier);
+    public Class<?> getTestClass() {
+      return testClass;
+    }
+
+    public Method getMethod() {
+      return method;
     }
   }
 
-  public Description getDescription() {
-    Description description = Description.createSuiteDescription("schedule");
-
-    for (final Method testCase : schedule) {
-      Class<?> testClass = testCase.getDeclaringClass();
-      description.addChild(
-          Description.createTestDescription(testClass.getName(), testCase.getName()));
+  public ScheduleRunner(final TestMethod first, final TestMethod second) {
+    if (first.getTestClass().equals(second.getTestClass())) {
+      request = singleClassRunner(first, second);
+    } else {
+      request = multipleClassesRunner(first, second);
     }
+  }
 
-    return description;
+  private Request multipleClassesRunner(final TestMethod first, final TestMethod second) {
+    return Request.classes(first.getTestClass(), second.getTestClass())
+        .filterWith(
+            new Filter() {
+              @Override
+              public String describe() {
+                return "pair filter";
+              }
+
+              @Override
+              public boolean shouldRun(final Description description) {
+                if (description.isSuite()) return true;
+
+                return description.toString().equals(first.toString())
+                    || description.toString().equals(second.toString());
+              }
+            });
+  }
+
+  private Request singleClassRunner(final TestMethod first, final TestMethod second) {
+    return Request.aClass(first.getTestClass())
+        .filterWith(
+            new Filter() {
+              @Override
+              public String describe() {
+                return "pair filter";
+              }
+
+              @Override
+              public boolean shouldRun(final Description description) {
+                return description.toString().equals(first.toString())
+                    || description.toString().equals(second.toString());
+              }
+            })
+        .sortWith((a, b) -> first.toString().equals(a.toString()) ? 1 : -1);
+  }
+
+  public void execute() {
+    final JUnitCore junit = new JUnitCore();
+    junit.addListener(new TextListener(new RealSystem()));
+    junit.run(request);
   }
 }
