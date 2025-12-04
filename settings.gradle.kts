@@ -19,4 +19,4 @@ dependencyResolutionManagement {
 
 include("agent")
 include("moira")
-include("runner")
+include("util")

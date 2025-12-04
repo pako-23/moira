@@ -1,4 +1,4 @@
-package ch.usi.inf.runner.cli;
+package ch.usi.inf.moira.util.cli;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -25,7 +25,7 @@ public class HelpCommand implements Runnable {
 
   @Override
   public void run() {
-    final CommandLine main = new CommandLine(new JUnitLauncher());
+    final CommandLine main = new CommandLine(new MoiraUtil());
     final CommandLine command = main.getSubcommands().get(commandName);
     if (command == null) {
       System.out.printf("Unknown command: '%s'\n", commandName);

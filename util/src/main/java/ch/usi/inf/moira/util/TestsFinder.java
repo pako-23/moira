@@ -1,4 +1,4 @@
-package ch.usi.inf.runner;
+package ch.usi.inf.moira.util;
 
 import java.io.File;
 import java.lang.annotation.Annotation;

@@ -1,6 +1,9 @@
 ENABLE_PROFILE := $(filter yes,$(PROFILE))
 
-all: doi-conflicts.txt obj-conflicts.txt $(if $(ENABLE_PROFILE),doi-profile.svg obj-profile.svg,)
+experiments := obj doi doi-only
+experiment_files := $(foreach exp,$(experiments),$(exp)-conflicts.txt $(exp)-verified.txt $(if $(ENABLE_PROFILE),$(exp)-profile.svg,))
+
+all: $(experiment_files)
 
 define mvn_exec
 @if test -f mvnw; then \
@@ -32,7 +35,7 @@ obj-conflicts.txt $(if $(ENABLE_PROFILE),obj-traces.txt,): testsuite classpath
 	start_time="$$(date -u +%s)" ; \
 	$(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/moira/build/libs/moira.jar \
 		-javaagent:$(top_srcdir)/agent/build/libs/agent.jar \
-		$(if $(ENABLE_PROFILE),-agentpath:$(top_srcdir)/experiments/lightweight-java-profiler/build-64/liblagent.so,) \
+		$(if $(ENABLE_PROFILE),-agentpath:$(top_srcdir)/experiments/lightweight-java-profiler/$(shell basename $(JAVA_HOME))/liblagent.so,) \
 		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar \
 		-Dmoira.profiler.name=ObjectProfiler \
 		-Dmoira.profiler.filename=obj-conflicts.txt \
@@ -44,7 +47,7 @@ doi-conflicts.txt $(if $(ENABLE_PROFILE),doi-traces.txt,): testsuite classpath o
 	start_time="$$(date -u +%s)" ; \
 	$(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/moira/build/libs/moira.jar \
 		-javaagent:$(top_srcdir)/agent/build/libs/agent.jar \
-		$(if $(ENABLE_PROFILE),-agentpath:$(top_srcdir)/experiments/lightweight-java-profiler/build-64/liblagent.so,) \
+		$(if $(ENABLE_PROFILE),-agentpath:$(top_srcdir)/experiments/lightweight-java-profiler/$(basename $(JAVA_HOME))/liblagent.so,) \
 		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar \
 		-Dmoira.profiler.name=DOIProfiler \
 		-Dmoira.profiler.filename=doi-conflicts.txt \
@@ -57,7 +60,7 @@ doi-only-conflicts.txt $(if $(ENABLE_PROFILE),doi-only-traces.txt,): testsuite c
 	start_time="$$(date -u +%s)" ; \
 	$(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/moira/build/libs/moira.jar \
 		-javaagent:$(top_srcdir)/agent/build/libs/agent.jar \
-		$(if $(ENABLE_PROFILE),-agentpath:$(top_srcdir)/experiments/lightweight-java-profiler/build-64/liblagent.so,) \
+		$(if $(ENABLE_PROFILE),-agentpath:$(top_srcdir)/experiments/lightweight-java-profiler/$(basename $(JAVA_HOME))/liblagent.so,) \
 		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar \
 		-Dmoira.profiler.name=DOIProfiler \
 		-Dmoira.profiler.filename=doi-only-conflicts.txt \
@@ -66,15 +69,16 @@ doi-only-conflicts.txt $(if $(ENABLE_PROFILE),doi-only-traces.txt,): testsuite c
 	$(ifeq $(ENABLE_PROFILE),@mv traces.txt doi-only-traces.txt,)
 
 
+%-verified.txt: %-conflicts.txt
+	while read -r pair; do \
+		echo "$$pair -> $$($(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/util/build/libs/util.jar ch.usi.inf.moira.util.cli.MoiraUtil verify $$pair) | grep OK)" >> $@; \
+	done < $^
+
 %-profile.svg: %-traces.txt
 	@$(top_srcdir)/experiments/FlameGraph/stackcollapse-ljp.awk $^ | $(top_srcdir)/experiments/FlameGraph/flamegraph.pl > $@
 
 .PHONY: clean
 clean:
 	- rm -f running-times
-	- rm -f doi-conflicts.txt
-	- rm -f doi-profile.svg
-	- rm -f obj-conflicts.txt
-	- rm -f obj-profile.svg
-	- rm -f doi-traces.txt
-	- rm -f obj-traces.txt
+	- rm -f $(experiment_files)
+	- rm -f $(foreach exp,$(experiments),$(exp)-traces.txt)

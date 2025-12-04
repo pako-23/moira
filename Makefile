@@ -50,7 +50,8 @@ $(call experiment_repodir,$(1))/$(call experiment_subdir,$(1))Makefile: | $(call
 run-$(call experiment_id,$(1)): $(call experiment_repodir,$(1))/$(call experiment_subdir,$(1))Makefile \
 	moira/build/libs/moira.jar \
 	agent/build/libs/agent.jar \
-	$(if $(filter yes,$(PROFILE)),$(EXPERIMENTS_DIR)/lightweight-java-profiler/build-64/liblagent.so,) | \
+	util/build/libs/util.jar \
+	$(if $(filter yes,$(PROFILE)),$(EXPERIMENTS_DIR)/lightweight-java-profiler/$(word 5,$(subst $(comma), ,$(1)))/liblagent.so,) | \
 	$(call experiment_repodir,$(1)) \
 	$(call experiment_java,$(1)) \
 	$(call experiment_mvn,$(1)) \
@@ -72,11 +73,14 @@ $(foreach s,$(SUBJECTS),$(eval $(call experiment,$(s))))
 $(EXPERIMENTS_DIR):
 	@mkdir $(EXPERIMENTS_DIR)
 
+agent/build/libs/agent.jar: $(shell find agent/ -name *.java)
+	./gradlew agent:build
+
 moira/build/libs/moira.jar: $(shell find moira/ -name *.java)
 	./gradlew moira:build
 
-agent/build/libs/agent.jar: $(shell find agent/ -name *.java)
-	./gradlew agent:build
+util/build/libs/util.jar: $(shell find util/ -name *.java)
+	./gradlew util:build
 
 $(EXPERIMENTS_DIR)/jdk8u462-b08: | $(EXPERIMENTS_DIR)
 	@wget -q https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u462-b08/OpenJDK8U-jdk_x64_linux_hotspot_8u462b08.tar.gz -P /tmp && \
@@ -113,8 +117,15 @@ ifeq ($(PROFILE),yes)
 $(EXPERIMENcompTS_DIR)/lightweight-java-profiler: | $(EXPERIMENTS_DIR)
 	@git clone --quiet https://github.com/yinheli/lightweight-java-profiler.git $@
 
-$(EXPERIMENTS_DIR)/lightweight-java-profiler/build-64/liblagent.so: | $(EXPERIMENTS_DIR)/lightweight-java-profiler $(EXPERIMENTS_DIR)/jdk8u462-b08
-	cd $(EXPERIMENTS_DIR)/lightweight-java-profiler && $(MAKE) BITS=64 INCLUDES='-I$(PWD)/$(EXPERIMENTS_DIR)/jdk8u462-b08/include -I$(PWD)/$(EXPERIMENTS_DIR)/jdk8u462-b08/include/linux' all
+define profiler_version
+$(EXPERIMENTS_DIR)/lightweight-java-profiler/$(1)/liblagent.so: | $(EXPERIMENTS_DIR)/lightweight-java-profiler $(EXPERIMENTS_DIR)/$(1)
+	cd $(EXPERIMENTS_DIR)/lightweight-java-profiler && \
+	mkdir $(1) && \
+	$(MAKE) BITS=64 BUILD_DIR=$(1) INCLUDES='-I$(PWD)/$(EXPERIMENTS_DIR)/$(1)/include -I$(PWD)/$(EXPERIMENTS_DIR)/$(1)/include/linux' all
+endef
+
+$(eval $(call profiler_version,jdk8u462-b08))
+$(eval $(call profiler_version,jdk-24.0.2+12))
 
 $(EXPERIMENTS_DIR)/FlameGraph: | $(EXPERIMENTS_DIR)
 	@git clone --quiet https://github.com/brendangregg/FlameGraph.git $@

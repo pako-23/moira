@@ -1,6 +1,6 @@
-package ch.usi.inf.runner.cli;
+package ch.usi.inf.moira.util.cli;
 
-import ch.usi.inf.runner.TestsFinder;
+import ch.usi.inf.moira.util.TestsFinder;
 import java.io.File;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -12,7 +12,7 @@ import picocli.CommandLine.ParentCommand;
     description = "List all test methods within a directory of Java classes without running them.",
     usageHelpAutoWidth = true)
 public class ListCommand implements Runnable {
-  @ParentCommand private JUnitLauncher parent;
+  @ParentCommand private MoiraUtil parent;
 
   @Parameters(
       paramLabel = "<directory>",

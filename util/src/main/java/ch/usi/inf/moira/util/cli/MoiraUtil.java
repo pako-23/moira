@@ -1,4 +1,4 @@
-package ch.usi.inf.runner.cli;
+package ch.usi.inf.moira.util.cli;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -7,11 +7,11 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
 
 @Command(
-    name = "ch.usi.inf.runner.cli.JUnitLauncher",
-    subcommands = {ListCommand.class, RunCommand.class, HelpCommand.class},
+    name = "ch.usi.inf.moira.util.cli.MoiraUtil",
+    subcommands = {ListCommand.class, VerifyCommand.class, HelpCommand.class},
     version = "JUnitLauncher 0.1",
     usageHelpAutoWidth = true)
-public class JUnitLauncher implements Runnable {
+public class MoiraUtil implements Runnable {
   @Option(
       names = {"-h", "-help"},
       usageHelp = true,
@@ -27,7 +27,7 @@ public class JUnitLauncher implements Runnable {
   @Spec private CommandSpec spec;
 
   public static void main(final String[] args) {
-    int exitCode = new CommandLine(new JUnitLauncher()).execute(args);
+    int exitCode = new CommandLine(new MoiraUtil()).execute(args);
     System.exit(exitCode);
   }
 

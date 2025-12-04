@@ -6,7 +6,7 @@ plugins {
 dependencies {
     jacocoAggregation(project(":agent"))
     jacocoAggregation(project(":moira"))
-    jacocoAggregation(project(":runner"))
+    jacocoAggregation(project(":util"))
 }
 
 tasks.check {
