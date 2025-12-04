@@ -1,6 +1,6 @@
 ENABLE_PROFILE := $(filter yes,$(PROFILE))
 
-all: doi-only-profile.txt doi-conflicts.txt obj-conflicts.txt $(if $(ENABLE_PROFILE),doi-only-profile.svg doi-profile.svg obj-profile.svg,)
+all: doi-conflicts.txt obj-conflicts.txt $(if $(ENABLE_PROFILE),doi-profile.svg obj-profile.svg,)
 
 define mvn_exec
 @if test -f mvnw; then \
@@ -30,38 +30,38 @@ testsuite: | target
 
 obj-conflicts.txt $(if $(ENABLE_PROFILE),obj-traces.txt,): testsuite classpath
 	start_time="$$(date -u +%s)" ; \
-	$(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/ \
+	$(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/moira/build/libs/moira.jar \
 		-javaagent:$(top_srcdir)/agent/build/libs/agent.jar \
 		$(if $(ENABLE_PROFILE),-agentpath:$(top_srcdir)/experiments/lightweight-java-profiler/build-64/liblagent.so,) \
 		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar \
-		-Dagent.profiler.name=ObjectProfiler \
-		-Dagent.profiler.filename=obj-conflicts.txt \
-		org.junit.runner.JUnitCore $$(cat testsuite | tr '\n' ' ')) && \
+		-Dmoira.profiler.name=ObjectProfiler \
+		-Dmoira.profiler.filename=obj-conflicts.txt \
+		ch.usi.inf.moira.Moira $$(cat testsuite | tr '\n' ' ')) && \
 	echo "obj-profiler: $$(expr "$$(date -u +%s)" - "$$start_time")" >> running-times
 	$(if $(ENABLE_PROFILE),@mv traces.txt obj-traces.txt,)
 
 doi-conflicts.txt $(if $(ENABLE_PROFILE),doi-traces.txt,): testsuite classpath obj-conflicts.txt
 	start_time="$$(date -u +%s)" ; \
-	$(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/ \
+	$(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/moira/build/libs/moira.jar \
 		-javaagent:$(top_srcdir)/agent/build/libs/agent.jar \
 		$(if $(ENABLE_PROFILE),-agentpath:$(top_srcdir)/experiments/lightweight-java-profiler/build-64/liblagent.so,) \
 		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar \
-		-Dagent.profiler.name=DOIProfiler \
-		-Dagent.profiler.filename=doi-conflicts.txt \
-		-Dagent.profiler.filter.filename=obj-conflicts.txt \
-		org.junit.runner.JUnitCore $$(cat testsuite | tr '\n' ' ')) && \
+		-Dmoira.profiler.name=DOIProfiler \
+		-Dmoira.profiler.filename=doi-conflicts.txt \
+		-Dmoira.profiler.filter.filename=obj-conflicts.txt \
+		ch.usi.inf.moira.Moira $$(cat testsuite | tr '\n' ' ')) && \
 	echo "doi-profiler: $$(expr "$$(date -u +%s)" - "$$start_time")" >> running-times
 	$(ifeq $(ENABLE_PROFILE),@mv traces.txt doi-traces.txt,)
 
 doi-only-conflicts.txt $(if $(ENABLE_PROFILE),doi-only-traces.txt,): testsuite classpath
 	start_time="$$(date -u +%s)" ; \
-	$(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/ \
+	$(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/moira/build/libs/moira.jar \
 		-javaagent:$(top_srcdir)/agent/build/libs/agent.jar \
 		$(if $(ENABLE_PROFILE),-agentpath:$(top_srcdir)/experiments/lightweight-java-profiler/build-64/liblagent.so,) \
 		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar \
-		-Dagent.profiler.name=DOIProfiler \
-		-Dagent.profiler.filename=doi-only-conflicts.txt \
-		org.junit.runner.JUnitCore $$(cat testsuite | tr '\n' ' ')) && \
+		-Dmoira.profiler.name=DOIProfiler \
+		-Dmoira.profiler.filename=doi-only-conflicts.txt \
+		ch.usi.inf.moira.Moira $$(cat testsuite | tr '\n' ' ')) && \
 	echo "doi-only-profiler: $$(expr "$$(date -u +%s)" - "$$start_time")" >> running-times
 	$(ifeq $(ENABLE_PROFILE),@mv traces.txt doi-only-traces.txt,)
 

@@ -5,6 +5,7 @@ plugins {
 
 dependencies {
     jacocoAggregation(project(":agent"))
+    jacocoAggregation(project(":moira"))
     jacocoAggregation(project(":runner"))
 }
 

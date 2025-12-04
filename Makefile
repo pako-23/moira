@@ -48,6 +48,7 @@ $(call experiment_repodir,$(1))/$(call experiment_subdir,$(1))Makefile: | $(call
 
 .PHONY: run-$(call experiment_id,$(1))
 run-$(call experiment_id,$(1)): $(call experiment_repodir,$(1))/$(call experiment_subdir,$(1))Makefile \
+	moira/build/libs/moira.jar \
 	agent/build/libs/agent.jar \
 	$(if $(filter yes,$(PROFILE)),$(EXPERIMENTS_DIR)/lightweight-java-profiler/build-64/liblagent.so,) | \
 	$(call experiment_repodir,$(1)) \
@@ -70,6 +71,9 @@ $(foreach s,$(SUBJECTS),$(eval $(call experiment,$(s))))
 
 $(EXPERIMENTS_DIR):
 	@mkdir $(EXPERIMENTS_DIR)
+
+moira/build/libs/moira.jar: $(shell find moira/ -name *.java)
+	./gradlew moira:build
 
 agent/build/libs/agent.jar: $(shell find agent/ -name *.java)
 	./gradlew agent:build

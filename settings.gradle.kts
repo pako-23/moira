@@ -1,4 +1,4 @@
-rootProject.name = "testdep"
+rootProject.name = "moira"
 
 pluginManagement {
     repositories {
@@ -18,4 +18,5 @@ dependencyResolutionManagement {
 }
 
 include("agent")
+include("moira")
 include("runner")
