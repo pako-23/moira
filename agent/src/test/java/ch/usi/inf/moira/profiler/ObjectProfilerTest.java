@@ -1,6 +1,7 @@
 package ch.usi.inf.moira.profiler;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
@@ -59,7 +60,7 @@ public class ObjectProfilerTest {
     ObjectProfiler.writeStaticField(FIELD);
     ObjectProfiler.readObjectField(OBJECT, FIELD);
     ObjectProfiler.writeObjectField(OBJECT, FIELD);
-    assertEquals(0, makeDump("initial-profiler-setup").size());
+    assertThat(makeDump("initial-profiler-setup").size(), is(0));
   }
 
   @Test
@@ -75,7 +76,7 @@ public class ObjectProfilerTest {
     ObjectProfiler.writeObjectField(OBJECT, FIELD);
     ObjectProfiler.disable();
     ObjectProfiler.exitTestMethod();
-    assertEquals(0, makeDump("suspended").size());
+    assertThat(makeDump("suspended").size(), is(0));
   }
 
   @Test
@@ -88,7 +89,7 @@ public class ObjectProfilerTest {
     ObjectProfiler.writeObjectField(null, FIELD);
     ObjectProfiler.disable();
     ObjectProfiler.exitTestMethod();
-    assertEquals(0, makeDump("null-objects").size());
+    assertThat(makeDump("null-objects").size(), is(0));
   }
 
   @Test
@@ -111,7 +112,7 @@ public class ObjectProfilerTest {
             .sorted()
             .collect(Collectors.toList());
 
-    assertEquals(expected, lines);
+    assertThat(lines, is(expected));
   }
 
   @Test
@@ -134,7 +135,7 @@ public class ObjectProfilerTest {
             .sorted()
             .collect(Collectors.toList());
 
-    assertEquals(expected, lines);
+    assertThat(lines, is(expected));
   }
 
   @Test
@@ -157,7 +158,46 @@ public class ObjectProfilerTest {
             .sorted()
             .collect(Collectors.toList());
 
-    assertEquals(expected, lines);
+    assertThat(lines, is(expected));
+  }
+
+  @Test
+  public void testStaticDependencyDisabled() {
+    ObjectProfiler.enterTestMethod(TEST_NAME[0]);
+    ObjectProfiler.writeStaticField(FIELD);
+    ObjectProfiler.exitTestMethod();
+
+    ObjectProfiler.enterTestMethod(TEST_NAME[1]);
+    ObjectProfiler.readStaticField(FIELD);
+    ObjectProfiler.exitTestMethod();
+
+    assertThat(makeDump("static-field-dependency-disabled").size(), is(0));
+  }
+
+  @Test
+  public void testObjectDependencyDisabled() {
+    ObjectProfiler.enterTestMethod(TEST_NAME[0]);
+    ObjectProfiler.writeObjectField(OBJECT, FIELD);
+    ObjectProfiler.exitTestMethod();
+
+    ObjectProfiler.enterTestMethod(TEST_NAME[1]);
+    ObjectProfiler.readObjectField(OBJECT, FIELD);
+    ObjectProfiler.exitTestMethod();
+
+    assertThat(makeDump("object-dependency-disabled").size(), is(0));
+  }
+
+  @Test
+  public void testArrayDependencyDisabled() {
+    ObjectProfiler.enterTestMethod(TEST_NAME[0]);
+    ObjectProfiler.writeArrayElement(ARRAY, INDEX);
+    ObjectProfiler.exitTestMethod();
+
+    ObjectProfiler.enterTestMethod(TEST_NAME[1]);
+    ObjectProfiler.readArrayElement(ARRAY, INDEX);
+    ObjectProfiler.exitTestMethod();
+
+    assertThat(makeDump("array-dependency-disabled").size(), is(0));
   }
 
   @Test
@@ -180,7 +220,7 @@ public class ObjectProfilerTest {
             .sorted()
             .collect(Collectors.toList());
 
-    assertEquals(expected, lines);
+    assertThat(lines, is(expected));
   }
 
   @Test
@@ -203,7 +243,7 @@ public class ObjectProfilerTest {
             .sorted()
             .collect(Collectors.toList());
 
-    assertEquals(expected, lines);
+    assertThat(lines, is(expected));
   }
 
   @Test
@@ -235,7 +275,7 @@ public class ObjectProfilerTest {
     ObjectProfiler.disable();
     ObjectProfiler.exitTestMethod();
 
-    assertEquals(0, makeDump("object-gc-dependency").size());
+    assertThat(makeDump("object-gc-dependency").size(), is(0));
   }
 
   @Test
@@ -267,7 +307,7 @@ public class ObjectProfilerTest {
     ObjectProfiler.disable();
     ObjectProfiler.exitTestMethod();
 
-    assertEquals(0, makeDump("array-gc-dependency").size());
+    assertThat(makeDump("array-gc-dependency").size(), is(0));
   }
 
   @Test
@@ -294,7 +334,7 @@ public class ObjectProfilerTest {
             .sorted()
             .collect(Collectors.toList());
 
-    assertEquals(expected, lines);
+    assertThat(lines, is(expected));
   }
 
   @Test
@@ -321,6 +361,6 @@ public class ObjectProfilerTest {
             .sorted()
             .collect(Collectors.toList());
 
-    assertEquals(expected, lines);
+    assertThat(lines, is(expected));
   }
 }

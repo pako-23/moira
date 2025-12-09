@@ -1,6 +1,7 @@
 package ch.usi.inf.moira.profiler;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
@@ -59,7 +60,7 @@ public class DOIProfilerTest {
     DOIProfiler.writeStaticField(FIELD);
     DOIProfiler.readObjectField(OBJECT, FIELD);
     DOIProfiler.writeObjectField(OBJECT, FIELD);
-    assertEquals(0, makeDump("initial-profiler-setup").size());
+    assertThat(makeDump("initial-profiler-setup").size(), is(0));
   }
 
   @Test
@@ -75,7 +76,7 @@ public class DOIProfilerTest {
     DOIProfiler.writeObjectField(OBJECT, FIELD);
     DOIProfiler.disable();
     DOIProfiler.exitTestMethod();
-    assertEquals(0, makeDump("suspended").size());
+    assertThat(makeDump("suspended").size(), is(0));
   }
 
   @Test
@@ -88,7 +89,7 @@ public class DOIProfilerTest {
     DOIProfiler.writeObjectField(null, FIELD);
     DOIProfiler.disable();
     DOIProfiler.exitTestMethod();
-    assertEquals(0, makeDump("null-objects").size());
+    assertThat(makeDump("null-objects").size(), is(0));
   }
 
   @Test
@@ -111,7 +112,7 @@ public class DOIProfilerTest {
             .sorted()
             .collect(Collectors.toList());
 
-    assertEquals(expected, lines);
+    assertThat(lines, is(expected));
   }
 
   @Test
@@ -134,7 +135,7 @@ public class DOIProfilerTest {
             .sorted()
             .collect(Collectors.toList());
 
-    assertEquals(expected, lines);
+    assertThat(lines, is(expected));
   }
 
   @Test
@@ -157,7 +158,46 @@ public class DOIProfilerTest {
             .sorted()
             .collect(Collectors.toList());
 
-    assertEquals(expected, lines);
+    assertThat(lines, is(expected));
+  }
+
+  @Test
+  public void testStaticDependencyDisabled() {
+    DOIProfiler.enterTestMethod(TEST_NAME[0]);
+    DOIProfiler.writeStaticField(FIELD);
+    DOIProfiler.exitTestMethod();
+
+    DOIProfiler.enterTestMethod(TEST_NAME[1]);
+    DOIProfiler.readStaticField(FIELD);
+    DOIProfiler.exitTestMethod();
+
+    assertThat(makeDump("static-field-dependency-disabled").size(), is(0));
+  }
+
+  @Test
+  public void testObjectDependencyDisabled() {
+    DOIProfiler.enterTestMethod(TEST_NAME[0]);
+    DOIProfiler.writeObjectField(OBJECT, FIELD);
+    DOIProfiler.exitTestMethod();
+
+    DOIProfiler.enterTestMethod(TEST_NAME[1]);
+    DOIProfiler.readObjectField(OBJECT, FIELD);
+    DOIProfiler.exitTestMethod();
+
+    assertThat(makeDump("object-dependency-disabled").size(), is(0));
+  }
+
+  @Test
+  public void testArrayDependencyDisabled() {
+    DOIProfiler.enterTestMethod(TEST_NAME[0]);
+    DOIProfiler.writeArrayElement(ARRAY, INDEX);
+    DOIProfiler.exitTestMethod();
+
+    DOIProfiler.enterTestMethod(TEST_NAME[1]);
+    DOIProfiler.readArrayElement(ARRAY, INDEX);
+    DOIProfiler.exitTestMethod();
+
+    assertThat(makeDump("array-dependency-disabled").size(), is(0));
   }
 
   @Test
@@ -174,7 +214,7 @@ public class DOIProfilerTest {
     DOIProfiler.disable();
     DOIProfiler.exitTestMethod();
 
-    assertEquals(0, makeDump("object-field-dependency").size());
+    assertThat(makeDump("object-field-dependency").size(), is(0));
   }
 
   @Test
@@ -191,7 +231,7 @@ public class DOIProfilerTest {
     DOIProfiler.disable();
     DOIProfiler.exitTestMethod();
 
-    assertEquals(0, makeDump("array-field-dependency").size());
+    assertThat(makeDump("array-field-dependency").size(), is(0));
   }
 
   @Test
@@ -219,7 +259,7 @@ public class DOIProfilerTest {
     DOIProfiler.disable();
     DOIProfiler.exitTestMethod();
 
-    assertEquals(0, makeDump("object-gc-dependency").size());
+    assertThat(makeDump("object-gc-dependency").size(), is(0));
   }
 
   @Test
@@ -247,7 +287,7 @@ public class DOIProfilerTest {
     DOIProfiler.disable();
     DOIProfiler.exitTestMethod();
 
-    assertEquals(0, makeDump("array-gc-dependency").size());
+    assertThat(makeDump("array-gc-dependency").size(), is(0));
   }
 
   @Test
@@ -274,7 +314,7 @@ public class DOIProfilerTest {
             .sorted()
             .collect(Collectors.toList());
 
-    assertEquals(expected, lines);
+    assertThat(lines, is(expected));
   }
 
   @Test
@@ -301,6 +341,6 @@ public class DOIProfilerTest {
             .sorted()
             .collect(Collectors.toList());
 
-    assertEquals(expected, lines);
+    assertThat(lines, is(expected));
   }
 }
