@@ -9,7 +9,7 @@ import picocli.CommandLine.Spec;
 @Command(
     name = "ch.usi.inf.moira.util.cli.MoiraUtil",
     subcommands = {VerifyCommand.class, HelpCommand.class},
-    version = "JUnitLauncher 0.1",
+    version = "MoiraUtil 0.1",
     usageHelpAutoWidth = true)
 public class MoiraUtil implements Runnable {
   @Option(

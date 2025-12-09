@@ -1,5 +1,5 @@
 plugins {
-    id("testdep.java-conventions")
+    id("moira.java-conventions")
 }
 
 dependencies {

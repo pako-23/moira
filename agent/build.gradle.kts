@@ -1,9 +1,8 @@
 plugins {
-    id("testdep.java-conventions")
+    id("moira.java-conventions")
 }
 
 dependencies {
-    compileOnly("junit:junit:4.13.2")
     implementation("org.ow2.asm:asm-commons:9.8")
     implementation("org.ow2.asm:asm:9.8")
     testImplementation("org.ow2.asm:asm-util:9.8")

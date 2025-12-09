@@ -1,10 +1,11 @@
 plugins {
-    id("testdep.java-conventions")
+    id("moira.java-conventions")
 }
 
 dependencies {
     compileOnly("junit:junit:4.13.2")
     implementation("info.picocli:picocli:4.7.7")
+    testImplementation("junit:junit:4.13.2")
 }
 
 

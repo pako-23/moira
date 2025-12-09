@@ -7,6 +7,10 @@ public final class NullProfiler {
 
   public static void resume() {}
 
+  public static void enable() {}
+
+  public static void disable() {}
+
   public static void writeStaticField(final String field) {}
 
   public static void writeArrayElement(final Object array, final int index) {}

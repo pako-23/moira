@@ -1,7 +1,7 @@
 package ch.usi.inf.moira.util.cli;
 
 import ch.usi.inf.moira.util.PairVerifier;
-import ch.usi.inf.moira.util.PairVerifier.TestMethod;
+import ch.usi.inf.moira.util.TestMethod;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.Option;
