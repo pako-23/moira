@@ -6,7 +6,7 @@ import ch.usi.inf.moira.collect.MapBuilder;
 import java.io.FileNotFoundException;
 import java.lang.reflect.Array;
 
-public class DOIProfiler {
+public final class DOIProfiler {
   private static final int DEFAULT_CONCURRENCY_LEVEL = 16;
 
   private static ThreadSuspension suspension;

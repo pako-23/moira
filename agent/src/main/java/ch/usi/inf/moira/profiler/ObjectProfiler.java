@@ -4,7 +4,7 @@ import ch.usi.inf.moira.collect.Map;
 import ch.usi.inf.moira.collect.MapBuilder;
 import java.io.FileNotFoundException;
 
-public class ObjectProfiler {
+public final class ObjectProfiler {
   private static final int DEFAULT_CONCURRENCY_LEVEL = 16;
 
   private static ThreadSuspension suspension;

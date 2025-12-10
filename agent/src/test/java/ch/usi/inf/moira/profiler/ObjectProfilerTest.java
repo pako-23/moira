@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -44,6 +46,17 @@ public class ObjectProfilerTest {
     }
 
     return lines;
+  }
+
+  @Test
+  public void testConstructorIsPrivate() throws NoSuchMethodException {
+    Constructor<ObjectProfiler> constructor = ObjectProfiler.class.getDeclaredConstructor();
+    assertThat(Modifier.isPrivate(constructor.getModifiers()), is(true));
+  }
+
+  @Test
+  public void testFinalClass() {
+    assertThat(Modifier.isFinal(ObjectProfiler.class.getModifiers()), is(true));
   }
 
   @Test

@@ -1,7 +1,8 @@
 package ch.usi.inf.moira.profiler;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
@@ -22,6 +23,16 @@ public class NullProfilerTest {
   @Test
   public void testResume() {
     assertDoesNotThrow(() -> NullProfiler.resume());
+  }
+
+  @Test
+  public void testEnable() {
+    assertDoesNotThrow(() -> NullProfiler.enable());
+  }
+
+  @Test
+  public void testDisable() {
+    assertDoesNotThrow(() -> NullProfiler.disable());
   }
 
   @Test
@@ -72,11 +83,11 @@ public class NullProfilerTest {
   @Test
   public void testConstructorIsPrivate() throws NoSuchMethodException {
     Constructor<NullProfiler> constructor = NullProfiler.class.getDeclaredConstructor();
-    assertTrue(Modifier.isPrivate(constructor.getModifiers()));
+    assertThat(Modifier.isPrivate(constructor.getModifiers()), is(true));
   }
 
   @Test
   public void testFinalClass() {
-    assertTrue(Modifier.isFinal(NullProfiler.class.getModifiers()));
+    assertThat(Modifier.isFinal(NullProfiler.class.getModifiers()), is(true));
   }
 }
