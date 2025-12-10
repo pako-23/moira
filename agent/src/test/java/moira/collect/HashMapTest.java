@@ -9,12 +9,14 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class HashMapTest {
 
   @Test
   public void createMapDefaults() {
-    MapBuilder<String, Integer> builder = MapBuilder.builder();
+    final MapBuilder<String, Integer> builder = MapBuilder.builder();
     assertThat(builder.getInitialCapacity(), is(16));
     assertThat(builder.getKeyReferenceStrength(), is(MapBuilder.ReferenceStrength.STRONG));
     assertThat(builder.getHashFunction().compute("test"), is("test".hashCode()));
@@ -29,25 +31,50 @@ public class HashMapTest {
 
   @Test
   public void testWeakReferenceStrengthEquivalence() {
-    String first = new String("A");
-    String second = new String("A");
-    Equivalence<String> equivalence = MapBuilder.ReferenceStrength.WEAK.defaultEquivalence();
+    final String first = new String("A");
+    final String second = new String("A");
+    final Equivalence<String> equivalence = MapBuilder.ReferenceStrength.WEAK.defaultEquivalence();
     assertThat(equivalence.test(first, second), is(false));
     assertThat(equivalence.test(first, first), is(true));
   }
 
   @Test
   public void testInitialCapacitySetting() {
-    MapBuilder<String, Integer> builder = MapBuilder.builder();
+    final MapBuilder<String, Integer> builder = MapBuilder.builder();
     builder.initialCapacity(32);
     assertThat(builder.getInitialCapacity(), is(32));
     assertThrows(IllegalArgumentException.class, () -> builder.initialCapacity(15));
     assertThrows(IllegalArgumentException.class, () -> builder.initialCapacity(0));
   }
 
+  @ParameterizedTest
+  @ValueSource(ints = {15, 0})
+  public void testInvalidCapacitySetting(final int capacity) {
+    final MapBuilder<String, Integer> builder = MapBuilder.builder();
+    final Exception thrown =
+        assertThrows(IllegalArgumentException.class, () -> builder.initialCapacity(capacity));
+    assertThat(thrown.getMessage(), is("The initial capacity must be a power of two"));
+  }
+
+  @Test
+  public void testConcurrencyLevelSetting() {
+    final MapBuilder<String, Integer> builder = MapBuilder.builder();
+    builder.concurrencyLevel(4);
+    assertThat(builder.getConcurrencyLevel(), is(4));
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {0, -1})
+  public void testInvalidConcurrencyLevel(final int level) {
+    final MapBuilder<String, Integer> builder = MapBuilder.builder();
+    final Exception thrown =
+        assertThrows(IllegalArgumentException.class, () -> builder.concurrencyLevel(level));
+    assertThat(thrown.getMessage(), is("The concurrency level must be greather than 0"));
+  }
+
   @Test
   public void testReferenceStrengthSetting() {
-    MapBuilder<String, Integer> builder = MapBuilder.builder();
+    final MapBuilder<String, Integer> builder = MapBuilder.builder();
     builder.weakKeys();
     assertThat(builder.getKeyReferenceStrength(), is(MapBuilder.ReferenceStrength.WEAK));
 
@@ -57,8 +84,8 @@ public class HashMapTest {
 
   @Test
   public void testCustomHashFunction() {
-    HashFunction<String> customHash = key -> 42;
-    MapBuilder<String, Integer> builder =
+    final HashFunction<String> customHash = key -> 42;
+    final MapBuilder<String, Integer> builder =
         MapBuilder.<String, Integer>builder().hashFunction(customHash);
 
     assertThat(builder.getHashFunction().compute("anything"), is(42));
@@ -67,8 +94,8 @@ public class HashMapTest {
 
   @Test
   public void testBasicPutAndGetOrPutExisting() {
-    Map<String, String> map = MapBuilder.<String, String>builder().initialCapacity(4).build();
-    AtomicInteger insertions = new AtomicInteger(0);
+    final Map<String, String> map = MapBuilder.<String, String>builder().initialCapacity(4).build();
+    final AtomicInteger insertions = new AtomicInteger(0);
     String result =
         map.getOrPut(
             "key1",
@@ -96,11 +123,27 @@ public class HashMapTest {
   }
 
   @Test
+  public void testGetNotFound() {
+    final Map<String, Integer> map = MapBuilder.<String, Integer>builder().build();
+
+    assertThat(map.get("something"), nullValue());
+  }
+
+  @Test
+  public void testTooSmallInitialCapacity() {
+    final Map<String, Integer> map =
+        MapBuilder.<String, Integer>builder().concurrencyLevel(4).initialCapacity(2).build();
+
+    assertThat(map.capacity(), is(4));
+  }
+
+  @Test
   public void testMultiplePutsAndSize() {
-    Map<Integer, String> map = MapBuilder.<Integer, String>builder().initialCapacity(8).build();
+    final Map<Integer, String> map =
+        MapBuilder.<Integer, String>builder().initialCapacity(8).build();
 
     for (int i = 0; i < 3; i++) {
-      int key = i + 1;
+      final int key = i + 1;
       map.getOrPut(key, () -> "Val" + key);
     }
 
@@ -111,7 +154,7 @@ public class HashMapTest {
 
   @Test
   public void testRehashing() {
-    Map<Integer, Integer> map =
+    final Map<Integer, Integer> map =
         MapBuilder.<Integer, Integer>builder().initialCapacity(4).loadFactor(0.5f).build();
 
     map.getOrPut(1, () -> 100);
@@ -165,7 +208,7 @@ public class HashMapTest {
 
   @Test
   public void testCollisionHandling() {
-    Map<String, String> map =
+    final Map<String, String> map =
         MapBuilder.<String, String>builder()
             .initialCapacity(4)
             .hashFunction((String key) -> 1)
@@ -190,7 +233,7 @@ public class HashMapTest {
 
   @Test
   public void testWeakKeys() {
-    Map<Object, String> map =
+    final Map<Object, String> map =
         MapBuilder.<Object, String>builder()
             .hashFunction(value -> 1)
             .weakKeys()
@@ -198,7 +241,7 @@ public class HashMapTest {
             .build();
 
     Object key = new Object();
-    WeakReference<Object> weakKey = new WeakReference<>(key);
+    final WeakReference<Object> weakKey = new WeakReference<>(key);
     String result = map.getOrPut(key, () -> "first-value");
     assertThat(result, is("first-value"));
     assertThat(map.size(), is(1));
@@ -207,7 +250,7 @@ public class HashMapTest {
       System.gc();
     }
 
-    Object newKey = new Object();
+    final Object newKey = new Object();
     result = map.getOrPut(newKey, () -> "second-value");
 
     assertThat(result, is("second-value"));
@@ -215,14 +258,14 @@ public class HashMapTest {
 
   @Test
   public void testWeakKeysMultipleCollisions() {
-    Map<String, String> map =
+    final Map<String, String> map =
         MapBuilder.<String, String>builder()
             .hashFunction(value -> 1)
             .weakKeys()
             .initialCapacity(8)
             .build();
 
-    String key1 = new String("first-key");
+    final String key1 = new String("first-key");
     String result = map.getOrPut(key1, () -> "first-value");
     assertThat(result, is("first-value"));
     assertThat(map.size(), is(1));
@@ -235,7 +278,7 @@ public class HashMapTest {
 
   @Test
   public void testWeakKeysCollisionDeletedKey() {
-    Map<String, String> map =
+    final Map<String, String> map =
         MapBuilder.<String, String>builder()
             .hashFunction(value -> 1)
             .weakKeys()
@@ -243,7 +286,7 @@ public class HashMapTest {
             .loadFactor(0.5f)
             .build();
 
-    String key1 = new String("first-key");
+    final String key1 = new String("first-key");
     String result = map.getOrPut(key1, () -> "first-value");
     assertThat(result, is("first-value"));
     assertThat(map.size(), is(1));
@@ -252,13 +295,13 @@ public class HashMapTest {
     result = map.getOrPut(key2, () -> "second-value");
     assertThat(result, is("second-value"));
     assertThat(map.size(), is(2));
-    WeakReference<String> reference = new WeakReference<>(key2);
+    final WeakReference<String> reference = new WeakReference<>(key2);
     key2 = null;
     while (reference.get() != null) {
       System.gc();
     }
 
-    String key3 = new String("third-key");
+    final String key3 = new String("third-key");
     result = map.getOrPut(key3, () -> "third-value");
     assertThat(result, is("third-value"));
     assertThat(map.size(), greaterThanOrEqualTo(2));
@@ -385,8 +428,8 @@ public class HashMapTest {
   @Test
   public void testCompaction() {
     Object[] objects = null;
-    AtomicInteger invocations = new AtomicInteger(0);
-    Map<Object, Integer> map =
+    final AtomicInteger invocations = new AtomicInteger(0);
+    final Map<Object, Integer> map =
         MapBuilder.<Object, Integer>builder()
             .initialCapacity(64)
             .weakKeys()
@@ -403,7 +446,7 @@ public class HashMapTest {
         map.getOrPut(objects[j], () -> 2);
       }
 
-      WeakReference<Object> reference = new WeakReference<>(objects);
+      final WeakReference<Object> reference = new WeakReference<>(objects);
       objects = null;
       while (reference.get() != null) {
         System.gc();

@@ -34,7 +34,7 @@ public class TestDetector {
       final boolean isSuperTest = isJUnit3TestClass(reader.getSuperName(), reader.getClassName());
       junit3TestsCache.getOrPut(reader.getClassName(), () -> isSuperTest);
       return isSuperTest;
-    } catch (IOException e) {
+    } catch (final IOException e) {
       return false;
     }
   }

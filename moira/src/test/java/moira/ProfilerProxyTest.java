@@ -29,6 +29,7 @@ public class ProfilerProxyTest {
       shouldThrow = false;
     }
 
+    @SuppressWarnings("unused")
     public static void enterTestMethod(final String testName) {
       if (shouldThrow) {
         throw new IllegalStateException("Simulated Profiler Exception on Enter");
@@ -36,6 +37,7 @@ public class ProfilerProxyTest {
       enteredTestName = testName;
     }
 
+    @SuppressWarnings("unused")
     public static void exitTestMethod() {
       if (shouldThrow) {
         throw new IllegalStateException("Simulated Profiler Exception on Exit");
@@ -43,6 +45,7 @@ public class ProfilerProxyTest {
       exitCalled = true;
     }
 
+    @SuppressWarnings("unused")
     public static void dump(final String fileName) throws Throwable {
       if (shouldThrow) {
         throw new IllegalStateException("Simulated Profiler Exception on Dump");

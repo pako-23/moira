@@ -14,7 +14,7 @@ public class TestCaseMangler extends AdviceAdapter {
     "()V", "()V",
   };
 
-  private static TestDetector detector = new TestDetector();
+  private static final TestDetector detector = new TestDetector();
 
   private boolean instrument;
   private Label tryBegin;

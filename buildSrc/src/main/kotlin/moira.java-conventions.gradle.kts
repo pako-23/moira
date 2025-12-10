@@ -33,7 +33,7 @@ jacoco {
 tasks.named<Test>("test") {
     useJUnitPlatform()
 
-    maxParallelForks = Runtime.getRuntime().availableProcessors()
+    maxParallelForks = Runtime.getRuntime().availableProcessors() / 2
 
     testLogging {
         events(TestLogEvent.FAILED)

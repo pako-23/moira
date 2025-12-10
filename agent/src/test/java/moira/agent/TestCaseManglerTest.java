@@ -1,302 +1,216 @@
 package moira.agent;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.mockito.Mockito.*;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.List;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.InOrder;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.MockitoAnnotations;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 public class TestCaseManglerTest {
   @Mock private MethodVisitor methodVisitorMock;
+  @Mock private TestDetector detectorMock;
+  private TestDetector detector;
+  private Field detectorField;
 
   @BeforeEach
-  public void setup() {
+  public void setup() throws IllegalAccessException, NoSuchFieldException {
     MockitoAnnotations.openMocks(this);
+
+    detectorField = TestCaseMangler.class.getDeclaredField("detector");
+    detectorField.setAccessible(true);
+
+    final Field modifiers = Field.class.getDeclaredField("modifiers");
+    modifiers.setAccessible(true);
+    modifiers.setInt(detectorField, detectorField.getModifiers() & ~Modifier.FINAL);
+    detector = (TestDetector) detectorField.get(null);
+    detectorField.set(null, detectorMock);
   }
 
-  // @ParameterizedTest
-  // @ValueSource(ints = {Opcodes.IRETURN, Opcodes.ATHROW, Opcodes.FRETURN})
-  // public void testVisitNonTest(final int opcode) {
-  //   final TestCaseMangler mangler =
-  //       new TestCaseMangler(
-  //           methodVisitorMock,
-  //           "java/lang/Object",
-  //           Opcodes.ACC_PUBLIC,
-  //           "com/example/Example",
-  //           "method",
-  //           "()V");
-  //   try (MockedConstruction<Label> mocked = mockConstruction(Label.class)) {
-  //     mangler.visitCode();
-  //     mangler.onMethodEnter();
-  //     mangler.onMethodExit(opcode);
-  //     mangler.visitMaxs(10, 12);
-  //     final InOrder order = inOrder(methodVisitorMock);
-  //     order.verify(methodVisitorMock).visitCode();
-  //     order.verify(methodVisitorMock).visitMaxs(10, 12);
-  //     order.verifyNoMoreInteractions();
-  //     assertEquals(0, mocked.constructed().size());
-  //   }
-  // }
+  @AfterEach
+  public void cleanup() throws IllegalAccessException, NoSuchFieldException {
+    detectorField.set(null, detector);
 
-  // @ParameterizedTest
-  // @ValueSource(ints = {Opcodes.IRETURN, Opcodes.ATHROW, Opcodes.FRETURN})
-  // public void testVisitJUnit3Test(final int opcode) {
-  //   final TestCaseMangler mangler =
-  //       new TestCaseMangler(
-  //           methodVisitorMock,
-  //           "junit/framework/TestCase",
-  //           Opcodes.ACC_PUBLIC,
-  //           "com/example/Example",
-  //           "testMethod",
-  //           "()V");
-  //   try (MockedConstruction<Label> mocked = mockConstruction(Label.class)) {
-  //     final InOrder order = inOrder(methodVisitorMock);
+    final Field modifiers = Field.class.getDeclaredField("modifiers");
+    modifiers.setAccessible(true);
+    modifiers.setInt(detectorField, detectorField.getModifiers() | Modifier.FINAL);
 
-  //     mangler.visitCode();
-  //     order.verify(methodVisitorMock).visitCode();
-  //     assertEquals(1, mocked.constructed().size());
-  //     order.verify(methodVisitorMock).visitLabel(mocked.constructed().get(0));
+    detectorField.setAccessible(false);
+    modifiers.setAccessible(false);
+  }
 
-  //     mangler.onMethodEnter();
-  //     order.verify(methodVisitorMock).visitLdcInsn("com/example/Example#testMethod");
-  //     order
-  //         .verify(methodVisitorMock)
-  //         .visitMethodInsn(
-  //             Opcodes.INVOKESTATIC,
-  //             Agent.PROFILER,
-  //             "enterTestMethod",
-  //             "(Ljava/lang/String;)V",
-  //             false);
+  private void makeNonInstrumentedChecks(final TestCaseMangler mangler, final int opcode) {
+    try (MockedConstruction<Label> mocked = mockConstruction(Label.class)) {
+      mangler.visitCode();
+      mangler.onMethodEnter();
+      mangler.onMethodExit(opcode);
+      mangler.visitMaxs(10, 12);
+      final InOrder order = inOrder(methodVisitorMock);
+      order.verify(methodVisitorMock).visitCode();
+      order.verify(methodVisitorMock).visitMaxs(10, 12);
+      order.verifyNoMoreInteractions();
+      assertThat(mocked.constructed().size(), is(0));
+    }
+  }
 
-  //     mangler.onMethodExit(opcode);
-  //     if (opcode != Opcodes.ATHROW)
-  //       order
-  //           .verify(methodVisitorMock)
-  //           .visitMethodInsn(Opcodes.INVOKESTATIC, Agent.PROFILER, "exitTestMethod", "()V",
-  // false);
+  private void makeInstrumentedChecks(final TestCaseMangler mangler, final int opcode) {
+    try (MockedConstruction<Label> mocked = mockConstruction(Label.class)) {
+      final InOrder order = inOrder(methodVisitorMock);
 
-  //     mangler.visitMaxs(10, 12);
-  //     final List<Label> labels = mocked.constructed();
-  //     assertEquals(2, labels.size());
-  //     order
-  //         .verify(methodVisitorMock)
-  //         .visitTryCatchBlock(labels.get(0), labels.get(1), labels.get(1), null);
-  //     order.verify(methodVisitorMock).visitLabel(labels.get(1));
-  //     order
-  //         .verify(methodVisitorMock)
-  //         .visitFrame(Opcodes.F_NEW, 0, null, 1, new Object[] {"java/lang/Throwable"});
-  //     order
-  //         .verify(methodVisitorMock)
-  //         .visitMethodInsn(Opcodes.INVOKESTATIC, Agent.PROFILER, "exitTestMethod", "()V", false);
-  //     order.verify(methodVisitorMock).visitInsn(Opcodes.ATHROW);
-  //     order.verify(methodVisitorMock).visitMaxs(10, 12);
-  //     order.verifyNoMoreInteractions();
-  //   }
-  // }
+      mangler.visitCode();
+      order.verify(methodVisitorMock).visitCode();
+      assertThat(mocked.constructed().size(), is(1));
+      order.verify(methodVisitorMock).visitLabel(mocked.constructed().get(0));
 
-  // @ParameterizedTest
-  // @ValueSource(ints = {Opcodes.IRETURN, Opcodes.ATHROW, Opcodes.FRETURN})
-  // public void testVisitJUnit4Test(final int opcode) {
-  //   final TestCaseMangler mangler =
-  //       new TestCaseMangler(
-  //           methodVisitorMock,
-  //           "java/lang/Object",
-  //           Opcodes.ACC_PUBLIC,
-  //           "com/example/Example",
-  //           "testSomething",
-  //           "()V");
-  //   try (MockedConstruction<Label> mocked = mockConstruction(Label.class)) {
-  //     final InOrder order = inOrder(methodVisitorMock);
+      mangler.onMethodEnter();
+      order
+          .verify(methodVisitorMock)
+          .visitMethodInsn(Opcodes.INVOKESTATIC, Agent.PROFILER, "enable", "()V", false);
 
-  //     final AnnotationVisitor annotationVisitorMock = mock(AnnotationVisitor.class);
-  //     when(methodVisitorMock.visitAnnotation("Lorg/junit/Test;", true))
-  //         .thenReturn(annotationVisitorMock);
+      mangler.onMethodExit(opcode);
+      if (opcode != Opcodes.ATHROW)
+        order
+            .verify(methodVisitorMock)
+            .visitMethodInsn(Opcodes.INVOKESTATIC, Agent.PROFILER, "disable", "()V", false);
 
-  //     final AnnotationVisitor annotationVisitor = mangler.visitAnnotation("Lorg/junit/Test;",
-  // true);
-  //     order.verify(methodVisitorMock).visitAnnotation("Lorg/junit/Test;", true);
-  //     assertSame(annotationVisitor, annotationVisitor);
+      mangler.visitMaxs(10, 12);
+      final List<Label> labels = mocked.constructed();
+      assertThat(labels.size(), is(2));
+      order
+          .verify(methodVisitorMock)
+          .visitTryCatchBlock(labels.get(0), labels.get(1), labels.get(1), null);
+      order.verify(methodVisitorMock).visitLabel(labels.get(1));
+      order
+          .verify(methodVisitorMock)
+          .visitFrame(Opcodes.F_NEW, 0, null, 1, new Object[] {"java/lang/Throwable"});
+      order
+          .verify(methodVisitorMock)
+          .visitMethodInsn(Opcodes.INVOKESTATIC, Agent.PROFILER, "disable", "()V", false);
+      order.verify(methodVisitorMock).visitInsn(Opcodes.ATHROW);
+      order.verify(methodVisitorMock).visitMaxs(10, 12);
+      order.verifyNoMoreInteractions();
+    }
+  }
 
-  //     mangler.visitCode();
-  //     order.verify(methodVisitorMock).visitCode();
-  //     assertEquals(1, mocked.constructed().size());
-  //     order.verify(methodVisitorMock).visitLabel(mocked.constructed().get(0));
+  @ParameterizedTest
+  @ValueSource(ints = {Opcodes.IRETURN, Opcodes.ATHROW, Opcodes.FRETURN})
+  public void testVisitNonTest(final int opcode) {
+    when(detectorMock.isJUint4TestMethod(anyString(), anyString(), anyString())).thenReturn(false);
+    when(detectorMock.isJUnit3TestClass(anyString(), anyString())).thenReturn(false);
 
-  //     mangler.onMethodEnter();
-  //     order.verify(methodVisitorMock).visitLdcInsn("com/example/Example#testSomething");
-  //     order
-  //         .verify(methodVisitorMock)
-  //         .visitMethodInsn(
-  //             Opcodes.INVOKESTATIC,
-  //             Agent.PROFILER,
-  //             "enterTestMethod",
-  //             "(Ljava/lang/String;)V",
-  //             false);
+    final TestCaseMangler mangler =
+        new TestCaseMangler(
+            methodVisitorMock,
+            "java/lang/Object",
+            Opcodes.ACC_PUBLIC,
+            "com/example/Example",
+            "method",
+            "()V");
+    makeNonInstrumentedChecks(mangler, opcode);
+  }
 
-  //     mangler.onMethodExit(opcode);
-  //     if (opcode != Opcodes.ATHROW)
-  //       order
-  //           .verify(methodVisitorMock)
-  //           .visitMethodInsn(Opcodes.INVOKESTATIC, Agent.PROFILER, "exitTestMethod", "()V",
-  // false);
+  private static Stream<Arguments> testVisitJUnit3TestParams() {
+    return Stream.of(Opcodes.IRETURN, Opcodes.ATHROW, Opcodes.FRETURN)
+        .flatMap(
+            opcode ->
+                Stream.of("testSomething", "runTest").map(name -> Arguments.of(opcode, name)));
+  }
 
-  //     mangler.visitMaxs(10, 12);
-  //     final List<Label> labels = mocked.constructed();
-  //     assertEquals(2, labels.size());
-  //     order
-  //         .verify(methodVisitorMock)
-  //         .visitTryCatchBlock(labels.get(0), labels.get(1), labels.get(1), null);
-  //     order.verify(methodVisitorMock).visitLabel(labels.get(1));
-  //     order
-  //         .verify(methodVisitorMock)
-  //         .visitFrame(Opcodes.F_NEW, 0, null, 1, new Object[] {"java/lang/Throwable"});
-  //     order
-  //         .verify(methodVisitorMock)
-  //         .visitMethodInsn(Opcodes.INVOKESTATIC, Agent.PROFILER, "exitTestMethod", "()V", false);
-  //     order.verify(methodVisitorMock).visitInsn(Opcodes.ATHROW);
-  //     order.verify(methodVisitorMock).visitMaxs(10, 12);
-  //     order.verifyNoMoreInteractions();
-  //   }
-  // }
+  @ParameterizedTest
+  @MethodSource("testVisitJUnit3TestParams")
+  public void testVisitJUnit3Test(final int opcode, final String methodName) {
+    when(detectorMock.isJUnit3TestClass(anyString(), anyString())).thenReturn(true);
+    when(detectorMock.isJUint4TestMethod(anyString(), anyString(), anyString())).thenReturn(false);
 
-  // @ParameterizedTest
-  // @ValueSource(ints = {Opcodes.IRETURN, Opcodes.ATHROW, Opcodes.FRETURN})
-  // public void testVisitNonTestAnnotation(final int opcode) {
-  //   final TestCaseMangler mangler =
-  //       new TestCaseMangler(
-  //           methodVisitorMock,
-  //           "java/lang/Object",
-  //           Opcodes.ACC_PUBLIC,
-  //           "com/example/Example",
-  //           "testSomething",
-  //           "()V");
-  //   try (MockedConstruction<Label> mocked = mockConstruction(Label.class)) {
-  //     final InOrder order = inOrder(methodVisitorMock);
+    final TestCaseMangler mangler =
+        new TestCaseMangler(
+            methodVisitorMock,
+            "junit/framework/TestCase",
+            Opcodes.ACC_PUBLIC,
+            "com/example/Example",
+            methodName,
+            "()V");
+    makeInstrumentedChecks(mangler, opcode);
+  }
 
-  //     final AnnotationVisitor annotationVisitorMock = mock(AnnotationVisitor.class);
-  //     when(methodVisitorMock.visitAnnotation("Lcom/example/Annotation;", true))
-  //         .thenReturn(annotationVisitorMock);
+  @Test
+  public void testVisitJUnit3PrivateTest() {
+    when(detectorMock.isJUint4TestMethod(anyString(), anyString(), anyString())).thenReturn(false);
+    when(detectorMock.isJUnit3TestClass(anyString(), anyString())).thenReturn(true);
 
-  //     final AnnotationVisitor annotationVisitor =
-  //         mangler.visitAnnotation("Lcom/example/Annotation;", true);
-  //     order.verify(methodVisitorMock).visitAnnotation("Lcom/example/Annotation;", true);
-  //     assertSame(annotationVisitor, annotationVisitor);
+    final TestCaseMangler mangler =
+        new TestCaseMangler(
+            methodVisitorMock,
+            "java/lang/Object",
+            Opcodes.ACC_PRIVATE,
+            "com/example/Example",
+            "testMethod",
+            "()V");
+    makeNonInstrumentedChecks(mangler, Opcodes.IRETURN);
+  }
 
-  //     mangler.visitCode();
-  //     order.verify(methodVisitorMock).visitCode();
+  @Test
+  public void testVisitJUnit3NotTest() {
+    when(detectorMock.isJUint4TestMethod(anyString(), anyString(), anyString())).thenReturn(false);
+    when(detectorMock.isJUnit3TestClass(anyString(), anyString())).thenReturn(true);
 
-  //     mangler.onMethodEnter();
-  //     if (opcode != Opcodes.ATHROW) mangler.onMethodExit(opcode);
+    final TestCaseMangler mangler =
+        new TestCaseMangler(
+            methodVisitorMock,
+            "java/lang/Object",
+            Opcodes.ACC_PRIVATE,
+            "com/example/Example",
+            "someMethod",
+            "()V");
+    makeNonInstrumentedChecks(mangler, Opcodes.IRETURN);
+  }
 
-  //     mangler.visitMaxs(10, 12);
-  //     order.verify(methodVisitorMock).visitMaxs(10, 12);
-  //     order.verifyNoMoreInteractions();
-  //     assertEquals(0, mocked.constructed().size());
-  //   }
-  // }
+  @Test
+  public void testVisitJUnit3NonValidTestDescription() {
+    when(detectorMock.isJUint4TestMethod(anyString(), anyString(), anyString())).thenReturn(false);
+    when(detectorMock.isJUnit3TestClass(anyString(), anyString())).thenReturn(true);
 
-  // @Test
-  // public void testRegisterTestsFilterFound() throws IOException {
-  //   final File file = new File("register-tests-filter-found");
+    final TestCaseMangler mangler =
+        new TestCaseMangler(
+            methodVisitorMock,
+            "java/lang/Object",
+            Opcodes.ACC_PRIVATE,
+            "com/example/Example",
+            "runTest",
+            "(I)V");
+    makeNonInstrumentedChecks(mangler, Opcodes.IRETURN);
+  }
 
-  //   file.deleteOnExit();
-  //   Files.write(
-  //       file.toPath(),
-  //       Arrays.asList(
-  //           "  com/example/Example#method  com/example/Example#method2",
-  //           "   com/example/Example#method4"));
+  @ParameterizedTest
+  @ValueSource(ints = {Opcodes.IRETURN, Opcodes.ATHROW, Opcodes.FRETURN})
+  public void testVisitJUnit4Test(final int opcode) {
+    when(detectorMock.isJUnit3TestClass(anyString(), anyString())).thenReturn(false);
+    when(detectorMock.isJUint4TestMethod(anyString(), anyString(), anyString())).thenReturn(true);
 
-  //   TestCaseMangler.registerTestsFilter(file.getPath());
-  //   final TestCaseMangler mangler =
-  //       new TestCaseMangler(
-  //           methodVisitorMock,
-  //           "java/lang/Object",
-  //           Opcodes.ACC_PUBLIC,
-  //           "com/example/Example",
-  //           "method4",
-  //           "()V");
-  //   mangler.visitAnnotation("Lorg/junit/Test;", true);
-  //   mangler.onMethodEnter();
-  //   final InOrder order = inOrder(methodVisitorMock);
-  //   order.verify(methodVisitorMock).visitAnnotation("Lorg/junit/Test;", true);
-  //   order.verify(methodVisitorMock).visitLdcInsn("com/example/Example#method4");
-  //   order
-  //       .verify(methodVisitorMock)
-  //       .visitMethodInsn(
-  //           Opcodes.INVOKESTATIC,
-  //           Agent.PROFILER,
-  //           "enterTestMethod",
-  //           "(Ljava/lang/String;)V",
-  //           false);
-  //   order.verifyNoMoreInteractions();
-  // }
-
-  // @Test
-  // public void testRegisterTestsFilterNotFound() throws IOException {
-  //   final File file = new File("register-tests-filter-not-found");
-
-  //   file.deleteOnExit();
-  //   Files.write(
-  //       file.toPath(),
-  //       Arrays.asList(
-  //           "  com/example/Example#method  com/example/Example#method2",
-  //           "   com/example/Example#method4"));
-
-  //   TestCaseMangler.registerTestsFilter(file.getPath());
-  //   final TestCaseMangler mangler =
-  //       new TestCaseMangler(
-  //           methodVisitorMock,
-  //           "java/lang/Object",
-  //           Opcodes.ACC_PUBLIC,
-  //           "com/example/Example",
-  //           "method3",
-  //           "()V");
-  //   mangler.visitAnnotation("Lorg/junit/Test;", true);
-  //   mangler.onMethodEnter();
-  //   verify(methodVisitorMock).visitAnnotation("Lorg/junit/Test;", true);
-  //   verifyNoMoreInteractions(methodVisitorMock);
-  // }
-
-  // @Test
-  // public void testFailRegistration() {
-  //   final PrintStream originalStderr = System.err;
-  //   final ByteArrayOutputStream errorBuffer = new ByteArrayOutputStream();
-  //   String message = "";
-  //   System.setErr(new PrintStream(errorBuffer));
-  //   try {
-  //     TestCaseMangler.registerTestsFilter("not-existing-path");
-  //     message = errorBuffer.toString();
-  //   } finally {
-  //     System.setErr(originalStderr);
-  //   }
-
-  //   assertTrue(message.contains("Warning: failed to read tests filter:"));
-
-  //   final TestCaseMangler mangler =
-  //       new TestCaseMangler(
-  //           methodVisitorMock,
-  //           "java/lang/Object",
-  //           Opcodes.ACC_PUBLIC,
-  //           "com/example/Example",
-  //           "method",
-  //           "()V");
-  //   mangler.visitAnnotation("Lorg/junit/Test;", true);
-  //   mangler.onMethodEnter();
-  //   final InOrder order = inOrder(methodVisitorMock);
-  //   order.verify(methodVisitorMock).visitAnnotation("Lorg/junit/Test;", true);
-  //   order.verify(methodVisitorMock).visitLdcInsn("com/example/Example#method");
-  //   order
-  //       .verify(methodVisitorMock)
-  //       .visitMethodInsn(
-  //           Opcodes.INVOKESTATIC,
-  //           Agent.PROFILER,
-  //           "enterTestMethod",
-  //           "(Ljava/lang/String;)V",
-  //           false);
-  //   order.verifyNoMoreInteractions();
-  // }
-
-  // @AfterEach
-  // public void cleanup() {
-  //   TestCaseMangler.clearTestsFilter();
-  // }
+    final TestCaseMangler mangler =
+        new TestCaseMangler(
+            methodVisitorMock,
+            "java/lang/Object",
+            Opcodes.ACC_PUBLIC,
+            "com/example/Example",
+            "testSomething",
+            "()V");
+    makeInstrumentedChecks(mangler, opcode);
+  }
 }

@@ -6,6 +6,7 @@ dependencies {
     implementation(libs.asm.commons)
     implementation(libs.asm)
     testImplementation(libs.asm.util)
+    testImplementation(libs.junit)
 }
 
 tasks.named<Jar>("jar") {

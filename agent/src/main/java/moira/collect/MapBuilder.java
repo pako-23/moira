@@ -232,7 +232,7 @@ public class MapBuilder<K, V> {
       protected final KeyDeletionCallback<V> keyDeletionCallback;
 
       public Segment(final MapBuilder<K, V> builder, int capacity) {
-        table = newTable(builder.getInitialCapacity());
+        table = newTable(capacity);
         size = 0;
         loadFactor = builder.getLoadFactor();
         equivalence = builder.getKeyReferenceStrength().defaultEquivalence();
@@ -425,7 +425,7 @@ public class MapBuilder<K, V> {
       int segmentCapacity = builder.getInitialCapacity() / segmentCount;
       if (segmentCapacity * segmentCount < builder.getInitialCapacity()) ++segmentCapacity;
 
-      segments = newSegmentArrau(segmentCount);
+      segments = newSegmentArray(segmentCount);
       for (int i = 0; i < segments.length; ++i) segments[i] = newSegment(builder, segmentCapacity);
     }
 
@@ -483,7 +483,7 @@ public class MapBuilder<K, V> {
     }
 
     @SuppressWarnings("unchecked")
-    private Segment<K, V>[] newSegmentArrau(final int capacity) {
+    private Segment<K, V>[] newSegmentArray(final int capacity) {
       return (Segment<K, V>[]) new Segment[capacity];
     }
 
