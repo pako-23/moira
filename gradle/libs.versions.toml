@@ -1,0 +1,11 @@
+[versions]
+asm = "9.8"
+junit = "4.13.2"
+picocli = "4.7.7"
+
+[libraries]
+asm = { module = "org.ow2.asm:asm", version.ref = "asm" }
+asm-commons = { module = "org.ow2.asm:asm-commons", version.ref = "asm" }
+asm-util = { module = "org.ow2.asm:asm-util", version.ref = "asm" }
+junit = { module = "junit:junit", version.ref = "junit" }
+picocli = { module = "info.picocli:picocli", version.ref = "picocli" }

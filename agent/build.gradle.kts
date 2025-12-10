@@ -3,9 +3,9 @@ plugins {
 }
 
 dependencies {
-    implementation("org.ow2.asm:asm-commons:9.8")
-    implementation("org.ow2.asm:asm:9.8")
-    testImplementation("org.ow2.asm:asm-util:9.8")
+    implementation(libs.asm.commons)
+    implementation(libs.asm)
+    testImplementation(libs.asm.util)
 }
 
 tasks.named<Jar>("jar") {
