@@ -1,0 +1,93 @@
+package moira.profiler;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
+import org.junit.jupiter.api.Test;
+
+public class NullProfilerTest {
+  private static final String DUMMY_FIELD = "testField";
+  private static final Object DUMMY_OBJECT = new Object();
+  private static final Object[] DUMMY_ARRAY = new Object[1];
+  private static final int DUMMY_INDEX = 0;
+  private static final String DUMMY_TEST_NAME = "MyTest";
+
+  @Test
+  public void testSuspend() {
+    assertDoesNotThrow(() -> NullProfiler.suspend());
+  }
+
+  @Test
+  public void testResume() {
+    assertDoesNotThrow(() -> NullProfiler.resume());
+  }
+
+  @Test
+  public void testEnable() {
+    assertDoesNotThrow(() -> NullProfiler.enable());
+  }
+
+  @Test
+  public void testDisable() {
+    assertDoesNotThrow(() -> NullProfiler.disable());
+  }
+
+  @Test
+  public void testWriteStaticField() {
+    assertDoesNotThrow(() -> NullProfiler.writeStaticField(DUMMY_FIELD));
+  }
+
+  @Test
+  public void testWriteArrayElement() {
+    assertDoesNotThrow(() -> NullProfiler.writeArrayElement(DUMMY_ARRAY, DUMMY_INDEX));
+  }
+
+  @Test
+  public void testWriteObjectField() {
+    assertDoesNotThrow(() -> NullProfiler.writeObjectField(DUMMY_OBJECT, DUMMY_FIELD));
+  }
+
+  @Test
+  public void testReadStaticField() {
+    assertDoesNotThrow(() -> NullProfiler.readStaticField(DUMMY_FIELD));
+  }
+
+  @Test
+  public void testReadArrayElement() {
+    assertDoesNotThrow(() -> NullProfiler.readArrayElement(DUMMY_ARRAY, DUMMY_INDEX));
+  }
+
+  @Test
+  public void testReadObjectField() {
+    assertDoesNotThrow(() -> NullProfiler.readObjectField(DUMMY_OBJECT, DUMMY_FIELD));
+  }
+
+  @Test
+  public void testEnterTestMethod() {
+    assertDoesNotThrow(() -> NullProfiler.enterTestMethod(DUMMY_TEST_NAME));
+  }
+
+  @Test
+  public void testExitTestMethod() {
+    assertDoesNotThrow(() -> NullProfiler.exitTestMethod());
+  }
+
+  @Test
+  public void testDumpMethod() {
+    assertDoesNotThrow(() -> NullProfiler.dump(null));
+  }
+
+  @Test
+  public void testConstructorIsPrivate() throws NoSuchMethodException {
+    Constructor<NullProfiler> constructor = NullProfiler.class.getDeclaredConstructor();
+    assertThat(Modifier.isPrivate(constructor.getModifiers()), is(true));
+  }
+
+  @Test
+  public void testFinalClass() {
+    assertThat(Modifier.isFinal(NullProfiler.class.getModifiers()), is(true));
+  }
+}

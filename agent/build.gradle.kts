@@ -14,7 +14,7 @@ tasks.named<Jar>("jar") {
     manifest {
         attributes(
             "Manifest-Version" to "1.0",
-            "Premain-Class" to "ch.usi.inf.moira.agent.Agent",
+            "Premain-Class" to "moira.agent.Agent",
             "Can-Redefine-Classes" to "true",
             "Can-Retransform-Classes" to "true"
         )

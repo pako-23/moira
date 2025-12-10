@@ -39,7 +39,7 @@ obj-conflicts.txt $(if $(ENABLE_PROFILE),obj-traces.txt,): testsuite classpath
 		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar \
 		-Dmoira.profiler.name=ObjectProfiler \
 		-Dmoira.profiler.filename=obj-conflicts.txt \
-		ch.usi.inf.moira.Moira $$(cat testsuite | tr '\n' ' ')) && \
+		moira.Moira $$(cat testsuite | tr '\n' ' ')) && \
 	echo "obj-profiler: $$(expr "$$(date -u +%s)" - "$$start_time")" >> running-times
 	$(if $(ENABLE_PROFILE),@mv traces.txt obj-traces.txt,)
 
@@ -52,7 +52,7 @@ doi-conflicts.txt $(if $(ENABLE_PROFILE),doi-traces.txt,): testsuite classpath o
 		-Dmoira.profiler.name=DOIProfiler \
 		-Dmoira.profiler.filename=doi-conflicts.txt \
 		-Dmoira.profiler.filter.filename=obj-conflicts.txt \
-		ch.usi.inf.moira.Moira $$(cat testsuite | tr '\n' ' ')) && \
+		moira.Moira $$(cat testsuite | tr '\n' ' ')) && \
 	echo "doi-profiler: $$(expr "$$(date -u +%s)" - "$$start_time")" >> running-times
 	$(ifeq $(ENABLE_PROFILE),@mv traces.txt doi-traces.txt,)
 
@@ -64,14 +64,14 @@ doi-only-conflicts.txt $(if $(ENABLE_PROFILE),doi-only-traces.txt,): testsuite c
 		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar \
 		-Dmoira.profiler.name=DOIProfiler \
 		-Dmoira.profiler.filename=doi-only-conflicts.txt \
-		ch.usi.inf.moira.Moira $$(cat testsuite | tr '\n' ' ')) && \
+		moira.Moira $$(cat testsuite | tr '\n' ' ')) && \
 	echo "doi-only-profiler: $$(expr "$$(date -u +%s)" - "$$start_time")" >> running-times
 	$(ifeq $(ENABLE_PROFILE),@mv traces.txt doi-only-traces.txt,)
 
 
 %-verified.txt: %-conflicts.txt
 	while read -r pair; do \
-		echo "$$pair -> $$($(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/util/build/libs/util.jar ch.usi.inf.moira.util.cli.MoiraUtil verify $$pair) | grep OK)" >> $@; \
+		echo "$$pair -> $$($(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/util/build/libs/util.jar moira.util.cli.MoiraUtil verify $$pair) | grep OK)" >> $@; \
 	done < $^
 
 %-profile.svg: %-traces.txt
