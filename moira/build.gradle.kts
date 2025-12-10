@@ -4,4 +4,5 @@ plugins {
 
 dependencies {
     compileOnly(libs.junit)
+    testImplementation(libs.junit)
 }

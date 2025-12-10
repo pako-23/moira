@@ -45,7 +45,7 @@ public class ProfilerProxy {
     try {
       dump.invokeExact(fileName);
     } catch (final Throwable e) {
-      throw new RuntimeException("Failed to invoke profiler at test exit", e);
+      throw new RuntimeException("Failed to invoke profiler at dumpo", e);
     }
   }
 }
