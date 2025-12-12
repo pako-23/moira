@@ -24,6 +24,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 public class TestCaseManglerTest {
+  private static final String PROFILER = "moira/agent/SomeProfiler";
   @Mock private MethodVisitor methodVisitorMock;
   @Mock private TestDetector detectorMock;
   private TestDetector detector;
@@ -81,13 +82,13 @@ public class TestCaseManglerTest {
       mangler.onMethodEnter();
       order
           .verify(methodVisitorMock)
-          .visitMethodInsn(Opcodes.INVOKESTATIC, Agent.PROFILER, "enable", "()V", false);
+          .visitMethodInsn(Opcodes.INVOKESTATIC, PROFILER, "enable", "()V", false);
 
       mangler.onMethodExit(opcode);
       if (opcode != Opcodes.ATHROW)
         order
             .verify(methodVisitorMock)
-            .visitMethodInsn(Opcodes.INVOKESTATIC, Agent.PROFILER, "disable", "()V", false);
+            .visitMethodInsn(Opcodes.INVOKESTATIC, PROFILER, "disable", "()V", false);
 
       mangler.visitMaxs(10, 12);
       final List<Label> labels = mocked.constructed();
@@ -101,7 +102,7 @@ public class TestCaseManglerTest {
           .visitFrame(Opcodes.F_NEW, 0, null, 1, new Object[] {"java/lang/Throwable"});
       order
           .verify(methodVisitorMock)
-          .visitMethodInsn(Opcodes.INVOKESTATIC, Agent.PROFILER, "disable", "()V", false);
+          .visitMethodInsn(Opcodes.INVOKESTATIC, PROFILER, "disable", "()V", false);
       order.verify(methodVisitorMock).visitInsn(Opcodes.ATHROW);
       order.verify(methodVisitorMock).visitMaxs(10, 12);
       order.verifyNoMoreInteractions();
@@ -117,6 +118,7 @@ public class TestCaseManglerTest {
     final TestCaseMangler mangler =
         new TestCaseMangler(
             methodVisitorMock,
+            PROFILER,
             "java/lang/Object",
             Opcodes.ACC_PUBLIC,
             "com/example/Example",
@@ -141,6 +143,7 @@ public class TestCaseManglerTest {
     final TestCaseMangler mangler =
         new TestCaseMangler(
             methodVisitorMock,
+            PROFILER,
             "junit/framework/TestCase",
             Opcodes.ACC_PUBLIC,
             "com/example/Example",
@@ -157,6 +160,7 @@ public class TestCaseManglerTest {
     final TestCaseMangler mangler =
         new TestCaseMangler(
             methodVisitorMock,
+            PROFILER,
             "java/lang/Object",
             Opcodes.ACC_PRIVATE,
             "com/example/Example",
@@ -173,6 +177,7 @@ public class TestCaseManglerTest {
     final TestCaseMangler mangler =
         new TestCaseMangler(
             methodVisitorMock,
+            PROFILER,
             "java/lang/Object",
             Opcodes.ACC_PRIVATE,
             "com/example/Example",
@@ -189,6 +194,7 @@ public class TestCaseManglerTest {
     final TestCaseMangler mangler =
         new TestCaseMangler(
             methodVisitorMock,
+            PROFILER,
             "java/lang/Object",
             Opcodes.ACC_PRIVATE,
             "com/example/Example",
@@ -206,6 +212,7 @@ public class TestCaseManglerTest {
     final TestCaseMangler mangler =
         new TestCaseMangler(
             methodVisitorMock,
+            PROFILER,
             "java/lang/Object",
             Opcodes.ACC_PUBLIC,
             "com/example/Example",

@@ -4,16 +4,19 @@ import java.lang.instrument.Instrumentation;
 import java.lang.instrument.UnmodifiableClassException;
 
 public class Agent {
-  public static String PROFILER = "moira/profiler/NullProfiler";
+  private static String DEFAULT_PROFILER = "moira/profiler/NullProfiler";
 
-  public static void premain(String args, Instrumentation instrumentation)
+  private Agent() {}
+
+  public static void premain(final String args, final Instrumentation instrumentation)
       throws UnmodifiableClassException {
-    String profilerName = System.getProperty("moira.profiler.name");
+    final String profilerName = System.getProperty("moira.profiler.name");
 
+    String profiler = DEFAULT_PROFILER;
     if (profilerName != null && !profilerName.isEmpty())
-      PROFILER = "moira/profiler/" + profilerName;
+      profiler = "moira/profiler/" + profilerName;
 
-    instrumentation.addTransformer(new Transformer(), true);
+    instrumentation.addTransformer(new Transformer(profiler), true);
 
     if (!instrumentation.isRetransformClassesSupported()) return;
 

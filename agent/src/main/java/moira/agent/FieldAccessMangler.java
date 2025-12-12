@@ -25,12 +25,17 @@ public class FieldAccessMangler extends MethodVisitor {
 
   private boolean isInitialized;
   private String superName;
+  private final String profiler;
 
   public FieldAccessMangler(
-      final MethodVisitor mv, final String superName, final String methodName) {
+      final MethodVisitor mv,
+      final String profiler,
+      final String superName,
+      final String methodName) {
     super(Opcodes.ASM9, mv);
     isInitialized = !methodName.equals("<init>");
     this.superName = superName;
+    this.profiler = profiler;
   }
 
   @Override
@@ -42,7 +47,7 @@ public class FieldAccessMangler extends MethodVisitor {
         mv.visitInsn(Opcodes.POP2);
         mv.visitInsn(Opcodes.DUP2_X2);
         mv.visitMethodInsn(
-            Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[1], methodDescriptions[1], false);
+            Opcodes.INVOKESTATIC, profiler, methodNames[1], methodDescriptions[1], false);
         break;
 
       case Opcodes.IASTORE:
@@ -55,7 +60,7 @@ public class FieldAccessMangler extends MethodVisitor {
         mv.visitInsn(Opcodes.POP);
         mv.visitInsn(Opcodes.DUP2_X1);
         mv.visitMethodInsn(
-            Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[1], methodDescriptions[1], false);
+            Opcodes.INVOKESTATIC, profiler, methodNames[1], methodDescriptions[1], false);
         break;
 
       case Opcodes.DALOAD:
@@ -68,7 +73,7 @@ public class FieldAccessMangler extends MethodVisitor {
       case Opcodes.SALOAD:
         mv.visitInsn(Opcodes.DUP2);
         mv.visitMethodInsn(
-            Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[4], methodDescriptions[4], false);
+            Opcodes.INVOKESTATIC, profiler, methodNames[4], methodDescriptions[4], false);
         break;
       default:
     }
@@ -110,21 +115,21 @@ public class FieldAccessMangler extends MethodVisitor {
 
       mv.visitLdcInsn(name);
       mv.visitMethodInsn(
-          Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[2], methodDescriptions[2], false);
+          Opcodes.INVOKESTATIC, profiler, methodNames[2], methodDescriptions[2], false);
 
     } else if (opcode == Opcodes.GETFIELD && isInitialized) {
       mv.visitInsn(Opcodes.DUP);
       mv.visitLdcInsn(name);
       mv.visitMethodInsn(
-          Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[5], methodDescriptions[5], false);
+          Opcodes.INVOKESTATIC, profiler, methodNames[5], methodDescriptions[5], false);
     } else if (opcode == Opcodes.PUTSTATIC) {
       mv.visitLdcInsn(owner + "#" + name);
       mv.visitMethodInsn(
-          Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[0], methodDescriptions[0], false);
+          Opcodes.INVOKESTATIC, profiler, methodNames[0], methodDescriptions[0], false);
     } else if (opcode == Opcodes.GETSTATIC) {
       mv.visitLdcInsn(owner + "#" + name);
       mv.visitMethodInsn(
-          Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[3], methodDescriptions[3], false);
+          Opcodes.INVOKESTATIC, profiler, methodNames[3], methodDescriptions[3], false);
     }
 
     mv.visitFieldInsn(opcode, owner, name, description);

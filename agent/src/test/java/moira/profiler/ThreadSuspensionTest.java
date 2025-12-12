@@ -1,7 +1,7 @@
 package moira.profiler;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.concurrent.BrokenBarrierException;
@@ -18,26 +18,45 @@ public class ThreadSuspensionTest {
   }
 
   @Test
-  public void testSimpleSuspendAndResume() {
-    assertFalse(suspension.suspend());
+  public void testSimpleSuspendedOrSuspendAndResume() {
+    assertThat(suspension.suspendedOrSuspend(), is(false));
     suspension.resume();
+  }
+
+  @Test
+  public void testSimpleSuspendAndResume() {
+    suspension.suspend();
+    assertThat(suspension.suspendedOrSuspend(), is(true));
+    suspension.resume();
+  }
+
+  @Test
+  public void testMultipleSuspendedOrSuspend() {
+    assertThat(suspension.suspendedOrSuspend(), is(false));
+    assertThat(suspension.suspendedOrSuspend(), is(true));
+    assertThat(suspension.suspendedOrSuspend(), is(true));
+
+    suspension.resume();
+    assertThat(suspension.suspendedOrSuspend(), is(false));
   }
 
   @Test
   public void testMultipleSuspendsPartialResume() {
-    assertFalse(suspension.suspend());
-    assertTrue(suspension.suspend());
-    assertTrue(suspension.suspend());
+    suspension.suspend();
+    suspension.suspend();
+    suspension.suspend();
+    assertThat(suspension.suspendedOrSuspend(), is(true));
 
     suspension.resume();
     suspension.resume();
-    assertTrue(suspension.suspend());
+    assertThat(suspension.suspendedOrSuspend(), is(true));
   }
 
   @Test
-  public void testNewThreadInsertionLogic() throws InterruptedException, BrokenBarrierException {
-    Thread[] threads = new Thread[5];
-    CyclicBarrier barrier = new CyclicBarrier(threads.length + 1);
+  public void testSuspendedOrSuspendMultipleThreads()
+      throws InterruptedException, BrokenBarrierException {
+    final Thread[] threads = new Thread[5];
+    final CyclicBarrier barrier = new CyclicBarrier(threads.length + 1);
 
     for (int i = 0; i < threads.length; ++i) {
       threads[i] =
@@ -45,11 +64,44 @@ public class ThreadSuspensionTest {
               () -> {
                 try {
                   barrier.await();
-                  assertFalse(suspension.suspend());
-                  assertTrue(suspension.suspend());
+                  assertThat(suspension.suspendedOrSuspend(), is(false));
+                  assertThat(suspension.suspendedOrSuspend(), is(true));
+                  barrier.await();
+                  suspension.resume();
+                } catch (Exception e) {
+                  fail(e.getMessage());
+                }
+              });
+      threads[i].start();
+    }
+
+    barrier.await();
+    barrier.await();
+
+    for (final Thread t : threads) {
+      t.join();
+      assertThat(t.isAlive(), is(false));
+    }
+  }
+
+  @Test
+  public void testSuspendMultipleThreads() throws InterruptedException, BrokenBarrierException {
+    final Thread[] threads = new Thread[5];
+    final CyclicBarrier barrier = new CyclicBarrier(threads.length + 1);
+
+    for (int i = 0; i < threads.length; ++i) {
+      threads[i] =
+          new Thread(
+              () -> {
+                try {
+                  barrier.await();
+                  suspension.suspend();
+                  suspension.suspend();
+                  assertThat(suspension.suspendedOrSuspend(), is(true));
                   barrier.await();
                   suspension.resume();
                   suspension.resume();
+                  assertThat(suspension.suspendedOrSuspend(), is(false));
                 } catch (Exception e) {
                   fail(e.getMessage());
                 }
@@ -62,14 +114,14 @@ public class ThreadSuspensionTest {
 
     for (Thread t : threads) {
       t.join();
-      assertFalse(t.isAlive());
+      assertThat(t.isAlive(), is(false));
     }
   }
 
   @Test
   public void testThreadSuspendVectorGrowth() throws InterruptedException, BrokenBarrierException {
-    Thread[] threads = new Thread[100];
-    CyclicBarrier barrier = new CyclicBarrier(threads.length + 1);
+    final Thread[] threads = new Thread[100];
+    final CyclicBarrier barrier = new CyclicBarrier(threads.length + 1);
 
     for (int i = 0; i < threads.length; ++i) {
       threads[i] =
@@ -77,10 +129,9 @@ public class ThreadSuspensionTest {
               () -> {
                 try {
                   barrier.await();
-                  assertFalse(suspension.suspend());
-                  assertTrue(suspension.suspend());
+                  assertThat(suspension.suspendedOrSuspend(), is(false));
+                  assertThat(suspension.suspendedOrSuspend(), is(true));
                   barrier.await();
-                  suspension.resume();
                   suspension.resume();
                 } catch (Exception e) {
                   fail(e.getMessage());
@@ -94,7 +145,41 @@ public class ThreadSuspensionTest {
 
     for (Thread t : threads) {
       t.join();
-      assertFalse(t.isAlive());
+      assertThat(t.isAlive(), is(false));
+    }
+  }
+
+  @Test
+  public void testSuspendVectorGrowth() throws InterruptedException, BrokenBarrierException {
+    final Thread[] threads = new Thread[100];
+    final CyclicBarrier barrier = new CyclicBarrier(threads.length + 1);
+
+    for (int i = 0; i < threads.length; ++i) {
+      threads[i] =
+          new Thread(
+              () -> {
+                try {
+                  barrier.await();
+                  suspension.suspend();
+                  suspension.suspend();
+                  assertThat(suspension.suspendedOrSuspend(), is(true));
+                  barrier.await();
+                  suspension.resume();
+                  suspension.resume();
+                  assertThat(suspension.suspendedOrSuspend(), is(false));
+                } catch (Exception e) {
+                  fail(e.getMessage());
+                }
+              });
+      threads[i].start();
+    }
+
+    barrier.await();
+    barrier.await();
+
+    for (Thread t : threads) {
+      t.join();
+      assertThat(t.isAlive(), is(false));
     }
   }
 }

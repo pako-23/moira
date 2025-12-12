@@ -7,37 +7,51 @@ import org.junit.runner.Request;
 import org.junit.runner.Result;
 
 public class Moira {
-  public static void main(final String[] args)
-      throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException {
-    final Class<?>[] classes = new Class<?>[args.length];
+  private static final String DEFAULT_PROFILER = "moira.profiler.NullProfiler";
 
-    for (int i = 0; i < args.length; ++i) {
-      try {
-        classes[i] = Class.forName(args[i]);
-      } catch (final ClassNotFoundException e) {
-        e.printStackTrace();
-        System.err.println("Could not find class[" + args[i] + "]");
-        System.exit(1);
-      }
-    }
+  private final String profiler;
 
-    final Request request = Request.classes(classes);
-    final JUnitCore junit = new JUnitCore();
-    String profiler = "moira.profiler.NullProfiler";
+  public Moira() {
     final String profilerName = System.getProperty("moira.profiler.name");
     if (profilerName != null && !profilerName.isEmpty())
       profiler = "moira.profiler." + profilerName;
-    final ProfilerProxy profilerProxy = new ProfilerProxy(profiler);
+    else profiler = DEFAULT_PROFILER;
+  }
 
-    junit.addListener(new TextListener(new RealSystem()));
-    junit.addListener(new MoiraListener(profilerProxy));
+  public int run(final String... classes) {
+    try {
+      final Class<?>[] testClasses = new Class<?>[classes.length];
 
-    System.out.println("JUnit version " + junit.getVersion());
-    final Result result = junit.run(request);
+      for (int i = 0; i < classes.length; ++i) {
+        try {
+          testClasses[i] = Class.forName(classes[i]);
+        } catch (final ClassNotFoundException e) {
+          System.err.println("Could not find class[" + classes[i] + "]");
+          throw e;
+        }
+      }
 
-    if (!result.wasSuccessful()) System.exit(1);
+      final Request request = Request.classes(testClasses);
+      final JUnitCore junit = new JUnitCore();
+      final ProfilerProxy profilerProxy = new ProfilerProxy(profiler);
 
-    profilerProxy.dump();
-    System.exit(0);
+      junit.addListener(new TextListener(new RealSystem()));
+      junit.addListener(new MoiraListener(profilerProxy));
+
+      System.out.println("JUnit version " + junit.getVersion());
+      final Result result = junit.run(request);
+
+      if (!result.wasSuccessful()) return 1;
+
+      profilerProxy.dump();
+      return 0;
+    } catch (final Exception e) {
+      e.printStackTrace();
+      return 1;
+    }
+  }
+
+  public static void main(final String[] args) {
+    System.exit(new Moira().run(args));
   }
 }

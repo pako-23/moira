@@ -21,13 +21,14 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 public class SuspendManglerTest {
+  private static final String PROFILER = "moira/agent/SomeProfiler";
   @Mock private MethodVisitor methodVisitorMock;
   private SuspendMangler mangler;
 
   @BeforeEach
   public void setup() {
     MockitoAnnotations.openMocks(this);
-    mangler = new SuspendMangler(methodVisitorMock, Opcodes.ACC_PUBLIC, "method", "()V");
+    mangler = new SuspendMangler(methodVisitorMock, PROFILER, Opcodes.ACC_PUBLIC, "method", "()V");
   }
 
   @Test
@@ -40,7 +41,7 @@ public class SuspendManglerTest {
       order.verify(methodVisitorMock).visitLabel(labels.get(0));
       order
           .verify(methodVisitorMock)
-          .visitMethodInsn(Opcodes.INVOKESTATIC, Agent.PROFILER, "suspend", "()V", false);
+          .visitMethodInsn(Opcodes.INVOKESTATIC, PROFILER, "suspend", "()V", false);
       order.verifyNoMoreInteractions();
     }
   }
@@ -50,7 +51,7 @@ public class SuspendManglerTest {
   public void testOnMethodExitReturn(final int opcode) {
     mangler.onMethodExit(opcode);
     verify(methodVisitorMock)
-        .visitMethodInsn(Opcodes.INVOKESTATIC, Agent.PROFILER, "resume", "()V", false);
+        .visitMethodInsn(Opcodes.INVOKESTATIC, PROFILER, "resume", "()V", false);
     verifyNoMoreInteractions(methodVisitorMock);
   }
 
@@ -70,7 +71,7 @@ public class SuspendManglerTest {
       order.verify(methodVisitorMock).visitLabel(mocked.constructed().get(0));
       order
           .verify(methodVisitorMock)
-          .visitMethodInsn(Opcodes.INVOKESTATIC, Agent.PROFILER, "suspend", "()V", false);
+          .visitMethodInsn(Opcodes.INVOKESTATIC, PROFILER, "suspend", "()V", false);
       order.verifyNoMoreInteractions();
 
       mangler.visitMaxs(10, 12);
@@ -86,7 +87,7 @@ public class SuspendManglerTest {
           .visitFrame(Opcodes.F_NEW, 0, null, 1, new Object[] {"java/lang/Throwable"});
       order
           .verify(methodVisitorMock)
-          .visitMethodInsn(Opcodes.INVOKESTATIC, Agent.PROFILER, "resume", "()V", false);
+          .visitMethodInsn(Opcodes.INVOKESTATIC, PROFILER, "resume", "()V", false);
       order.verify(methodVisitorMock).visitInsn(Opcodes.ATHROW);
       order.verify(methodVisitorMock).visitMaxs(10, 12);
       order.verifyNoMoreInteractions();

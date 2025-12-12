@@ -76,7 +76,7 @@ public final class DOIProfiler {
     int runningTest = DOIProfiler.runningTest;
     if (runningTest < 0) return;
     if (enabled == 0) return;
-    if (suspension.suspend()) return;
+    if (suspension.suspendedOrSuspend()) return;
 
     ReadWriteSet set = staticMapping.getOrPut(field, () -> new ReadWriteSet());
     synchronized (set) {
@@ -117,7 +117,7 @@ public final class DOIProfiler {
     if (runningTest < 0) return;
     if (enabled == 0) return;
     if (object == null) return;
-    if (suspension.suspend()) return;
+    if (suspension.suspendedOrSuspend()) return;
 
     final Map<String, ReadWriteSet> fieldMapping =
         objectMapping.getOrPut(
@@ -134,7 +134,7 @@ public final class DOIProfiler {
     if (array == null) return;
     if (runningTest < 0) return;
     if (enabled == 0) return;
-    if (suspension.suspend()) return;
+    if (suspension.suspendedOrSuspend()) return;
 
     final Map<Integer, ReadWriteSet> mapping =
         arrayMapping.getOrPut(array, () -> new ArrayMap<>(Array.getLength(array)));

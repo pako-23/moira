@@ -5,4 +5,5 @@ plugins {
 dependencies {
     compileOnly(libs.junit)
     testImplementation(libs.junit)
+    testImplementation(project(":agent"))
 }

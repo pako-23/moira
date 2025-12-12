@@ -1,8 +1,7 @@
 package moira.collect;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,8 +18,8 @@ public class ArrayMapTest {
 
   @Test
   public void testConstructorAndBasicMethods() {
-    assertEquals(TEST_CAPACITY, map.capacity());
-    assertEquals(TEST_CAPACITY, map.size());
+    assertThat(map.capacity(), is(TEST_CAPACITY));
+    assertThat(map.size(), is(TEST_CAPACITY));
   }
 
   @Test
@@ -28,7 +27,7 @@ public class ArrayMapTest {
     final String newValue = "TestValue";
     final String result = map.getOrPut(5, () -> newValue);
 
-    assertEquals(newValue, result);
+    assertThat(result, is(newValue));
   }
 
   @Test
@@ -37,9 +36,9 @@ public class ArrayMapTest {
     final String initialValue = "InitialValue";
     String result = map.getOrPut(key, () -> initialValue);
 
-    assertEquals(initialValue, result);
+    assertThat(result, is(initialValue));
     result = map.getOrPut(key, () -> "SomeDifferentValue");
-    assertEquals(initialValue, result);
+    assertThat(result, is(initialValue));
   }
 
   @Test
@@ -48,8 +47,8 @@ public class ArrayMapTest {
     final String initialValue = "InitialValue";
     String result = map.getOrPut(key, () -> initialValue);
 
-    assertEquals(initialValue, result);
-    assertTrue(map.contains(key));
+    assertThat(result, is(initialValue));
+    assertThat(map.contains(key), is(true));
   }
 
   @Test
@@ -58,22 +57,30 @@ public class ArrayMapTest {
     final String initialValue = "InitialValue";
     String result = map.getOrPut(key, () -> initialValue);
 
-    assertEquals(initialValue, result);
-    assertFalse(map.contains(key + 1));
+    assertThat(result, is(initialValue));
+    assertThat(map.contains(key + 1), is(false));
   }
 
   @Test
   public void testContainsEmpty() {
     final int key = 3;
 
-    assertFalse(map.contains(key));
+    assertThat(map.contains(key), is(false));
+  }
+
+  @Test
+  public void testGetInsertedValue() {
+    final String initialValue = "value";
+
+    map.getOrPut(3, () -> initialValue);
+    assertThat(map.get(3), is(initialValue));
   }
 
   @Test
   public void testIteratorEmptyMap() {
     final Map.Iterator<Integer, String> it = map.iterator();
 
-    assertFalse(it.hasNext());
+    assertThat(it.hasNext(), is(false));
   }
 
   @Test
@@ -83,11 +90,11 @@ public class ArrayMapTest {
 
     final Map.Iterator<Integer, String> it = map.iterator();
 
-    assertTrue(it.hasNext());
-    assertEquals(0, it.key());
-    assertEquals(value, it.value());
+    assertThat(it.hasNext(), is(true));
+    assertThat(it.key(), is(0));
+    assertThat(it.value(), is(value));
     it.next();
-    assertFalse(it.hasNext());
+    assertThat(it.hasNext(), is(false));
   }
 
   @Test
@@ -97,11 +104,11 @@ public class ArrayMapTest {
 
     final Map.Iterator<Integer, String> it = map.iterator();
 
-    assertTrue(it.hasNext());
-    assertEquals(3, it.key());
-    assertEquals(value, it.value());
+    assertThat(it.hasNext(), is(true));
+    assertThat(it.key(), is(3));
+    assertThat(it.value(), is(value));
     it.next();
-    assertFalse(it.hasNext());
+    assertThat(it.hasNext(), is(false));
   }
 
   @Test
@@ -112,18 +119,18 @@ public class ArrayMapTest {
 
     Map.Iterator<Integer, String> it = map.iterator();
 
-    assertEquals(0, it.key());
-    assertEquals("V0", it.value());
+    assertThat(it.key(), is(0));
+    assertThat(it.value(), is("V0"));
 
     it.next();
-    assertEquals(1, it.key());
-    assertEquals("V1", it.value());
+    assertThat(it.key(), is(1));
+    assertThat(it.value(), is("V1"));
 
     it.next();
-    assertEquals(5, it.key());
-    assertEquals("V5", it.value());
+    assertThat(it.key(), is(5));
+    assertThat(it.value(), is("V5"));
     it.next();
 
-    assertFalse(it.hasNext());
+    assertThat(it.hasNext(), is(false));
   }
 }

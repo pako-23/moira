@@ -18,6 +18,11 @@ class Transformer implements ClassFileTransformer {
     "org/objectweb/asm/",
     "sun/",
   };
+  private String profiler;
+
+  public Transformer(final String profiler) {
+    this.profiler = profiler;
+  }
 
   @Override
   public byte[] transform(
@@ -43,7 +48,7 @@ class Transformer implements ClassFileTransformer {
   private byte[] instrument(final ClassLoader loader, final byte[] bytes) {
     final ClassReader reader = new ClassReader(bytes);
     final ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS);
-    reader.accept(new ClassMangler(writer), ClassReader.EXPAND_FRAMES);
+    reader.accept(new ClassMangler(writer, profiler), ClassReader.EXPAND_FRAMES);
     return writer.toByteArray();
   }
 }

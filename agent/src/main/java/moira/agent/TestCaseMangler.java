@@ -18,9 +18,11 @@ public class TestCaseMangler extends AdviceAdapter {
 
   private boolean instrument;
   private Label tryBegin;
+  private final String profiler;
 
   public TestCaseMangler(
       final MethodVisitor mv,
+      final String profiler,
       final String superName,
       final int access,
       final String className,
@@ -31,6 +33,7 @@ public class TestCaseMangler extends AdviceAdapter {
     instrument =
         isJUint3TestMethod(superName, access, className, methodName, description)
             || detector.isJUint4TestMethod(className, methodName, description);
+    this.profiler = profiler;
   }
 
   private boolean isJUint3TestMethod(
@@ -57,7 +60,7 @@ public class TestCaseMangler extends AdviceAdapter {
   public void onMethodEnter() {
     if (instrument) {
       mv.visitMethodInsn(
-          Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[0], methodDescriptions[0], false);
+          Opcodes.INVOKESTATIC, profiler, methodNames[0], methodDescriptions[0], false);
     }
   }
 
@@ -65,7 +68,7 @@ public class TestCaseMangler extends AdviceAdapter {
   public void onMethodExit(int opcode) {
     if (instrument && opcode != Opcodes.ATHROW) {
       mv.visitMethodInsn(
-          Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[1], methodDescriptions[1], false);
+          Opcodes.INVOKESTATIC, profiler, methodNames[1], methodDescriptions[1], false);
     }
   }
 
@@ -77,7 +80,7 @@ public class TestCaseMangler extends AdviceAdapter {
       mv.visitLabel(tryEnd);
       mv.visitFrame(F_NEW, 0, null, 1, new Object[] {"java/lang/Throwable"});
       mv.visitMethodInsn(
-          Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[1], methodDescriptions[1], false);
+          Opcodes.INVOKESTATIC, profiler, methodNames[1], methodDescriptions[1], false);
       mv.visitInsn(Opcodes.ATHROW);
     }
 

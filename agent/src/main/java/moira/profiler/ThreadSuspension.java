@@ -13,19 +13,22 @@ public class ThreadSuspension {
     size = 0;
   }
 
-  public boolean suspend() {
-    return suspend(Thread.currentThread());
+  public void suspend() {
+    suspend(Thread.currentThread());
   }
 
   public void resume() {
     resume(Thread.currentThread());
   }
 
-  private synchronized boolean suspend(final Thread thread) {
+  public boolean suspendedOrSuspend() {
+    return suspendedOrSuspend(Thread.currentThread());
+  }
+
+  private synchronized boolean suspendedOrSuspend(final Thread thread) {
     for (int i = 0; i < size; ++i) {
       if (threads[i] != thread) continue;
 
-      ++suspensionVector[i];
       if (i > 0) {
         int count = suspensionVector[i];
 
@@ -50,6 +53,34 @@ public class ThreadSuspension {
     return false;
   }
 
+  private synchronized void suspend(final Thread thread) {
+    for (int i = 0; i < size; ++i) {
+      if (threads[i] != thread) continue;
+
+      ++suspensionVector[i];
+      if (i > 0) {
+        int count = suspensionVector[i];
+
+        threads[i] = threads[0];
+        suspensionVector[i] = suspensionVector[0];
+        threads[0] = thread;
+        suspensionVector[0] = count;
+      }
+
+      return;
+    }
+
+    if (size > 0) {
+      if (size == threads.length) grow();
+      threads[size] = threads[0];
+      suspensionVector[size] = suspensionVector[0];
+    }
+
+    size += 1;
+    threads[0] = thread;
+    suspensionVector[0] = 1;
+  }
+
   private synchronized void resume(final Thread thread) {
     for (int i = 0; i < size; ++i) {
       if (threads[i] != thread) continue;
@@ -64,7 +95,6 @@ public class ThreadSuspension {
       } else {
         threads[i] = null;
       }
-
       --size;
       break;
     }

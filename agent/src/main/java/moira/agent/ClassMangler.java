@@ -17,11 +17,13 @@ public class ClassMangler extends ClassVisitor {
   private boolean suspend;
   private String superName;
   private String className;
+  private final String profiler;
 
-  public ClassMangler(final ClassVisitor cv) {
+  public ClassMangler(final ClassVisitor cv, final String profiler) {
     super(Opcodes.ASM9, cv);
     mangle = true;
     suspend = false;
+    this.profiler = profiler;
   }
 
   @Override
@@ -56,10 +58,11 @@ public class ClassMangler extends ClassVisitor {
     MethodVisitor visitor = cv.visitMethod(access, name, description, signature, exceptions);
     if (visitor == null || !mangle || (access & METHOD_FILTER) != 0) return visitor;
 
-    if (suspend) return new SuspendMangler(visitor, access, name, description);
+    if (suspend) return new SuspendMangler(visitor, profiler, access, name, description);
 
     return new TestCaseMangler(
-        new FieldAccessMangler(visitor, superName, name),
+        new FieldAccessMangler(visitor, profiler, superName, name),
+        profiler,
         superName,
         access,
         className,

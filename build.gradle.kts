@@ -7,6 +7,7 @@ dependencies {
     jacocoAggregation(project(":agent"))
     jacocoAggregation(project(":moira"))
     jacocoAggregation(project(":util"))
+    // jacocoAggregation(project(":test"))
 }
 
 tasks.check {

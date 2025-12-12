@@ -21,6 +21,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 public class ClassManglerTest {
+  private static final String PROFILER = "moira/agent/SomeProfiler";
   @Mock private ClassVisitor classVisitorMock;
   @Mock private MethodVisitor methodVisitorMock;
   private ClassMangler mangler;
@@ -34,7 +35,7 @@ public class ClassManglerTest {
   @BeforeEach
   public void setup() {
     MockitoAnnotations.openMocks(this);
-    mangler = new ClassMangler(classVisitorMock);
+    mangler = new ClassMangler(classVisitorMock, PROFILER);
   }
 
   @ParameterizedTest
@@ -70,10 +71,11 @@ public class ClassManglerTest {
         mockConstruction(
             FieldAccessMangler.class,
             (mock, context) -> {
-              assertThat(context.arguments().size(), is(3));
+              assertThat(context.arguments().size(), is(4));
               assertThat(context.arguments().get(0), sameInstance(methodVisitorMock));
-              assertThat(context.arguments().get(1), is(superName));
-              assertThat(context.arguments().get(2), is(METHOD_NAME));
+              assertThat(context.arguments().get(1), is(PROFILER));
+              assertThat(context.arguments().get(2), is(superName));
+              assertThat(context.arguments().get(3), is(METHOD_NAME));
             })) {
 
       final List<FieldAccessMangler> fieldAccessMangler = new ArrayList<>();
@@ -82,13 +84,14 @@ public class ClassManglerTest {
           mockConstruction(
               TestCaseMangler.class,
               (mock, context) -> {
-                assertThat(context.arguments().size(), is(6));
+                assertThat(context.arguments().size(), is(7));
                 fieldAccessMangler.add((FieldAccessMangler) context.arguments().get(0));
-                assertThat(context.arguments().get(1), is(superName));
-                assertThat(context.arguments().get(2), is(Opcodes.ACC_PUBLIC));
-                assertThat(context.arguments().get(3), is(CLASS_NAME));
-                assertThat(context.arguments().get(4), is(METHOD_NAME));
-                assertThat(context.arguments().get(5), is(METHOD_DESCRIPTION));
+                assertThat(context.arguments().get(1), is(PROFILER));
+                assertThat(context.arguments().get(2), is(superName));
+                assertThat(context.arguments().get(3), is(Opcodes.ACC_PUBLIC));
+                assertThat(context.arguments().get(4), is(CLASS_NAME));
+                assertThat(context.arguments().get(5), is(METHOD_NAME));
+                assertThat(context.arguments().get(6), is(METHOD_DESCRIPTION));
               })) {
 
         when(classVisitorMock.visitMethod(
@@ -162,11 +165,12 @@ public class ClassManglerTest {
         mockConstruction(
             SuspendMangler.class,
             (mock, context) -> {
-              assertThat(context.arguments().size(), is(4));
+              assertThat(context.arguments().size(), is(5));
               assertThat(context.arguments().get(0), sameInstance(methodVisitorMock));
-              assertThat(context.arguments().get(1), is(Opcodes.ACC_PUBLIC));
-              assertThat(context.arguments().get(2), is(METHOD_NAME));
-              assertThat(context.arguments().get(3), is(METHOD_DESCRIPTION));
+              assertThat(context.arguments().get(1), is(PROFILER));
+              assertThat(context.arguments().get(2), is(Opcodes.ACC_PUBLIC));
+              assertThat(context.arguments().get(3), is(METHOD_NAME));
+              assertThat(context.arguments().get(4), is(METHOD_DESCRIPTION));
             })) {
       when(classVisitorMock.visitMethod(
               Opcodes.ACC_PUBLIC, METHOD_NAME, METHOD_DESCRIPTION, null, null))

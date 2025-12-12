@@ -14,10 +14,16 @@ public final class SuspendMangler extends AdviceAdapter {
   };
 
   private Label tryBegin;
+  private final String profiler;
 
   public SuspendMangler(
-      final MethodVisitor mv, final int access, final String methodName, final String description) {
+      final MethodVisitor mv,
+      final String profiler,
+      final int access,
+      final String methodName,
+      final String description) {
     super(Opcodes.ASM9, mv, access, methodName, description);
+    this.profiler = profiler;
   }
 
   @Override
@@ -25,14 +31,14 @@ public final class SuspendMangler extends AdviceAdapter {
     tryBegin = new Label();
     mv.visitLabel(tryBegin);
     mv.visitMethodInsn(
-        Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[0], methodDescriptions[0], false);
+        Opcodes.INVOKESTATIC, profiler, methodNames[0], methodDescriptions[0], false);
   }
 
   @Override
   public void onMethodExit(final int opcode) {
     if (opcode != Opcodes.ATHROW) {
       mv.visitMethodInsn(
-          Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[1], methodDescriptions[1], false);
+          Opcodes.INVOKESTATIC, profiler, methodNames[1], methodDescriptions[1], false);
     }
   }
 
@@ -43,7 +49,7 @@ public final class SuspendMangler extends AdviceAdapter {
     mv.visitLabel(tryEnd);
     mv.visitFrame(F_NEW, 0, null, 1, new Object[] {"java/lang/Throwable"});
     mv.visitMethodInsn(
-        Opcodes.INVOKESTATIC, Agent.PROFILER, methodNames[1], methodDescriptions[1], false);
+        Opcodes.INVOKESTATIC, profiler, methodNames[1], methodDescriptions[1], false);
     mv.visitInsn(Opcodes.ATHROW);
     mv.visitMaxs(maxStack, maxLocals);
   }

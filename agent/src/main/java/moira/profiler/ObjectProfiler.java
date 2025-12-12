@@ -76,13 +76,13 @@ public final class ObjectProfiler {
     int runningTest = ObjectProfiler.runningTest;
     if (runningTest < 0) return;
     if (enabled == 0) return;
-    if (suspension.suspend()) return;
+    if (suspension.suspendedOrSuspend()) return;
 
     final ReadWriteSet set = staticMapping.getOrPut(field, () -> new ReadWriteSet());
     synchronized (set) {
       set.update(runningTest, event);
     }
-    resume();
+    suspension.resume();
   }
 
   private static void objectEvent(final Object object, final byte event) {
@@ -90,13 +90,13 @@ public final class ObjectProfiler {
     if (runningTest < 0) return;
     if (enabled == 0) return;
     if (object == null) return;
-    if (suspension.suspend()) return;
+    if (suspension.suspendedOrSuspend()) return;
 
     final ReadWriteSet set = objectMapping.getOrPut(object, () -> new ReadWriteSet());
     synchronized (set) {
       set.update(runningTest, event);
     }
-    resume();
+    suspension.resume();
   }
 
   private static void arrayEvent(final Object array, final byte event) {
@@ -104,13 +104,13 @@ public final class ObjectProfiler {
     if (array == null) return;
     if (runningTest < 0) return;
     if (enabled == 0) return;
-    if (suspension.suspend()) return;
+    if (suspension.suspendedOrSuspend()) return;
 
     final ReadWriteSet set = arrayMapping.getOrPut(array, () -> new ReadWriteSet());
     synchronized (set) {
       set.update(runningTest, event);
     }
-    resume();
+    suspension.resume();
   }
 
   private static void mappingDump(final Map<?, ReadWriteSet> mapping) {

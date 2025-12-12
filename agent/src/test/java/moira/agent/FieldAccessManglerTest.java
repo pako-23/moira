@@ -21,6 +21,8 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 public class FieldAccessManglerTest {
+  private static final String PROFILER = "moira/agent/SomeProfiler";
+
   @Mock private MethodVisitor methodVisitorMock;
 
   @BeforeEach
@@ -97,7 +99,7 @@ public class FieldAccessManglerTest {
   @MethodSource("testVisitInsnStoreWordMangledParams")
   public void testVisitInsnStoreWordMangled(final String superName, final int opcode) {
     final FieldAccessMangler mangler =
-        new FieldAccessMangler(methodVisitorMock, superName, "someMethod");
+        new FieldAccessMangler(methodVisitorMock, PROFILER, superName, "someMethod");
     mangler.visitInsn(opcode);
     final InOrder order = inOrder(methodVisitorMock);
     order.verify(methodVisitorMock).visitInsn(Opcodes.DUP2_X2);
@@ -106,11 +108,7 @@ public class FieldAccessManglerTest {
     order
         .verify(methodVisitorMock)
         .visitMethodInsn(
-            Opcodes.INVOKESTATIC,
-            Agent.PROFILER,
-            "writeArrayElement",
-            "(Ljava/lang/Object;I)V",
-            false);
+            Opcodes.INVOKESTATIC, PROFILER, "writeArrayElement", "(Ljava/lang/Object;I)V", false);
     order.verify(methodVisitorMock).visitInsn(opcode);
     order.verifyNoMoreInteractions();
   }
@@ -119,7 +117,7 @@ public class FieldAccessManglerTest {
   @MethodSource("testVisitInsnStoreMangledParams")
   public void testVisitInsnStoreMangled(final String superName, final int opcode) {
     final FieldAccessMangler mangler =
-        new FieldAccessMangler(methodVisitorMock, superName, "someMethod");
+        new FieldAccessMangler(methodVisitorMock, PROFILER, superName, "someMethod");
     mangler.visitInsn(opcode);
     final InOrder order = inOrder(methodVisitorMock);
     order.verify(methodVisitorMock).visitInsn(Opcodes.DUP_X2);
@@ -128,11 +126,7 @@ public class FieldAccessManglerTest {
     order
         .verify(methodVisitorMock)
         .visitMethodInsn(
-            Opcodes.INVOKESTATIC,
-            Agent.PROFILER,
-            "writeArrayElement",
-            "(Ljava/lang/Object;I)V",
-            false);
+            Opcodes.INVOKESTATIC, PROFILER, "writeArrayElement", "(Ljava/lang/Object;I)V", false);
     order.verify(methodVisitorMock).visitInsn(opcode);
     order.verifyNoMoreInteractions();
   }
@@ -141,17 +135,13 @@ public class FieldAccessManglerTest {
   @MethodSource("testVisitInsnLoadMangledParams")
   public void testVisitInsnLoadMangled(final String superName, final int opcode) {
     final FieldAccessMangler mangler =
-        new FieldAccessMangler(methodVisitorMock, superName, "someMethod");
+        new FieldAccessMangler(methodVisitorMock, PROFILER, superName, "someMethod");
     mangler.visitInsn(opcode);
     final InOrder order = inOrder(methodVisitorMock);
     order
         .verify(methodVisitorMock)
         .visitMethodInsn(
-            Opcodes.INVOKESTATIC,
-            Agent.PROFILER,
-            "readArrayElement",
-            "(Ljava/lang/Object;I)V",
-            false);
+            Opcodes.INVOKESTATIC, PROFILER, "readArrayElement", "(Ljava/lang/Object;I)V", false);
     order.verify(methodVisitorMock).visitInsn(opcode);
     order.verifyNoMoreInteractions();
   }
@@ -160,7 +150,7 @@ public class FieldAccessManglerTest {
   @MethodSource("testVisitInsnNoMangleParams")
   public void testVisitInsnNoMangle(final String superName, final int opcode) {
     final FieldAccessMangler mangler =
-        new FieldAccessMangler(methodVisitorMock, superName, "someMethod");
+        new FieldAccessMangler(methodVisitorMock, PROFILER, superName, "someMethod");
     mangler.visitInsn(opcode);
     verify(methodVisitorMock).visitInsn(opcode);
     verifyNoMoreInteractions(methodVisitorMock);
@@ -170,7 +160,7 @@ public class FieldAccessManglerTest {
   @MethodSource("testVisitPutfieldWordMangleParam")
   public void testVisitPutfieldWordMangle(final String superName, final String description) {
     final FieldAccessMangler mangler =
-        new FieldAccessMangler(methodVisitorMock, superName, "someMethod");
+        new FieldAccessMangler(methodVisitorMock, PROFILER, superName, "someMethod");
 
     mangler.visitFieldInsn(Opcodes.PUTFIELD, "com/example/Example", "field", description);
     final InOrder order = inOrder(methodVisitorMock);
@@ -182,7 +172,7 @@ public class FieldAccessManglerTest {
         .verify(methodVisitorMock)
         .visitMethodInsn(
             Opcodes.INVOKESTATIC,
-            Agent.PROFILER,
+            PROFILER,
             "writeObjectField",
             "(Ljava/lang/Object;Ljava/lang/String;)V",
             false);
@@ -196,7 +186,7 @@ public class FieldAccessManglerTest {
   @MethodSource("testVisitPutfieldMangleParam")
   public void testVisitPutfieldMangle(final String superName, final String description) {
     final FieldAccessMangler mangler =
-        new FieldAccessMangler(methodVisitorMock, superName, "someMethod");
+        new FieldAccessMangler(methodVisitorMock, PROFILER, superName, "someMethod");
 
     mangler.visitFieldInsn(Opcodes.PUTFIELD, "com/example/Example", "field", description);
     final InOrder order = inOrder(methodVisitorMock);
@@ -207,7 +197,7 @@ public class FieldAccessManglerTest {
         .verify(methodVisitorMock)
         .visitMethodInsn(
             Opcodes.INVOKESTATIC,
-            Agent.PROFILER,
+            PROFILER,
             "writeObjectField",
             "(Ljava/lang/Object;Ljava/lang/String;)V",
             false);
@@ -222,7 +212,7 @@ public class FieldAccessManglerTest {
   @NullSource
   public void testVisitGetfieldMangle(final String superName) {
     final FieldAccessMangler mangler =
-        new FieldAccessMangler(methodVisitorMock, superName, "someMethod");
+        new FieldAccessMangler(methodVisitorMock, PROFILER, superName, "someMethod");
 
     mangler.visitFieldInsn(Opcodes.GETFIELD, "com/example/Example", "field", "");
     final InOrder order = inOrder(methodVisitorMock);
@@ -232,7 +222,7 @@ public class FieldAccessManglerTest {
         .verify(methodVisitorMock)
         .visitMethodInsn(
             Opcodes.INVOKESTATIC,
-            Agent.PROFILER,
+            PROFILER,
             "readObjectField",
             "(Ljava/lang/Object;Ljava/lang/String;)V",
             false);
@@ -246,7 +236,7 @@ public class FieldAccessManglerTest {
   @MethodSource("testVisitStaticFieldsParams")
   public void testVisitGetstaticMangle(final String superName, final String methodName) {
     final FieldAccessMangler mangler =
-        new FieldAccessMangler(methodVisitorMock, superName, methodName);
+        new FieldAccessMangler(methodVisitorMock, PROFILER, superName, methodName);
 
     mangler.visitFieldInsn(Opcodes.GETSTATIC, "com/example/Example", "field", "");
     final InOrder order = inOrder(methodVisitorMock);
@@ -254,11 +244,7 @@ public class FieldAccessManglerTest {
     order
         .verify(methodVisitorMock)
         .visitMethodInsn(
-            Opcodes.INVOKESTATIC,
-            Agent.PROFILER,
-            "readStaticField",
-            "(Ljava/lang/String;)V",
-            false);
+            Opcodes.INVOKESTATIC, PROFILER, "readStaticField", "(Ljava/lang/String;)V", false);
     order
         .verify(methodVisitorMock)
         .visitFieldInsn(Opcodes.GETSTATIC, "com/example/Example", "field", "");
@@ -269,7 +255,7 @@ public class FieldAccessManglerTest {
   @MethodSource("testVisitStaticFieldsParams")
   public void testVisitPutstaticMangle(final String superName, final String methodName) {
     final FieldAccessMangler mangler =
-        new FieldAccessMangler(methodVisitorMock, superName, methodName);
+        new FieldAccessMangler(methodVisitorMock, PROFILER, superName, methodName);
 
     mangler.visitFieldInsn(Opcodes.PUTSTATIC, "com/example/Example", "field", "");
     final InOrder order = inOrder(methodVisitorMock);
@@ -277,11 +263,7 @@ public class FieldAccessManglerTest {
     order
         .verify(methodVisitorMock)
         .visitMethodInsn(
-            Opcodes.INVOKESTATIC,
-            Agent.PROFILER,
-            "writeStaticField",
-            "(Ljava/lang/String;)V",
-            false);
+            Opcodes.INVOKESTATIC, PROFILER, "writeStaticField", "(Ljava/lang/String;)V", false);
     order
         .verify(methodVisitorMock)
         .visitFieldInsn(Opcodes.PUTSTATIC, "com/example/Example", "field", "");
@@ -292,7 +274,7 @@ public class FieldAccessManglerTest {
   @ValueSource(ints = {Opcodes.GETFIELD, Opcodes.PUTFIELD})
   public void testNotInitializedObject(final int opcode) {
     final FieldAccessMangler mangler =
-        new FieldAccessMangler(methodVisitorMock, "com/example/Example", "<init>");
+        new FieldAccessMangler(methodVisitorMock, PROFILER, "com/example/Example", "<init>");
 
     mangler.visitFieldInsn(opcode, "com/example/Example", "field", "");
     verify(methodVisitorMock).visitFieldInsn(opcode, "com/example/Example", "field", "");
@@ -303,7 +285,7 @@ public class FieldAccessManglerTest {
   @MethodSource("testObjectFieldParams")
   public void testInvokeInstruction(final String superName, final int opcode) {
     final FieldAccessMangler mangler =
-        new FieldAccessMangler(methodVisitorMock, superName, "<init>");
+        new FieldAccessMangler(methodVisitorMock, PROFILER, superName, "<init>");
 
     mangler.visitMethodInsn(Opcodes.INVOKESTATIC, "com/example/Example", "method", "()V", false);
     mangler.visitFieldInsn(opcode, "com/example/Example", "field", "");
@@ -319,7 +301,7 @@ public class FieldAccessManglerTest {
   @MethodSource("testObjectFieldParams")
   public void testInvokeSpecialNotInitialized(final String superName, final int opcode) {
     final FieldAccessMangler mangler =
-        new FieldAccessMangler(methodVisitorMock, superName, "<init>");
+        new FieldAccessMangler(methodVisitorMock, PROFILER, superName, "<init>");
 
     mangler.visitMethodInsn(Opcodes.INVOKESPECIAL, "com/example/Example", "method", "()V", false);
     mangler.visitFieldInsn(opcode, "com/example/Example", "field", "");
@@ -336,7 +318,7 @@ public class FieldAccessManglerTest {
   public void testInvokeSpecialSuperMethod(final int opcode) {
     final String superName = "com/example/Example";
     final FieldAccessMangler mangler =
-        new FieldAccessMangler(methodVisitorMock, superName, "<init>");
+        new FieldAccessMangler(methodVisitorMock, PROFILER, superName, "<init>");
 
     mangler.visitMethodInsn(Opcodes.INVOKESPECIAL, superName, "method", "()V", false);
     mangler.visitFieldInsn(opcode, superName, "field", "");
@@ -352,7 +334,7 @@ public class FieldAccessManglerTest {
   public void testPutfieldObjectInitialization() {
     final String superName = "com/example/Super";
     final FieldAccessMangler mangler =
-        new FieldAccessMangler(methodVisitorMock, superName, "<init>");
+        new FieldAccessMangler(methodVisitorMock, PROFILER, superName, "<init>");
 
     mangler.visitMethodInsn(Opcodes.INVOKESPECIAL, superName, "<init>", "()V", false);
     mangler.visitFieldInsn(Opcodes.PUTFIELD, "com/example/Example", "field", "I");
@@ -365,7 +347,7 @@ public class FieldAccessManglerTest {
         .verify(methodVisitorMock)
         .visitMethodInsn(
             Opcodes.INVOKESTATIC,
-            Agent.PROFILER,
+            PROFILER,
             "writeObjectField",
             "(Ljava/lang/Object;Ljava/lang/String;)V",
             false);
@@ -379,7 +361,7 @@ public class FieldAccessManglerTest {
   public void testGetfieldObjectInitialization() {
     final String superName = "com/example/Super";
     final FieldAccessMangler mangler =
-        new FieldAccessMangler(methodVisitorMock, superName, "<init>");
+        new FieldAccessMangler(methodVisitorMock, PROFILER, superName, "<init>");
 
     mangler.visitMethodInsn(Opcodes.INVOKESPECIAL, superName, "<init>", "()V", false);
     mangler.visitFieldInsn(Opcodes.GETFIELD, "com/example/Example", "field", "");
@@ -391,7 +373,7 @@ public class FieldAccessManglerTest {
         .verify(methodVisitorMock)
         .visitMethodInsn(
             Opcodes.INVOKESTATIC,
-            Agent.PROFILER,
+            PROFILER,
             "readObjectField",
             "(Ljava/lang/Object;Ljava/lang/String;)V",
             false);

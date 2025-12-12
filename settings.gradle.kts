@@ -20,3 +20,4 @@ dependencyResolutionManagement {
 include("agent")
 include("moira")
 include("util")
+include("test")
