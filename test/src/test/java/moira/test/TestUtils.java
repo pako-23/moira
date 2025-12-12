@@ -39,7 +39,6 @@ public class TestUtils {
     command.add("moira.Moira");
     command.addAll(Stream.of(args).collect(Collectors.toList()));
 
-    System.out.println(String.join(" ", command));
     return new ProcessBuilder(command).start();
   }
 
@@ -62,7 +61,7 @@ public class TestUtils {
     try (final BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
       String line;
       while ((line = reader.readLine()) != null) {
-        buffer.append(line);
+        buffer.append(line).append("\n");
       }
     }
 
@@ -71,5 +70,22 @@ public class TestUtils {
 
   public static List<String> readFileLines(final String fileName) throws IOException {
     return Files.readAllLines(Paths.get(fileName)).stream().collect(Collectors.toList());
+  }
+
+  public static Process moiraUtilCommand(final String... args) throws IOException {
+    final List<String> command = new ArrayList<>();
+    final RuntimeMXBean parentArgs = ManagementFactory.getRuntimeMXBean();
+
+    command.add(System.getProperty("java.home") + File.separator + "bin" + File.separator + "java");
+    command.addAll(
+        parentArgs.getInputArguments().stream()
+            .filter(arg -> arg.startsWith("-javaagent:"))
+            .collect(Collectors.toList()));
+    command.add("-classpath");
+    command.add(System.getProperty("java.class.path"));
+    command.add("moira.util.cli.MoiraUtil");
+    command.addAll(Stream.of(args).collect(Collectors.toList()));
+
+    return new ProcessBuilder(command).start();
   }
 }

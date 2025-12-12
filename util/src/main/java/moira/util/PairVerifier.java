@@ -6,12 +6,10 @@ import org.junit.runner.Request;
 import org.junit.runner.manipulation.Filter;
 
 public class PairVerifier {
-  private final Request orderedRequest;
-  private final Request invertedOrderRequest;
+  private final Request request;
 
   public PairVerifier(final TestMethod first, final TestMethod second) {
-    orderedRequest = buildRequest(first, second);
-    invertedOrderRequest = buildRequest(second, first);
+    request = buildRequest(first, second);
   }
 
   private Request buildRequest(final TestMethod first, final TestMethod second) {
@@ -63,7 +61,7 @@ public class PairVerifier {
         .sortWith((a, b) -> first.toString().equals(TestMethod.descriptionToTestID(a)) ? 1 : -1);
   }
 
-  private boolean execute(final Request request) {
+  public boolean verify() {
     final JUnitCore junit = new JUnitCore();
     final ScheduleListener listener = new ScheduleListener(2);
 
@@ -73,9 +71,5 @@ public class PairVerifier {
     listener.print(System.out);
 
     return success;
-  }
-
-  public boolean verify() {
-    return execute(orderedRequest) ^ execute(invertedOrderRequest);
   }
 }

@@ -27,8 +27,7 @@ public class MoiraUtil implements Runnable {
   @Spec private CommandSpec spec;
 
   public static void main(final String[] args) {
-    int exitCode = new CommandLine(new MoiraUtil()).execute(args);
-    System.exit(exitCode);
+    new CommandLine(new MoiraUtil()).execute(args);
   }
 
   @Override

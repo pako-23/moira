@@ -11,7 +11,7 @@ import picocli.CommandLine.TypeConversionException;
 
 @Command(
     name = "verify",
-    description = "Verifies wether a given pair of tests has a dependency.",
+    description = "Verifies that a given pair of tests passes or not.",
     usageHelpAutoWidth = true)
 public class VerifyCommand implements Runnable {
   @ParentCommand private MoiraUtil parent;
