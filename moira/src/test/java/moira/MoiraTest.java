@@ -60,10 +60,15 @@ public class MoiraTest {
                 })) {
       final Request returnedRequest = mock(Request.class);
       requestMock.when(() -> Request.classes(any())).thenReturn(returnedRequest);
-      new Moira().run(MoiraTest.class.getName());
+      final int exitCode = new Moira().run(MoiraTest.class.getName());
       assertThat(proxyMock.constructed().size(), is(1));
-      if (success) verify(proxyMock.constructed().get(0)).dump();
-      else verify(proxyMock.constructed().get(0), never()).dump();
+      if (success) {
+        verify(proxyMock.constructed().get(0)).dump();
+        assertThat(exitCode, is(0));
+      } else {
+        verify(proxyMock.constructed().get(0), never()).dump();
+        assertThat(exitCode, not(is(0)));
+      }
     }
   }
 
@@ -73,7 +78,8 @@ public class MoiraTest {
     final ByteArrayOutputStream stream = new ByteArrayOutputStream();
     try {
       System.setErr(new PrintStream(stream));
-      new Moira().run("some.not.existing.Class");
+      final int exitCode = new Moira().run("some.not.existing.Class");
+      assertThat(exitCode, not(is(0)));
     } finally {
       System.setErr(originalStderr);
     }

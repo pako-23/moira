@@ -10,14 +10,14 @@ public class MoiraTest {
   @Test
   public void testSimpleMoiraExecution() throws IOException, InterruptedException {
     final Process process = TestUtils.moiraDefaultsCommand();
-    process.waitFor();
+    assertThat(process.waitFor(), is(0));
     assertThat(TestUtils.readOutputStream(process.getErrorStream()).length(), is(0));
   }
 
   @Test
   public void testSinglePassingTest() throws IOException, InterruptedException {
     final Process process = TestUtils.moiraDefaultsCommand("com.example.SimplePassingTest");
-    process.waitFor();
+    assertThat(process.waitFor(), is(0));
     assertThat(TestUtils.readOutputStream(process.getErrorStream()).length(), is(0));
   }
 
@@ -26,14 +26,14 @@ public class MoiraTest {
     final Process process =
         TestUtils.moiraDefaultsCommand(
             "com.example.SimplePassingTest", "com.example.OtherPassingTest");
-    process.waitFor();
+    assertThat(process.waitFor(), is(0));
     assertThat(TestUtils.readOutputStream(process.getErrorStream()).length(), is(0));
   }
 
   @Test
   public void testSingleFailingTest() throws IOException, InterruptedException {
     final Process process = TestUtils.moiraDefaultsCommand("com.example.SimpleFailingTest");
-    process.waitFor();
+    assertThat(process.waitFor(), not(is(0)));
   }
 
   @Test
@@ -43,7 +43,7 @@ public class MoiraTest {
             "com.example.SimplePassingTest",
             "com.example.SimpleFailingTest",
             "com.example.OtherPassingTest");
-    process.waitFor();
+    assertThat(process.waitFor(), not(is(0)));
     final String output = TestUtils.readOutputStream(process.getInputStream());
     assertThat(output, containsString("com.example.SimpleFailingTest"));
   }
@@ -51,7 +51,7 @@ public class MoiraTest {
   @Test
   public void testNotExistingTest() throws IOException, InterruptedException {
     final Process process = TestUtils.moiraDefaultsCommand("com.example.NotExisting");
-    process.waitFor();
+    assertThat(process.waitFor(), not(is(0)));
     assertThat(
         TestUtils.readOutputStream(process.getErrorStream()),
         containsString("Could not find class[com.example.NotExisting]"));

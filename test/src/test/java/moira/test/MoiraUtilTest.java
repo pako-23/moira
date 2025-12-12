@@ -12,13 +12,13 @@ public class MoiraUtilTest {
   @Test
   public void testHelpPage() throws IOException, InterruptedException {
     final Process noOptionsCommand = TestUtils.moiraUtilCommand();
-    final Process helpCommnd = TestUtils.moiraUtilCommand("-h");
+    final Process helpCommand = TestUtils.moiraUtilCommand("-h");
 
-    noOptionsCommand.waitFor();
-    helpCommnd.waitFor();
+    assertThat(noOptionsCommand.waitFor(), is(0));
+    assertThat(helpCommand.waitFor(), is(0));
 
     final String noOptionsOutput = TestUtils.readOutputStream(noOptionsCommand.getInputStream());
-    final String helpOutput = TestUtils.readOutputStream(helpCommnd.getInputStream());
+    final String helpOutput = TestUtils.readOutputStream(helpCommand.getInputStream());
 
     assertThat(noOptionsOutput.length(), not(is(0)));
     assertThat(helpOutput.length(), not(is(0)));
@@ -30,8 +30,8 @@ public class MoiraUtilTest {
     final Process noOptionsCommand = TestUtils.moiraUtilCommand("help", "-h");
     final Process helpCommand = TestUtils.moiraUtilCommand("help");
 
-    noOptionsCommand.waitFor();
-    helpCommand.waitFor();
+    assertThat(noOptionsCommand.waitFor(), is(0));
+    assertThat(helpCommand.waitFor(), not(is(0)));
 
     final String noOptionsOutput = TestUtils.readOutputStream(noOptionsCommand.getInputStream());
     final String helpOutput = TestUtils.readOutputStream(helpCommand.getErrorStream());
@@ -46,8 +46,8 @@ public class MoiraUtilTest {
     final Process helpVerifyCommand = TestUtils.moiraUtilCommand("help", "verify");
     final Process verifyHelpOptionCommnd = TestUtils.moiraUtilCommand("verify", "-h");
 
-    helpVerifyCommand.waitFor();
-    verifyHelpOptionCommnd.waitFor();
+    assertThat(helpVerifyCommand.waitFor(), is(0));
+    assertThat(verifyHelpOptionCommnd.waitFor(), is(0));
 
     final String helpVerifyOutput = TestUtils.readOutputStream(helpVerifyCommand.getInputStream());
     final String verifyHelpOptionOutput =
@@ -62,7 +62,7 @@ public class MoiraUtilTest {
   public void testHelpInvalidCommand() throws IOException, InterruptedException {
     final Process command = TestUtils.moiraUtilCommand("help", "somecommand");
 
-    command.waitFor();
+    assertThat(command.waitFor(), is(0));
 
     final String output = TestUtils.readOutputStream(command.getInputStream());
 
@@ -80,7 +80,7 @@ public class MoiraUtilTest {
     final String version = annotation.version()[0];
     final Process command = TestUtils.moiraUtilCommand("-version");
 
-    command.waitFor();
+    assertThat(command.waitFor(), is(0));
 
     final String output = TestUtils.readOutputStream(command.getInputStream());
 
@@ -96,7 +96,7 @@ public class MoiraUtilTest {
             "com.example.AppObjectFieldTest[testReadFieldX(com.example.AppObjectFieldTest)]",
             "com.example.AppObjectFieldTest[testWriteFieldX(com.example.AppObjectFieldTest)]");
 
-    command.waitFor();
+    assertThat(command.waitFor(), is(0));
 
     final List<String> expectedLines =
         Arrays.asList(
@@ -118,7 +118,7 @@ public class MoiraUtilTest {
             "com.example.AppObjectFieldTest[testWriteFieldX(com.example.AppObjectFieldTest)]",
             "com.example.AppObjectFieldTest[testReadFieldX(com.example.AppObjectFieldTest)]");
 
-    command.waitFor();
+    assertThat(command.waitFor(), is(0));
 
     final List<String> expectedLines =
         Arrays.asList(
@@ -138,7 +138,7 @@ public class MoiraUtilTest {
         TestUtils.moiraUtilCommand(
             "verify", "com.example.AppObjectFieldTest[]", "com.example.AppObjectFieldTest[]");
 
-    command.waitFor();
+    assertThat(command.waitFor(), not(is(0)));
 
     final String output = TestUtils.readOutputStream(command.getErrorStream());
 

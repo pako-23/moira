@@ -71,7 +71,15 @@ doi-only-conflicts.txt $(if $(ENABLE_PROFILE),doi-only-traces.txt,): testsuite c
 
 %-verified.txt: %-conflicts.txt
 	while read -r pair; do \
-		echo "$$pair -> $$($(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/util/build/libs/util.jar moira.util.cli.MoiraUtil verify $$pair) | grep OK)" >> $@; \
+		first="$$(echo "$$pair" | cut -f1 -d' ')"; \
+		second="$$(echo "$$pair" | cut -f2 -d' ')"; \
+		ordered="$$($(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/util/build/libs/util.jar moira.util.cli.MoiraUtil verify $$first $$second) | grep OK)" ; \
+		reversed="$$($(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/util/build/libs/util.jar moira.util.cli.MoiraUtil verify $$second $$first) | grep OK)" ; \
+		if test "$$ordered" = "$$reversed"; then \
+			echo "$$pair -> INVALID" >> $@; \
+		else \
+			echo "$$pair -> VALID" >> $@; \
+		fi; \
 	done < $^
 
 %-profile.svg: %-traces.txt

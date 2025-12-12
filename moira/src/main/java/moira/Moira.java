@@ -18,7 +18,7 @@ public class Moira {
     else profiler = DEFAULT_PROFILER;
   }
 
-  public void run(final String... classes) {
+  public int run(final String... classes) {
     try {
       final Class<?>[] testClasses = new Class<?>[classes.length];
 
@@ -41,13 +41,17 @@ public class Moira {
       System.out.println("JUnit version " + junit.getVersion());
       final Result result = junit.run(request);
 
-      if (result.wasSuccessful()) profilerProxy.dump();
+      if (!result.wasSuccessful()) return 1;
+
+      profilerProxy.dump();
+      return 0;
     } catch (final Exception e) {
       e.printStackTrace();
+      return 1;
     }
   }
 
   public static void main(final String[] args) {
-    new Moira().run(args);
+    System.exit(new Moira().run(args));
   }
 }

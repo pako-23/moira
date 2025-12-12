@@ -375,7 +375,7 @@ public class MapBuilder<K, V> {
           int index = indexFor(entry.getHash(), table.length);
           Entry<K, V> prev = table[index];
           Entry<K, V> p = prev;
-          while (p != null) {
+          while (true) {
             Entry<K, V> next = p.getNext();
             if (p == entry) {
               if (prev == entry) table[index] = next;
