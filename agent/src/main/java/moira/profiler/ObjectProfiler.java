@@ -24,11 +24,15 @@ public final class ObjectProfiler {
   public static void setup() {
     suspension = new ThreadSuspension();
     dump = new ProfilerDump();
-    staticMapping = MapBuilder.<String, ReadWriteSet>builder().initialCapacity(64).build();
+    staticMapping =
+        MapBuilder.<String, ReadWriteSet>builder()
+            .concurrencyLevel(DEFAULT_CONCURRENCY_LEVEL)
+            .initialCapacity(1 << 10)
+            .build();
     arrayMapping =
         MapBuilder.<Object, ReadWriteSet>builder()
             .concurrencyLevel(DEFAULT_CONCURRENCY_LEVEL)
-            .initialCapacity(1 << 10)
+            .initialCapacity(1 << 11)
             .weakKeys()
             .keyDeletionCallback(ObjectProfiler::computeConflicts)
             .hashFunction(System::identityHashCode)
@@ -36,7 +40,7 @@ public final class ObjectProfiler {
     objectMapping =
         MapBuilder.<Object, ReadWriteSet>builder()
             .concurrencyLevel(DEFAULT_CONCURRENCY_LEVEL)
-            .initialCapacity(1 << 10)
+            .initialCapacity(1 << 11)
             .weakKeys()
             .keyDeletionCallback(ObjectProfiler::computeConflicts)
             .hashFunction(System::identityHashCode)

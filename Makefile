@@ -114,7 +114,7 @@ clean:
 	rm -rf $(EXPERIMENTS_DIR)
 
 ifeq ($(PROFILE),yes)
-$(EXPERIMENcompTS_DIR)/lightweight-java-profiler: | $(EXPERIMENTS_DIR)
+$(EXPERIMENTS_DIR)/lightweight-java-profiler: | $(EXPERIMENTS_DIR)
 	@git clone --quiet https://github.com/yinheli/lightweight-java-profiler.git $@
 
 define profiler_version

@@ -15,8 +15,13 @@ public class TestDetector {
   private final Map<String, Map<String, Void>> junit4TestsCache;
 
   public TestDetector() {
-    junit3TestsCache = MapBuilder.<String, Boolean>builder().build();
-    junit4TestsCache = MapBuilder.<String, Map<String, Void>>builder().build();
+    junit3TestsCache =
+        MapBuilder.<String, Boolean>builder().concurrencyLevel(16).initialCapacity(1 << 10).build();
+    junit4TestsCache =
+        MapBuilder.<String, Map<String, Void>>builder()
+            .concurrencyLevel(16)
+            .initialCapacity(1 << 10)
+            .build();
   }
 
   public boolean isJUnit3TestClass(final String superName, final String className) {
@@ -58,7 +63,8 @@ public class TestDetector {
 
   private void solveClassHierarcy(final String className) {
     final Map<String, Void> inserted =
-        junit4TestsCache.getOrPut(className, () -> MapBuilder.<String, Void>builder().build());
+        junit4TestsCache.getOrPut(
+            className, () -> MapBuilder.<String, Void>builder().initialCapacity(8).build());
 
     try (InputStream stream =
         ClassLoader.getSystemClassLoader().getResourceAsStream(className + ".class")) {

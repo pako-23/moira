@@ -29,11 +29,11 @@ public final class DOIProfiler {
     staticMapping =
         MapBuilder.<String, ReadWriteSet>builder()
             .concurrencyLevel(DEFAULT_CONCURRENCY_LEVEL)
-            .initialCapacity(64)
+            .initialCapacity(1 << 10)
             .build();
     arrayMapping =
         MapBuilder.<Object, Map<Integer, ReadWriteSet>>builder()
-            .initialCapacity(1 << 10)
+            .initialCapacity(1 << 11)
             .weakKeys()
             .concurrencyLevel(DEFAULT_CONCURRENCY_LEVEL)
             .keyDeletionCallback(DOIProfiler::fieldMappingDump)
@@ -41,7 +41,7 @@ public final class DOIProfiler {
             .build();
     objectMapping =
         MapBuilder.<Object, Map<String, ReadWriteSet>>builder()
-            .initialCapacity(1 << 10)
+            .initialCapacity(1 << 11)
             .weakKeys()
             .concurrencyLevel(DEFAULT_CONCURRENCY_LEVEL)
             .keyDeletionCallback(DOIProfiler::fieldMappingDump)
