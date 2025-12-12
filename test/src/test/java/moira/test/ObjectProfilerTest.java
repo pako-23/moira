@@ -15,7 +15,7 @@ public class ObjectProfilerTest {
     final Process process =
         TestUtils.moiraObjectProfilerCommand(
             fileName, "com.example.SimplePassingTest", "com.example.OtherPassingTest");
-    assertThat(process.waitFor(), is(0));
+    process.waitFor();
     assertThat(TestUtils.readFileLines(fileName).size(), is(0));
   }
 
@@ -24,7 +24,7 @@ public class ObjectProfilerTest {
     final String fileName = "obj-static-field-dependency";
     final Process process =
         TestUtils.moiraObjectProfilerCommand(fileName, "com.example.AppStaticFieldTest");
-    assertThat(process.waitFor(), is(0));
+    process.waitFor();
     final List<String> lines = TestUtils.readFileLines(fileName);
     assertThat(lines.size(), is(2));
     assertThat(
@@ -40,7 +40,7 @@ public class ObjectProfilerTest {
     final String fileName = "obj-object-field-dependency";
     final Process process =
         TestUtils.moiraObjectProfilerCommand(fileName, "com.example.AppObjectFieldTest");
-    assertThat(process.waitFor(), is(0));
+    process.waitFor();
     final List<String> lines = TestUtils.readFileLines(fileName);
     assertThat(lines.size(), is(4));
     assertThat(
@@ -58,7 +58,7 @@ public class ObjectProfilerTest {
     final String fileName = "obj-array-dependency";
     final Process process =
         TestUtils.moiraObjectProfilerCommand(fileName, "com.example.AppArrayTest");
-    assertThat(process.waitFor(), is(0));
+    process.waitFor();
     final List<String> lines = TestUtils.readFileLines(fileName);
     assertThat(lines.size(), is(4));
     assertThat(

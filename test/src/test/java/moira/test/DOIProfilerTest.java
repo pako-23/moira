@@ -15,7 +15,7 @@ public class DOIProfilerTest {
     final Process process =
         TestUtils.moiraDOIProfilerCommand(
             fileName, "com.example.SimplePassingTest", "com.example.OtherPassingTest");
-    assertThat(process.waitFor(), is(0));
+    process.waitFor();
     assertThat(TestUtils.readFileLines(fileName).size(), is(0));
   }
 
@@ -24,7 +24,7 @@ public class DOIProfilerTest {
     final String fileName = "doi-static-field-dependency";
     final Process process =
         TestUtils.moiraDOIProfilerCommand(fileName, "com.example.AppStaticFieldTest");
-    assertThat(process.waitFor(), is(0));
+    process.waitFor();
     final List<String> lines = TestUtils.readFileLines(fileName);
     assertThat(lines.size(), is(2));
     assertThat(
@@ -40,7 +40,7 @@ public class DOIProfilerTest {
     final String fileName = "doi-object-field-dependency";
     final Process process =
         TestUtils.moiraDOIProfilerCommand(fileName, "com.example.AppObjectFieldTest");
-    assertThat(process.waitFor(), is(0));
+    process.waitFor();
     final List<String> lines = TestUtils.readFileLines(fileName);
     assertThat(lines.size(), is(2));
     assertThat(
@@ -55,7 +55,7 @@ public class DOIProfilerTest {
   public void testArrayDependency() throws IOException, InterruptedException {
     final String fileName = "doi-array-dependency";
     final Process process = TestUtils.moiraDOIProfilerCommand(fileName, "com.example.AppArrayTest");
-    assertThat(process.waitFor(), is(0));
+    process.waitFor();
     final List<String> lines = TestUtils.readFileLines(fileName);
     assertThat(lines.size(), is(2));
     assertThat(

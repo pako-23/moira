@@ -6,8 +6,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -56,14 +60,24 @@ public class MoiraTest {
                 })) {
       final Request returnedRequest = mock(Request.class);
       requestMock.when(() -> Request.classes(any())).thenReturn(returnedRequest);
-      final int exitCode = new Moira().run(MoiraTest.class.getName());
-      if (success) assertThat(exitCode, is(0));
-      else assertThat(exitCode, not(is(0)));
+      new Moira().run(MoiraTest.class.getName());
+      assertThat(proxyMock.constructed().size(), is(1));
+      if (success) verify(proxyMock.constructed().get(0)).dump();
+      else verify(proxyMock.constructed().get(0), never()).dump();
     }
   }
 
   @Test
   public void testNotValidTestClass() {
-    assertThat(new Moira().run("some.not.existing.Class"), not(is(0)));
+    final PrintStream originalStderr = System.err;
+    final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+    try {
+      System.setErr(new PrintStream(stream));
+      new Moira().run("some.not.existing.Class");
+    } finally {
+      System.setErr(originalStderr);
+    }
+
+    assertThat(stream.toByteArray().length, not(is(0)));
   }
 }
