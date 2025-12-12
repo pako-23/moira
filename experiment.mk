@@ -1,9 +1,10 @@
 ENABLE_PROFILE := $(filter yes,$(PROFILE))
 
+runs := 1 2 3 4 5 6 7 8 9 10
 experiments := obj doi doi-only
-experiment_files := $(foreach exp,$(experiments),$(exp)-conflicts.txt $(exp)-verified.txt $(if $(ENABLE_PROFILE),$(exp)-profile.svg,))
+experiment_files := $(foreach exp,$(experiments),$(exp)-conflicts.txt $(exp)-verified.txt)
 
-all: $(experiment_files)
+all: $(foreach run,$(runs),$(foreach file,$(experiment_files),run-$(run)/$(file)))
 
 define mvn_exec
 @if test -f mvnw; then \
@@ -31,43 +32,39 @@ testsuite: | target
 	$(call mvn_exec,test)
 	@find target/ -name 'TEST*.xml' -print0 | xargs -0 sed -n -e 's/^<testsuite .* name="\([^"]*\)".*$$/\1/p' | sort -u > testsuite
 
-obj-conflicts.txt $(if $(ENABLE_PROFILE),obj-traces.txt,): testsuite classpath
+%obj-conflicts.txt: testsuite classpath
+	mkdir -p $(dir $@) ; \
 	start_time="$$(date -u +%s)" ; \
 	$(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/moira/build/libs/moira.jar \
 		-javaagent:$(top_srcdir)/agent/build/libs/agent.jar \
-		$(if $(ENABLE_PROFILE),-agentpath:$(top_srcdir)/experiments/lightweight-java-profiler/$(shell basename $(JAVA_HOME))/liblagent.so,) \
 		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar \
 		-Dmoira.profiler.name=ObjectProfiler \
-		-Dmoira.profiler.filename=obj-conflicts.txt \
+		-Dmoira.profiler.filename=$@ \
 		moira.Moira $$(cat testsuite | tr '\n' ' ')) && \
 	echo "obj-profiler: $$(expr "$$(date -u +%s)" - "$$start_time")" >> running-times
-	$(if $(ENABLE_PROFILE),@mv traces.txt obj-traces.txt,)
 
-doi-conflicts.txt $(if $(ENABLE_PROFILE),doi-traces.txt,): testsuite classpath obj-conflicts.txt
+%doi-conflicts.txt: %obj-conflicts.txt testsuite classpath
+	mkdir -p $(dir $@) ; \
 	start_time="$$(date -u +%s)" ; \
 	$(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/moira/build/libs/moira.jar \
 		-javaagent:$(top_srcdir)/agent/build/libs/agent.jar \
-		$(if $(ENABLE_PROFILE),-agentpath:$(top_srcdir)/experiments/lightweight-java-profiler/$(basename $(JAVA_HOME))/liblagent.so,) \
 		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar \
 		-Dmoira.profiler.name=DOIProfiler \
-		-Dmoira.profiler.filename=doi-conflicts.txt \
-		-Dmoira.profiler.filter.filename=obj-conflicts.txt \
+		-Dmoira.profiler.filename=$@ \
+		-Dmoira.profiler.filter.filename=$< \
 		moira.Moira $$(cat testsuite | tr '\n' ' ')) && \
 	echo "doi-profiler: $$(expr "$$(date -u +%s)" - "$$start_time")" >> running-times
-	$(ifeq $(ENABLE_PROFILE),@mv traces.txt doi-traces.txt,)
 
-doi-only-conflicts.txt $(if $(ENABLE_PROFILE),doi-only-traces.txt,): testsuite classpath
+%doi-only-conflicts.txt: testsuite classpath
+	mkdir -p $(dir $@) ; \
 	start_time="$$(date -u +%s)" ; \
 	$(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/moira/build/libs/moira.jar \
 		-javaagent:$(top_srcdir)/agent/build/libs/agent.jar \
-		$(if $(ENABLE_PROFILE),-agentpath:$(top_srcdir)/experiments/lightweight-java-profiler/$(basename $(JAVA_HOME))/liblagent.so,) \
 		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar \
 		-Dmoira.profiler.name=DOIProfiler \
-		-Dmoira.profiler.filename=doi-only-conflicts.txt \
+		-Dmoira.profiler.filename=$@ \
 		moira.Moira $$(cat testsuite | tr '\n' ' ')) && \
 	echo "doi-only-profiler: $$(expr "$$(date -u +%s)" - "$$start_time")" >> running-times
-	$(ifeq $(ENABLE_PROFILE),@mv traces.txt doi-only-traces.txt,)
-
 
 %-verified.txt: %-conflicts.txt
 	while read -r pair; do \
@@ -82,11 +79,45 @@ doi-only-conflicts.txt $(if $(ENABLE_PROFILE),doi-only-traces.txt,): testsuite c
 		fi; \
 	done < $^
 
-%-profile.svg: %-traces.txt
-	@$(top_srcdir)/experiments/FlameGraph/stackcollapse-ljp.awk $^ | $(top_srcdir)/experiments/FlameGraph/flamegraph.pl > $@
 
 .PHONY: clean
 clean:
 	- rm -f running-times
 	- rm -f $(experiment_files)
-	- rm -f $(foreach exp,$(experiments),$(exp)-traces.txt)
+	- rm -rf $(foreach run,$(runs),run-$(run))
+	- rm -f $(foreach exp,$(experiments),$(exp)-profile.svg $(exp)-traces.txt $(exp)-conflicts.txt)
+
+ifeq ($(PROFILE),yes)
+all: $(foreach exp,$(experiments),$(exp)-profile.svg $(exp)-traces.txt $(exp)-conflicts.txt)
+
+%-profile.svg: %-traces.txt
+	@$(top_srcdir)/experiments/FlameGraph/stackcollapse-ljp.awk $^ | $(top_srcdir)/experiments/FlameGraph/flamegraph.pl > $@
+
+obj-conflicts.txt obj-traces.txt &: testsuite classpath
+	$(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/moira/build/libs/moira.jar \
+		-agentpath:$(top_srcdir)/experiments/lightweight-java-profiler/$(basename $(JAVA_HOME))/liblagent.so=file=obj-traces.txt \
+		-javaagent:$(top_srcdir)/agent/build/libs/agent.jar \
+		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar \
+		-Dmoira.profiler.name=ObjectProfiler \
+		-Dmoira.profiler.filename=obj-conflicts.txt \
+		moira.Moira $$(cat testsuite | tr '\n' ' '))
+
+doi-conflicts.txt doi-traces.txt &: testsuite classpath obj-conflicts.txt
+	$(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/moira/build/libs/moira.jar \
+		-agentpath:$(top_srcdir)/experiments/lightweight-java-profiler/$(basename $(JAVA_HOME))/liblagent.so=file=doi-traces.txt \
+		-javaagent:$(top_srcdir)/agent/build/libs/agent.jar \
+		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar \
+		-Dmoira.profiler.name=DOIProfiler \
+		-Dmoira.profiler.filename=doi-conflicts.txt \
+		-Dmoira.profiler.filter.filename=obj-conflicts.txt \
+		moira.Moira $$(cat testsuite | tr '\n' ' '))
+
+doi-only-conflicts.txt doi-only-traces &: testsuite classpath
+	$(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/moira/build/libs/moira.jar \
+		-agentpath:$(top_srcdir)/experiments/lightweight-java-profiler/$(basename $(JAVA_HOME))/liblagent.so=file=doi-only-traces.txt \
+		-javaagent:$(top_srcdir)/agent/build/libs/agent.jar \
+		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar \
+		-Dmoira.profiler.name=DOIProfiler \
+		-Dmoira.profiler.filename=doi-only-conflicts.txt \
+		moira.Moira $$(cat testsuite | tr '\n' ' '))
+endif
