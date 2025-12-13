@@ -87,15 +87,15 @@ clean:
 	- rm -rf $(foreach run,$(runs),run-$(run))
 	- rm -f $(foreach exp,$(experiments),$(exp)-profile.svg $(exp)-traces.txt $(exp)-conflicts.txt)
 
-ifeq ($(PROFILE),yes)
-all: $(foreach exp,$(experiments),$(exp)-profile.svg $(exp)-traces.txt $(exp)-conflicts.txt)
+.PHONY: profile
+profile: $(foreach exp,$(experiments),$(exp)-profile.svg $(exp)-traces.txt $(exp)-conflicts.txt)
 
 %-profile.svg: %-traces.txt
 	@$(top_srcdir)/experiments/FlameGraph/stackcollapse-ljp.awk $^ | $(top_srcdir)/experiments/FlameGraph/flamegraph.pl > $@
 
 obj-conflicts.txt obj-traces.txt &: testsuite classpath
 	$(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/moira/build/libs/moira.jar \
-		-agentpath:$(top_srcdir)/experiments/lightweight-java-profiler/$(basename $(JAVA_HOME))/liblagent.so=file=obj-traces.txt \
+		-agentpath:$(top_srcdir)/experiments/lightweight-java-profiler/$(shell basename $(JAVA_HOME))/liblagent.so=file=obj-traces.txt \
 		-javaagent:$(top_srcdir)/agent/build/libs/agent.jar \
 		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar \
 		-Dmoira.profiler.name=ObjectProfiler \
@@ -104,7 +104,7 @@ obj-conflicts.txt obj-traces.txt &: testsuite classpath
 
 doi-conflicts.txt doi-traces.txt &: testsuite classpath obj-conflicts.txt
 	$(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/moira/build/libs/moira.jar \
-		-agentpath:$(top_srcdir)/experiments/lightweight-java-profiler/$(basename $(JAVA_HOME))/liblagent.so=file=doi-traces.txt \
+		-agentpath:$(top_srcdir)/experiments/lightweight-java-profiler/$(shell basename $(JAVA_HOME))/liblagent.so=file=doi-traces.txt \
 		-javaagent:$(top_srcdir)/agent/build/libs/agent.jar \
 		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar \
 		-Dmoira.profiler.name=DOIProfiler \
@@ -112,12 +112,11 @@ doi-conflicts.txt doi-traces.txt &: testsuite classpath obj-conflicts.txt
 		-Dmoira.profiler.filter.filename=obj-conflicts.txt \
 		moira.Moira $$(cat testsuite | tr '\n' ' '))
 
-doi-only-conflicts.txt doi-only-traces &: testsuite classpath
+doi-only-conflicts.txt doi-only-traces.txt &: testsuite classpath
 	$(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/moira/build/libs/moira.jar \
-		-agentpath:$(top_srcdir)/experiments/lightweight-java-profiler/$(basename $(JAVA_HOME))/liblagent.so=file=doi-only-traces.txt \
+		-agentpath:$(top_srcdir)/experiments/lightweight-java-profiler/$(shell basename $(JAVA_HOME))/liblagent.so=file=doi-only-traces.txt \
 		-javaagent:$(top_srcdir)/agent/build/libs/agent.jar \
 		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar \
 		-Dmoira.profiler.name=DOIProfiler \
 		-Dmoira.profiler.filename=doi-only-conflicts.txt \
 		moira.Moira $$(cat testsuite | tr '\n' ' '))
-endif

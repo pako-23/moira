@@ -1,9 +1,10 @@
 EXPERIMENTS_DIR := experiments
-PROFILE ?= no
-
 
 .PHONY: all
 all: | java-versions mvn-versions
+
+.PHONY: profile
+profile:
 
 .PHONY: clean-experiments
 clean-experiments:
@@ -51,12 +52,10 @@ run-$(call experiment_id,$(1)): $(call experiment_repodir,$(1))/$(call experimen
 	moira/build/libs/moira.jar \
 	agent/build/libs/agent.jar \
 	util/build/libs/util.jar \
-	$(if $(filter yes,$(PROFILE)),$(EXPERIMENTS_DIR)/lightweight-java-profiler/$(word 5,$(subst $(comma), ,$(1)))/liblagent.so,) | \
 	$(call experiment_repodir,$(1)) \
 	$(call experiment_java,$(1)) \
-	$(call experiment_mvn,$(1)) \
-	$(if $(filter yes,$(PROFILE)),$(EXPERIMENTS_DIR)/FlameGraph,)
-	$(MAKE) -C $(call experiment_repodir,$(1))/$(call experiment_subdir,$(1)) PROFILE=$(PROFILE) all
+	$(call experiment_mvn,$(1))
+	$(MAKE) -C $(call experiment_repodir,$(1))/$(call experiment_subdir,$(1)) all
 
 all: run-$(word 1,$(subst $(comma), ,$(1)))
 
@@ -65,6 +64,20 @@ clean-$(word 1,$(subst $(comma), ,$(1))):
 	$(MAKE) -C $(call experiment_repodir,$(1))/$(call experiment_subdir,$(1)) clean
 
 clean-experiments: clean-$(word 1,$(subst $(comma), ,$(1)))
+
+.PHONY: profile-$(call experiment_id,$(1))
+profile-$(call experiment_id,$(1)): $(call experiment_repodir,$(1))/$(call experiment_subdir,$(1))Makefile \
+	moira/build/libs/moira.jar \
+	agent/build/libs/agent.jar \
+	$(EXPERIMENTS_DIR)/lightweight-java-profiler/$(word 5,$(subst $(comma), ,$(1)))/liblagent.so | \
+	$(call experiment_repodir,$(1)) \
+	$(call experiment_java,$(1)) \
+	$(call experiment_mvn,$(1)) \
+	$(EXPERIMENTS_DIR)/FlameGraph
+	$(MAKE) -C $(call experiment_repodir,$(1))/$(call experiment_subdir,$(1)) profile
+
+profile: profile-$(word 1,$(subst $(comma), ,$(1)))
+
 endef
 
 $(foreach s,$(SUBJECTS),$(eval $(call experiment,$(s))))
@@ -113,7 +126,6 @@ $(eval $(call mvn_version,3.9.9))
 clean:
 	rm -rf $(EXPERIMENTS_DIR)
 
-ifeq ($(PROFILE),yes)
 $(EXPERIMENTS_DIR)/lightweight-java-profiler: | $(EXPERIMENTS_DIR)
 	@git clone --quiet https://github.com/yinheli/lightweight-java-profiler.git $@
 
@@ -129,4 +141,3 @@ $(eval $(call profiler_version,jdk-24.0.2+12))
 
 $(EXPERIMENTS_DIR)/FlameGraph: | $(EXPERIMENTS_DIR)
 	@git clone --quiet https://github.com/brendangregg/FlameGraph.git $@
-endif
