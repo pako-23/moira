@@ -89,6 +89,25 @@ public class TransformerTest {
   }
 
   @ParameterizedTest
+  @ValueSource(classes = {java.lang.ClassLoader.class, java.net.URLClassLoader.class})
+  public void testSuspendedClass(final Class<?> clazz) throws IOException {
+    final byte[] classFileBuffer = classToBytes(clazz);
+
+    assertDoesNotThrow(
+        () -> {
+          final byte[] instrumented =
+              transformer.transform(
+                  clazz.getClassLoader(),
+                  clazz.getName().replace('.', '/'),
+                  clazz,
+                  null,
+                  classFileBuffer);
+          assertThat(instrumented, notNullValue());
+          assertThat(verifyClass(instrumented), is(true));
+        });
+  }
+
+  @ParameterizedTest
   @ValueSource(
       classes = {
         moira.agent.Agent.class,

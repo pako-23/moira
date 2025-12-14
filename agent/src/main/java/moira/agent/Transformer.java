@@ -7,7 +7,7 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 
 class Transformer implements ClassFileTransformer {
-  private static final String[] filter = {
+  private static final String[] FILTER_PREFIXES = {
     "java/io/",
     "java/lang/",
     "java/nio/",
@@ -18,10 +18,25 @@ class Transformer implements ClassFileTransformer {
     "org/objectweb/asm/",
     "sun/",
   };
+  private static String[] SUSPEND_PREFIXES = {
+    "java/lang/ClassLoader",
+    "java/net/URLClassLoader",
+    "java/security/SecureClassLoader",
+    "java/lang/invoke/MethodHandleNatives"
+  };
+
   private String profiler;
 
   public Transformer(final String profiler) {
     this.profiler = profiler;
+  }
+
+  private boolean prefixMatch(final String item, final String[] prefixes) {
+    for (final String prefix : prefixes) {
+      if (item.startsWith(prefix)) return true;
+    }
+
+    return false;
   }
 
   @Override
@@ -32,23 +47,20 @@ class Transformer implements ClassFileTransformer {
       final ProtectionDomain protectionDomain,
       final byte[] classFileBuffer)
       throws IllegalClassFormatException {
-
+    boolean suspend = false;
     if (className != null) {
-      for (int i = 0; i < filter.length; ++i) if (className.startsWith(filter[i])) return null;
+      suspend = prefixMatch(className, SUSPEND_PREFIXES);
+      if (!suspend && prefixMatch(className, FILTER_PREFIXES)) return null;
     }
 
     try {
-      return instrument(loader, classFileBuffer);
+      final ClassReader reader = new ClassReader(classFileBuffer);
+      final ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS);
+      reader.accept(new ClassMangler(writer, suspend, profiler), ClassReader.EXPAND_FRAMES);
+      return writer.toByteArray();
     } catch (Throwable t) {
       t.printStackTrace();
       return null;
     }
-  }
-
-  private byte[] instrument(final ClassLoader loader, final byte[] bytes) {
-    final ClassReader reader = new ClassReader(bytes);
-    final ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS);
-    reader.accept(new ClassMangler(writer, profiler), ClassReader.EXPAND_FRAMES);
-    return writer.toByteArray();
   }
 }

@@ -35,7 +35,7 @@ public class ClassManglerTest {
   @BeforeEach
   public void setup() {
     MockitoAnnotations.openMocks(this);
-    mangler = new ClassMangler(classVisitorMock, PROFILER);
+    mangler = new ClassMangler(classVisitorMock, false, PROFILER);
   }
 
   @ParameterizedTest
@@ -157,6 +157,7 @@ public class ClassManglerTest {
         "java/security/SecureClassLoader"
       })
   public void testVisitSuspendedClass(final String className) {
+    mangler = new ClassMangler(classVisitorMock, true, PROFILER);
     mangler.visit(VERSION, Opcodes.ACC_PUBLIC, className, null, OBJECT_SUPER, null);
     verify(classVisitorMock)
         .visit(VERSION, Opcodes.ACC_PUBLIC, className, null, OBJECT_SUPER, null);

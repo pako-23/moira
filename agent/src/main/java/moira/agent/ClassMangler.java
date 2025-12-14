@@ -9,9 +9,6 @@ public class ClassMangler extends ClassVisitor {
       Opcodes.ACC_INTERFACE | Opcodes.ACC_ENUM | Opcodes.ACC_SYNTHETIC;
   private static final int METHOD_FILTER =
       Opcodes.ACC_NATIVE | Opcodes.ACC_BRIDGE | Opcodes.ACC_ABSTRACT | Opcodes.ACC_SYNTHETIC;
-  private static String[] SUSPEND_LIST = {
-    "java/lang/ClassLoader", "java/net/URLClassLoader", "java/security/SecureClassLoader"
-  };
 
   private boolean mangle;
   private boolean suspend;
@@ -19,10 +16,10 @@ public class ClassMangler extends ClassVisitor {
   private String className;
   private final String profiler;
 
-  public ClassMangler(final ClassVisitor cv, final String profiler) {
+  public ClassMangler(final ClassVisitor cv, final boolean suspend, final String profiler) {
     super(Opcodes.ASM9, cv);
     mangle = true;
-    suspend = false;
+    this.suspend = suspend;
     this.profiler = profiler;
   }
 
@@ -38,14 +35,7 @@ public class ClassMangler extends ClassVisitor {
 
     mangle = (access & CLASS_FILTER) == 0 && !superName.equals("java/lang/reflect/Proxy");
     className = name;
-
     this.superName = superName;
-
-    for (final String item : SUSPEND_LIST)
-      if (name.equals(item)) {
-        suspend = true;
-        break;
-      }
   }
 
   @Override
