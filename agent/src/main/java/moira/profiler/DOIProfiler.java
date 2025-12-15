@@ -12,8 +12,8 @@ public final class DOIProfiler {
   private static Map<String, ReadWriteSet> staticMapping;
   private static Map<Object, Map<Integer, ReadWriteSet>> arrayMapping;
   private static Map<Object, Map<String, ReadWriteSet>> objectMapping;
-  private static volatile int runningTest = -1;
-  private static volatile int enabled = 0;
+  private static volatile int runningTest;
+  private static volatile int enabled;
 
   static {
     setup();
@@ -39,6 +39,8 @@ public final class DOIProfiler {
             .keyDeletionCallback(DOIProfiler::fieldMappingDump)
             .hashFunction(System::identityHashCode)
             .build();
+    runningTest = -1;
+    enabled = 0;
   }
 
   public static void dump(final String fileName) throws FileNotFoundException {
@@ -72,8 +74,8 @@ public final class DOIProfiler {
 
     synchronized (staticMapping) {
       staticMapping.getOrPut(field, () -> new ReadWriteSet()).update(runningTest, event);
+      resume();
     }
-    resume();
   }
 
   private static void arrayMappingDump() {
@@ -105,9 +107,9 @@ public final class DOIProfiler {
 
   private static void objectEvent(final Object object, final String field, final byte event) {
     int runningTest = DOIProfiler.runningTest;
+    if (object == null) return;
     if (runningTest < 0) return;
     if (enabled == 0) return;
-    if (object == null) return;
     if (suspension.suspendedOrSuspend()) return;
 
     synchronized (objectMapping) {
@@ -116,8 +118,8 @@ public final class DOIProfiler {
               object, () -> MapBuilder.<String, ReadWriteSet>builder().initialCapacity(4).build())
           .getOrPut(field, () -> new ReadWriteSet())
           .update(runningTest, event);
+      resume();
     }
-    resume();
   }
 
   private static void arrayEvent(final Object array, final int index, final byte event) {
@@ -132,8 +134,8 @@ public final class DOIProfiler {
           .getOrPut(array, () -> new ArrayMap<>(Array.getLength(array)))
           .getOrPut(index, () -> new ReadWriteSet())
           .update(runningTest, event);
+      resume();
     }
-    resume();
   }
 
   public static void writeStaticField(final String field) {
