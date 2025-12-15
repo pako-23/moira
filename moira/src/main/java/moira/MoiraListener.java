@@ -11,7 +11,7 @@ import org.junit.runner.Description;
 import org.junit.runner.notification.RunListener;
 
 public class MoiraListener extends RunListener {
-  private static final Pattern pattern = Pattern.compile("\\s+");
+  private static final Pattern pattern = Pattern.compile("from: |, to: ");
   private final ProfilerProxy profilerProxy;
   private final Set<String> filter;
 

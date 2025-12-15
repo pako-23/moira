@@ -53,6 +53,34 @@ public class ThreadSuspensionTest {
   }
 
   @Test
+  public void testSuspendedOrSuspendTwoThreads()
+      throws InterruptedException, BrokenBarrierException {
+    final CyclicBarrier barrier = new CyclicBarrier(2);
+    final Thread thread =
+        new Thread(
+            () -> {
+              try {
+                assertThat(suspension.suspendedOrSuspend(), is(false));
+                assertThat(suspension.suspendedOrSuspend(), is(true));
+                barrier.await();
+                barrier.await();
+                suspension.resume();
+              } catch (Exception e) {
+                fail(e.getMessage());
+              }
+            });
+
+    assertThat(suspension.suspendedOrSuspend(), is(false));
+    thread.start();
+    barrier.await();
+    assertThat(suspension.suspendedOrSuspend(), is(true));
+    barrier.await();
+
+    thread.join();
+    assertThat(thread.isAlive(), is(false));
+  }
+
+  @Test
   public void testSuspendedOrSuspendMultipleThreads()
       throws InterruptedException, BrokenBarrierException {
     final Thread[] threads = new Thread[5];
@@ -82,6 +110,39 @@ public class ThreadSuspensionTest {
       t.join();
       assertThat(t.isAlive(), is(false));
     }
+  }
+
+  @Test
+  public void testSuspendTwoThreads() throws InterruptedException, BrokenBarrierException {
+    final CyclicBarrier barrier = new CyclicBarrier(2);
+    final Thread thread =
+        new Thread(
+            () -> {
+              try {
+                suspension.suspend();
+                suspension.suspend();
+                assertThat(suspension.suspendedOrSuspend(), is(true));
+                barrier.await();
+                barrier.await();
+                suspension.resume();
+                suspension.resume();
+                assertThat(suspension.suspendedOrSuspend(), is(false));
+              } catch (Exception e) {
+                fail(e.getMessage());
+              }
+            });
+
+    suspension.suspend();
+    suspension.suspend();
+    assertThat(suspension.suspendedOrSuspend(), is(true));
+    thread.start();
+    barrier.await();
+    suspension.suspend();
+    assertThat(suspension.suspendedOrSuspend(), is(true));
+    barrier.await();
+
+    thread.join();
+    assertThat(thread.isAlive(), is(false));
   }
 
   @Test

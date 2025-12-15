@@ -68,7 +68,7 @@ public class ProfilerDump {
         int dependant = it.getDependant();
         int dependee = it.getDependee();
 
-        writer.println(getTestName(dependant) + " " + getTestName(dependee));
+        writer.println("from: " + getTestName(dependant) + ", to: " + getTestName(dependee));
         it.next();
       }
     }

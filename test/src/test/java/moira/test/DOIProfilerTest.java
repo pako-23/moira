@@ -32,8 +32,8 @@ public class DOIProfilerTest {
         lines,
         is(
             Stream.of(
-                    "com.example.AppStaticFieldTest[testReadFieldX(com.example.AppStaticFieldTest)] com.example.AppStaticFieldTest[testWriteFieldX(com.example.AppStaticFieldTest)]",
-                    "com.example.AppStaticFieldTest[testReadFieldY(com.example.AppStaticFieldTest)] com.example.AppStaticFieldTest[testWriteFieldY(com.example.AppStaticFieldTest)]")
+                    "from: com.example.AppStaticFieldTest[testReadFieldX(com.example.AppStaticFieldTest)], to: com.example.AppStaticFieldTest[testWriteFieldX(com.example.AppStaticFieldTest)]",
+                    "from: com.example.AppStaticFieldTest[testReadFieldY(com.example.AppStaticFieldTest)], to: com.example.AppStaticFieldTest[testWriteFieldY(com.example.AppStaticFieldTest)]")
                 .sorted()
                 .collect(Collectors.toList())));
   }
@@ -50,8 +50,8 @@ public class DOIProfilerTest {
         lines,
         is(
             Stream.of(
-                    "com.example.AppObjectFieldTest[testReadFieldX(com.example.AppObjectFieldTest)] com.example.AppObjectFieldTest[testWriteFieldX(com.example.AppObjectFieldTest)]",
-                    "com.example.AppObjectFieldTest[testReadFieldY(com.example.AppObjectFieldTest)] com.example.AppObjectFieldTest[testWriteFieldY(com.example.AppObjectFieldTest)]")
+                    "from: com.example.AppObjectFieldTest[testReadFieldX(com.example.AppObjectFieldTest)], to: com.example.AppObjectFieldTest[testWriteFieldX(com.example.AppObjectFieldTest)]",
+                    "from: com.example.AppObjectFieldTest[testReadFieldY(com.example.AppObjectFieldTest)], to: com.example.AppObjectFieldTest[testWriteFieldY(com.example.AppObjectFieldTest)]")
                 .sorted()
                 .collect(Collectors.toList())));
   }
@@ -67,8 +67,8 @@ public class DOIProfilerTest {
         lines,
         is(
             Stream.of(
-                    "com.example.AppArrayTest[testReadFirstIndex(com.example.AppArrayTest)] com.example.AppArrayTest[testWriteFirstIndex(com.example.AppArrayTest)]",
-                    "com.example.AppArrayTest[testReadSecondIndex(com.example.AppArrayTest)] com.example.AppArrayTest[testWriteSecondIndex(com.example.AppArrayTest)]")
+                    "from: com.example.AppArrayTest[testReadFirstIndex(com.example.AppArrayTest)], to: com.example.AppArrayTest[testWriteFirstIndex(com.example.AppArrayTest)]",
+                    "from: com.example.AppArrayTest[testReadSecondIndex(com.example.AppArrayTest)], to: com.example.AppArrayTest[testWriteSecondIndex(com.example.AppArrayTest)]")
                 .sorted()
                 .collect(Collectors.toList())));
   }

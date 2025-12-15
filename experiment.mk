@@ -71,10 +71,10 @@ testsuite: | target
 			echo "$$already_done" | grep -F "$$pair" >> $@; \
 			continue; \
 		fi ; \
-		first="$$(echo "$$pair" | cut -f1 -d' ')"; \
-		second="$$(echo "$$pair" | cut -f2 -d' ')"; \
-		ordered="$$($(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/util/build/libs/util.jar moira.util.cli.MoiraUtil verify $$first $$second) | grep OK)" ; \
-		reversed="$$($(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/util/build/libs/util.jar moira.util.cli.MoiraUtil verify $$second $$first) | grep OK)" ; \
+		first="$$(echo "$$pair" | sed -e 's/from: \(.*\), to: .*$$/\1/')"; \
+		second="$$(echo "$$pair" | sed -e 's/from: \(.*\), to: \(.*\)$$/\2/')"; \
+		ordered="$$($(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/util/build/libs/util.jar moira.util.cli.MoiraUtil verify "$$first" "$$second") | grep OK)" ; \
+		reversed="$$($(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/util/build/libs/util.jar moira.util.cli.MoiraUtil verify "$$second" "$$first") | grep OK)" ; \
 		if test "$$ordered" = "$$reversed"; then \
 			echo "$$pair -> INVALID" >> $@; \
 		else \

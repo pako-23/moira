@@ -223,11 +223,8 @@ public final class TestSnapshotProfiler {
 
   public static void exitTestMethod() {
     final TestSnapshot node = new TestSnapshot(runningTest);
-    if (snapshots != null) {
-      snapshots.setNext(node);
-    } else {
-      snapshots = node;
-    }
+    node.setNext(snapshots);
+    snapshots = node;
     runningTest = -1;
   }
 }

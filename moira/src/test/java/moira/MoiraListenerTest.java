@@ -66,7 +66,8 @@ public class MoiraListenerTest {
         String.format("%s[%s]", MoiraListenerTest.class.getName(), secondDescription.toString());
     file.deleteOnExit();
     Files.write(
-        file.toPath(), Arrays.asList(secondIdentifier + "   ", " other.TestClass[otherMethod]"));
+        file.toPath(),
+        Arrays.asList("from: " + secondIdentifier + ", to: other.TestClass[otherMethod]"));
     System.setProperty(FILTER_PROPERTY, file.toString());
 
     final InOrder order = inOrder(proxy);

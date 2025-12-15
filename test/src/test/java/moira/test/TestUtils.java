@@ -52,6 +52,11 @@ public class TestUtils {
     return moiraCommand("DOIProfiler", dumpFileName, args);
   }
 
+  public static Process moiraTestSnapshotProfilerCommand(
+      final String dumpFileName, final String... args) throws IOException {
+    return moiraCommand("TestSnapshotProfiler", dumpFileName, args);
+  }
+
   public static Process moiraDefaultsCommand(final String... args) throws IOException {
     return moiraCommand(null, null, args);
   }

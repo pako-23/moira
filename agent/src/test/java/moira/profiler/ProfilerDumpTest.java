@@ -184,7 +184,9 @@ public class ProfilerDumpTest {
 
     List<String> lines = makeDump("some-dependencies-dump");
     List<String> expected =
-        Arrays.asList("TestA TestB", "TestC TestD").stream().sorted().collect(Collectors.toList());
+        Arrays.asList("from: TestA, to: TestB", "from: TestC, to: TestD").stream()
+            .sorted()
+            .collect(Collectors.toList());
 
     assertEquals(expected, lines);
   }

@@ -9,12 +9,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
-public class ObjectProfilerTest {
+public class TestSnapshotProfilerTest {
   @Test
   public void testMultiplePassingTest() throws IOException, InterruptedException {
-    final String fileName = "obj-no-dependency";
+    final String fileName = "test-snapshot-no-dependency";
     final Process process =
-        TestUtils.moiraObjectProfilerCommand(
+        TestUtils.moiraTestSnapshotProfilerCommand(
             fileName, "com.example.SimplePassingTest", "com.example.OtherPassingTest");
     assertThat(process.waitFor(), is(0));
     assertThat(TestUtils.readFileLines(fileName).size(), is(0));
@@ -22,9 +22,9 @@ public class ObjectProfilerTest {
 
   @Test
   public void testStaticFieldDependency() throws IOException, InterruptedException {
-    final String fileName = "obj-static-field-dependency";
+    final String fileName = "test-snapshot-static-field-dependency";
     final Process process =
-        TestUtils.moiraObjectProfilerCommand(fileName, "com.example.AppStaticFieldTest");
+        TestUtils.moiraTestSnapshotProfilerCommand(fileName, "com.example.AppStaticFieldTest");
     assertThat(process.waitFor(), is(0));
     final List<String> lines = TestUtils.readFileLines(fileName);
     assertThat(lines.size(), is(2));
@@ -40,39 +40,35 @@ public class ObjectProfilerTest {
 
   @Test
   public void testObjectFieldDependency() throws IOException, InterruptedException {
-    final String fileName = "obj-object-field-dependency";
+    final String fileName = "test-snapshot-object-field-dependency";
     final Process process =
-        TestUtils.moiraObjectProfilerCommand(fileName, "com.example.AppObjectFieldTest");
+        TestUtils.moiraTestSnapshotProfilerCommand(fileName, "com.example.AppObjectFieldTest");
     assertThat(process.waitFor(), is(0));
     final List<String> lines = TestUtils.readFileLines(fileName);
-    assertThat(lines.size(), is(4));
+    assertThat(lines.size(), is(2));
     assertThat(
         lines,
         is(
             Stream.of(
-                    "from: com.example.AppObjectFieldTest[testReadFieldX(com.example.AppObjectFieldTest)], to: com.example.AppObjectFieldTest[testWriteFieldY(com.example.AppObjectFieldTest)]",
                     "from: com.example.AppObjectFieldTest[testReadFieldX(com.example.AppObjectFieldTest)], to: com.example.AppObjectFieldTest[testWriteFieldX(com.example.AppObjectFieldTest)]",
-                    "from: com.example.AppObjectFieldTest[testReadFieldY(com.example.AppObjectFieldTest)], to: com.example.AppObjectFieldTest[testWriteFieldY(com.example.AppObjectFieldTest)]",
-                    "from: com.example.AppObjectFieldTest[testReadFieldY(com.example.AppObjectFieldTest)], to: com.example.AppObjectFieldTest[testWriteFieldX(com.example.AppObjectFieldTest)]")
+                    "from: com.example.AppObjectFieldTest[testReadFieldY(com.example.AppObjectFieldTest)], to: com.example.AppObjectFieldTest[testWriteFieldY(com.example.AppObjectFieldTest)]")
                 .sorted()
                 .collect(Collectors.toList())));
   }
 
   @Test
   public void testArrayDependency() throws IOException, InterruptedException {
-    final String fileName = "obj-array-dependency";
+    final String fileName = "test-snapshot-array-dependency";
     final Process process =
-        TestUtils.moiraObjectProfilerCommand(fileName, "com.example.AppArrayTest");
+        TestUtils.moiraTestSnapshotProfilerCommand(fileName, "com.example.AppArrayTest");
     assertThat(process.waitFor(), is(0));
     final List<String> lines = TestUtils.readFileLines(fileName);
-    assertThat(lines.size(), is(4));
+    assertThat(lines.size(), is(2));
     assertThat(
         lines,
         is(
             Stream.of(
                     "from: com.example.AppArrayTest[testReadFirstIndex(com.example.AppArrayTest)], to: com.example.AppArrayTest[testWriteFirstIndex(com.example.AppArrayTest)]",
-                    "from: com.example.AppArrayTest[testReadFirstIndex(com.example.AppArrayTest)], to: com.example.AppArrayTest[testWriteSecondIndex(com.example.AppArrayTest)]",
-                    "from: com.example.AppArrayTest[testReadSecondIndex(com.example.AppArrayTest)], to: com.example.AppArrayTest[testWriteFirstIndex(com.example.AppArrayTest)]",
                     "from: com.example.AppArrayTest[testReadSecondIndex(com.example.AppArrayTest)], to: com.example.AppArrayTest[testWriteSecondIndex(com.example.AppArrayTest)]")
                 .sorted()
                 .collect(Collectors.toList())));
