@@ -1,5 +1,3 @@
-ENABLE_PROFILE := $(filter yes,$(PROFILE))
-
 runs := 1 2 3 4 5 6 7 8 9 10
 experiments := obj doi doi-only
 experiment_files := $(foreach exp,$(experiments),$(exp)-conflicts.txt $(exp)-verified.txt)
@@ -67,7 +65,7 @@ testsuite: | target
 	echo "doi-only-profiler: $$(expr "$$(date -u +%s)" - "$$start_time")" >> running-times
 
 %-verified.txt: %-conflicts.txt
-	already_done="$$(sort $$(find . -name '*-verified.txt') | uniq)" ; \
+	already_done="$$(find . -name '*-verified.txt' -print0 | grep -vFz "$@" | xargs -0 sort | uniq)" ; \
 	while read -r pair; do \
 		if echo "$$already_done" | grep -cFq "$$pair"; then \
 			echo "$$already_done" | grep -F "$$pair" >> $@; \
