@@ -5,7 +5,6 @@ import moira.collect.Map;
 import moira.collect.MapBuilder;
 
 public final class ObjectProfiler {
-  private static final int DEFAULT_CONCURRENCY_LEVEL = 16;
 
   private static ThreadSuspension suspension;
   private static ProfilerDump dump;
@@ -24,14 +23,9 @@ public final class ObjectProfiler {
   public static void setup() {
     suspension = new ThreadSuspension();
     dump = new ProfilerDump();
-    staticMapping =
-        MapBuilder.<String, ReadWriteSet>builder()
-            .concurrencyLevel(DEFAULT_CONCURRENCY_LEVEL)
-            .initialCapacity(1 << 10)
-            .build();
+    staticMapping = MapBuilder.<String, ReadWriteSet>builder().initialCapacity(1 << 10).build();
     arrayMapping =
         MapBuilder.<Object, ReadWriteSet>builder()
-            .concurrencyLevel(DEFAULT_CONCURRENCY_LEVEL)
             .initialCapacity(1 << 11)
             .weakKeys()
             .keyDeletionCallback(ObjectProfiler::computeConflicts)
@@ -39,7 +33,6 @@ public final class ObjectProfiler {
             .build();
     objectMapping =
         MapBuilder.<Object, ReadWriteSet>builder()
-            .concurrencyLevel(DEFAULT_CONCURRENCY_LEVEL)
             .initialCapacity(1 << 11)
             .weakKeys()
             .keyDeletionCallback(ObjectProfiler::computeConflicts)
@@ -82,11 +75,10 @@ public final class ObjectProfiler {
     if (enabled == 0) return;
     if (suspension.suspendedOrSuspend()) return;
 
-    final ReadWriteSet set = staticMapping.getOrPut(field, () -> new ReadWriteSet());
-    synchronized (set) {
-      set.update(runningTest, event);
+    synchronized (staticMapping) {
+      staticMapping.getOrPut(field, () -> new ReadWriteSet()).update(runningTest, event);
+      resume();
     }
-    suspension.resume();
   }
 
   private static void objectEvent(final Object object, final byte event) {
@@ -96,11 +88,10 @@ public final class ObjectProfiler {
     if (object == null) return;
     if (suspension.suspendedOrSuspend()) return;
 
-    final ReadWriteSet set = objectMapping.getOrPut(object, () -> new ReadWriteSet());
-    synchronized (set) {
-      set.update(runningTest, event);
+    synchronized (objectMapping) {
+      objectMapping.getOrPut(object, () -> new ReadWriteSet()).update(runningTest, event);
+      resume();
     }
-    suspension.resume();
   }
 
   private static void arrayEvent(final Object array, final byte event) {
@@ -110,11 +101,10 @@ public final class ObjectProfiler {
     if (enabled == 0) return;
     if (suspension.suspendedOrSuspend()) return;
 
-    final ReadWriteSet set = arrayMapping.getOrPut(array, () -> new ReadWriteSet());
-    synchronized (set) {
-      set.update(runningTest, event);
+    synchronized (arrayMapping) {
+      arrayMapping.getOrPut(array, () -> new ReadWriteSet()).update(runningTest, event);
+      resume();
     }
-    suspension.resume();
   }
 
   private static void mappingDump(final Map<?, ReadWriteSet> mapping) {

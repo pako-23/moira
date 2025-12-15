@@ -1,6 +1,6 @@
 ENABLE_PROFILE := $(filter yes,$(PROFILE))
 
-runs := 1 # 2 3 4 5 6 7 8 9 10
+runs := 1 2 3 4 5 6 7 8 9 10
 experiments := obj doi doi-only
 experiment_files := $(foreach exp,$(experiments),$(exp)-conflicts.txt $(exp)-verified.txt)
 
@@ -107,7 +107,7 @@ obj-conflicts.txt obj-traces.txt &: testsuite classpath
 		-Dmoira.profiler.filename=obj-conflicts.txt \
 		moira.Moira $$(cat testsuite | tr '\n' ' '))
 
-doi-conflicts.txt doi-traces.txt &: testsuite classpath obj-conflicts.txt
+doi-conflicts.txt doi-traces.txt &: obj-conflicts.txt testsuite classpath
 	$(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/moira/build/libs/moira.jar \
 		-agentpath:$(top_srcdir)/experiments/lightweight-java-profiler/$(shell basename $(JAVA_HOME))/liblagent.so=file=doi-traces.txt \
 		-javaagent:$(top_srcdir)/agent/build/libs/agent.jar \

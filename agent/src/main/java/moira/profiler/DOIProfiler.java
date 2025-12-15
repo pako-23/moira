@@ -7,8 +7,6 @@ import moira.collect.Map;
 import moira.collect.MapBuilder;
 
 public final class DOIProfiler {
-  private static final int DEFAULT_CONCURRENCY_LEVEL = 16;
-
   private static ThreadSuspension suspension;
   private static ProfilerDump dump;
   private static Map<String, ReadWriteSet> staticMapping;
@@ -26,16 +24,11 @@ public final class DOIProfiler {
   public static void setup() {
     suspension = new ThreadSuspension();
     dump = new ProfilerDump();
-    staticMapping =
-        MapBuilder.<String, ReadWriteSet>builder()
-            .concurrencyLevel(DEFAULT_CONCURRENCY_LEVEL)
-            .initialCapacity(1 << 10)
-            .build();
+    staticMapping = MapBuilder.<String, ReadWriteSet>builder().initialCapacity(1 << 10).build();
     arrayMapping =
         MapBuilder.<Object, Map<Integer, ReadWriteSet>>builder()
             .initialCapacity(1 << 11)
             .weakKeys()
-            .concurrencyLevel(DEFAULT_CONCURRENCY_LEVEL)
             .keyDeletionCallback(DOIProfiler::fieldMappingDump)
             .hashFunction(System::identityHashCode)
             .build();
@@ -43,7 +36,6 @@ public final class DOIProfiler {
         MapBuilder.<Object, Map<String, ReadWriteSet>>builder()
             .initialCapacity(1 << 11)
             .weakKeys()
-            .concurrencyLevel(DEFAULT_CONCURRENCY_LEVEL)
             .keyDeletionCallback(DOIProfiler::fieldMappingDump)
             .hashFunction(System::identityHashCode)
             .build();
@@ -78,9 +70,8 @@ public final class DOIProfiler {
     if (enabled == 0) return;
     if (suspension.suspendedOrSuspend()) return;
 
-    ReadWriteSet set = staticMapping.getOrPut(field, () -> new ReadWriteSet());
-    synchronized (set) {
-      set.update(runningTest, event);
+    synchronized (staticMapping) {
+      staticMapping.getOrPut(field, () -> new ReadWriteSet()).update(runningTest, event);
     }
     resume();
   }
@@ -119,12 +110,12 @@ public final class DOIProfiler {
     if (object == null) return;
     if (suspension.suspendedOrSuspend()) return;
 
-    final Map<String, ReadWriteSet> fieldMapping =
-        objectMapping.getOrPut(
-            object, () -> MapBuilder.<String, ReadWriteSet>builder().initialCapacity(4).build());
-    final ReadWriteSet set = fieldMapping.getOrPut(field, () -> new ReadWriteSet());
-    synchronized (set) {
-      set.update(runningTest, event);
+    synchronized (objectMapping) {
+      objectMapping
+          .getOrPut(
+              object, () -> MapBuilder.<String, ReadWriteSet>builder().initialCapacity(4).build())
+          .getOrPut(field, () -> new ReadWriteSet())
+          .update(runningTest, event);
     }
     resume();
   }
@@ -136,11 +127,11 @@ public final class DOIProfiler {
     if (enabled == 0) return;
     if (suspension.suspendedOrSuspend()) return;
 
-    final Map<Integer, ReadWriteSet> mapping =
-        arrayMapping.getOrPut(array, () -> new ArrayMap<>(Array.getLength(array)));
-    final ReadWriteSet set = mapping.getOrPut(index, () -> new ReadWriteSet());
-    synchronized (set) {
-      set.update(runningTest, event);
+    synchronized (arrayMapping) {
+      arrayMapping
+          .getOrPut(array, () -> new ArrayMap<>(Array.getLength(array)))
+          .getOrPut(index, () -> new ReadWriteSet())
+          .update(runningTest, event);
     }
     resume();
   }

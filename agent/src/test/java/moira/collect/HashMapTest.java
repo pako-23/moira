@@ -57,22 +57,6 @@ public class HashMapTest {
   }
 
   @Test
-  public void testConcurrencyLevelSetting() {
-    final MapBuilder<String, Integer> builder = MapBuilder.builder();
-    builder.concurrencyLevel(4);
-    assertThat(builder.getConcurrencyLevel(), is(4));
-  }
-
-  @ParameterizedTest
-  @ValueSource(ints = {0, -1})
-  public void testInvalidConcurrencyLevel(final int level) {
-    final MapBuilder<String, Integer> builder = MapBuilder.builder();
-    final Exception thrown =
-        assertThrows(IllegalArgumentException.class, () -> builder.concurrencyLevel(level));
-    assertThat(thrown.getMessage(), is("The concurrency level must be greather than 0"));
-  }
-
-  @Test
   public void testReferenceStrengthSetting() {
     final MapBuilder<String, Integer> builder = MapBuilder.builder();
     builder.weakKeys();
@@ -127,14 +111,6 @@ public class HashMapTest {
     final Map<String, Integer> map = MapBuilder.<String, Integer>builder().build();
 
     assertThat(map.get("something"), nullValue());
-  }
-
-  @Test
-  public void testTooSmallInitialCapacity() {
-    final Map<String, Integer> map =
-        MapBuilder.<String, Integer>builder().concurrencyLevel(4).initialCapacity(2).build();
-
-    assertThat(map.capacity(), is(4));
   }
 
   @Test

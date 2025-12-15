@@ -15,32 +15,30 @@ public class TestDetector {
   private final Map<String, Map<String, Void>> junit4TestsCache;
 
   public TestDetector() {
-    junit3TestsCache =
-        MapBuilder.<String, Boolean>builder().concurrencyLevel(16).initialCapacity(1 << 10).build();
+    junit3TestsCache = MapBuilder.<String, Boolean>builder().initialCapacity(1 << 10).build();
     junit4TestsCache =
-        MapBuilder.<String, Map<String, Void>>builder()
-            .concurrencyLevel(16)
-            .initialCapacity(1 << 10)
-            .build();
+        MapBuilder.<String, Map<String, Void>>builder().initialCapacity(1 << 10).build();
   }
 
   public boolean isJUnit3TestClass(final String superName, final String className) {
-    final Boolean isTest = junit3TestsCache.get(className);
-    if (isTest != null) return isTest;
-    else if (superName == null || superName.equals("java/lang/Object"))
-      return junit3TestsCache.getOrPut(className, () -> false);
-    else if (superName.equals("junit/framework/TestCase"))
-      return junit3TestsCache.getOrPut(className, () -> true);
+    synchronized (junit3TestsCache) {
+      final Boolean isTest = junit3TestsCache.get(className);
+      if (isTest != null) return isTest;
+      else if (superName == null || superName.equals("java/lang/Object"))
+        return junit3TestsCache.getOrPut(className, () -> false);
+      else if (superName.equals("junit/framework/TestCase"))
+        return junit3TestsCache.getOrPut(className, () -> true);
 
-    try (InputStream stream =
-        ClassLoader.getSystemClassLoader().getResourceAsStream(superName + ".class")) {
-      final ClassReader reader = new ClassReader(stream);
+      try (InputStream stream =
+          ClassLoader.getSystemClassLoader().getResourceAsStream(superName + ".class")) {
+        final ClassReader reader = new ClassReader(stream);
 
-      final boolean isSuperTest = isJUnit3TestClass(reader.getSuperName(), reader.getClassName());
-      junit3TestsCache.getOrPut(reader.getClassName(), () -> isSuperTest);
-      return isSuperTest;
-    } catch (final IOException e) {
-      return false;
+        final boolean isSuperTest = isJUnit3TestClass(reader.getSuperName(), reader.getClassName());
+        junit3TestsCache.getOrPut(reader.getClassName(), () -> isSuperTest);
+        return isSuperTest;
+      } catch (final IOException e) {
+        return false;
+      }
     }
   }
 
@@ -48,13 +46,15 @@ public class TestDetector {
       final String className, final String methodName, final String description) {
     if (className.equals("java/lang/Object")) return false;
 
-    final Map<String, Void> methodCache = junit4TestsCache.get(className);
-    if (methodCache != null) {
-      return methodCache.contains(methodKey(methodName, description));
-    }
+    synchronized (junit4TestsCache) {
+      final Map<String, Void> methodCache = junit4TestsCache.get(className);
+      if (methodCache != null) {
+        return methodCache.contains(methodKey(methodName, description));
+      }
 
-    solveClassHierarcy(className);
-    return junit4TestsCache.get(className).contains(methodKey(methodName, description));
+      solveClassHierarcy(className);
+      return junit4TestsCache.get(className).contains(methodKey(methodName, description));
+    }
   }
 
   private String methodKey(final String name, final String description) {

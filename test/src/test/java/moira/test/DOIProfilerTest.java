@@ -4,8 +4,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 public class DOIProfilerTest {
@@ -30,9 +31,11 @@ public class DOIProfilerTest {
     assertThat(
         lines,
         is(
-            Arrays.asList(
-                "com.example.AppStaticFieldTest[testReadFieldX(com.example.AppStaticFieldTest)] com.example.AppStaticFieldTest[testWriteFieldX(com.example.AppStaticFieldTest)]",
-                "com.example.AppStaticFieldTest[testReadFieldY(com.example.AppStaticFieldTest)] com.example.AppStaticFieldTest[testWriteFieldY(com.example.AppStaticFieldTest)]")));
+            Stream.of(
+                    "com.example.AppStaticFieldTest[testReadFieldX(com.example.AppStaticFieldTest)] com.example.AppStaticFieldTest[testWriteFieldX(com.example.AppStaticFieldTest)]",
+                    "com.example.AppStaticFieldTest[testReadFieldY(com.example.AppStaticFieldTest)] com.example.AppStaticFieldTest[testWriteFieldY(com.example.AppStaticFieldTest)]")
+                .sorted()
+                .collect(Collectors.toList())));
   }
 
   @Test
@@ -46,9 +49,11 @@ public class DOIProfilerTest {
     assertThat(
         lines,
         is(
-            Arrays.asList(
-                "com.example.AppObjectFieldTest[testReadFieldX(com.example.AppObjectFieldTest)] com.example.AppObjectFieldTest[testWriteFieldX(com.example.AppObjectFieldTest)]",
-                "com.example.AppObjectFieldTest[testReadFieldY(com.example.AppObjectFieldTest)] com.example.AppObjectFieldTest[testWriteFieldY(com.example.AppObjectFieldTest)]")));
+            Stream.of(
+                    "com.example.AppObjectFieldTest[testReadFieldX(com.example.AppObjectFieldTest)] com.example.AppObjectFieldTest[testWriteFieldX(com.example.AppObjectFieldTest)]",
+                    "com.example.AppObjectFieldTest[testReadFieldY(com.example.AppObjectFieldTest)] com.example.AppObjectFieldTest[testWriteFieldY(com.example.AppObjectFieldTest)]")
+                .sorted()
+                .collect(Collectors.toList())));
   }
 
   @Test
@@ -61,8 +66,10 @@ public class DOIProfilerTest {
     assertThat(
         lines,
         is(
-            Arrays.asList(
-                "com.example.AppArrayTest[testReadFirstIndex(com.example.AppArrayTest)] com.example.AppArrayTest[testWriteFirstIndex(com.example.AppArrayTest)]",
-                "com.example.AppArrayTest[testReadSecondIndex(com.example.AppArrayTest)] com.example.AppArrayTest[testWriteSecondIndex(com.example.AppArrayTest)]")));
+            Stream.of(
+                    "com.example.AppArrayTest[testReadFirstIndex(com.example.AppArrayTest)] com.example.AppArrayTest[testWriteFirstIndex(com.example.AppArrayTest)]",
+                    "com.example.AppArrayTest[testReadSecondIndex(com.example.AppArrayTest)] com.example.AppArrayTest[testWriteSecondIndex(com.example.AppArrayTest)]")
+                .sorted()
+                .collect(Collectors.toList())));
   }
 }

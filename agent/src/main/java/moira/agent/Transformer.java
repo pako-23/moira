@@ -10,10 +10,12 @@ class Transformer implements ClassFileTransformer {
   private static final String[] FILTER_PREFIXES = {
     "java/io/",
     "java/lang/",
+    "java/net/",
     "java/nio/",
-    "moira/",
+    "java/util/concurrent/locks/",
     "jdk/",
     "junit/",
+    "moira/",
     "org/junit/",
     "org/objectweb/asm/",
     "sun/",

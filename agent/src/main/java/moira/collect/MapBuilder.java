@@ -5,14 +5,13 @@ import java.lang.ref.WeakReference;
 
 public class MapBuilder<K, V> {
   private static final int DEFAULT_INITIAL_CAPACITY = 1 << 4;
-  private static final float DEFAULT_LOAD_FACTOR = 0.75f;
+  private static final float DEFAULT_LOAD_FACTOR = 0.5f;
 
   private KeyDeletionCallback<V> keyDeletionCallback;
   private HashFunction<K> hashFunction;
   private int initialCapacity;
   private ReferenceStrength keyReferenceStrength;
   private float loadFactor;
-  private int concurrencyLevel;
 
   private MapBuilder() {
     keyDeletionCallback =
@@ -23,7 +22,6 @@ public class MapBuilder<K, V> {
     initialCapacity = DEFAULT_INITIAL_CAPACITY;
     keyReferenceStrength = ReferenceStrength.STRONG;
     loadFactor = DEFAULT_LOAD_FACTOR;
-    concurrencyLevel = 1;
   }
 
   public static <K, V> MapBuilder<K, V> builder() {
@@ -61,17 +59,6 @@ public class MapBuilder<K, V> {
   public MapBuilder<K, V> loadFactor(final float loadFactor) {
     this.loadFactor = loadFactor;
     return this;
-  }
-
-  public MapBuilder<K, V> concurrencyLevel(final int concurrencyLevel) {
-    if (concurrencyLevel <= 0)
-      throw new IllegalArgumentException("The concurrency level must be greather than 0");
-    this.concurrencyLevel = concurrencyLevel;
-    return this;
-  }
-
-  public int getConcurrencyLevel() {
-    return concurrencyLevel;
   }
 
   public float getLoadFactor() {
@@ -240,11 +227,11 @@ public class MapBuilder<K, V> {
         keyDeletionCallback = builder.getKeyDeletionCallback();
       }
 
-      public synchronized boolean contains(final K key, final int hash) {
+      public boolean contains(final K key, final int hash) {
         return search(key, hash) != null;
       }
 
-      public synchronized V get(final K key, final int hash) {
+      public V get(final K key, final int hash) {
         final Entry<K, V> entry = search(key, hash);
         if (entry == null) return null;
         return entry.getValue();
@@ -258,7 +245,7 @@ public class MapBuilder<K, V> {
         return size;
       }
 
-      public synchronized V getOrPut(final K key, final int hash, final ValueProducer<V> producer) {
+      public V getOrPut(final K key, final int hash, final ValueProducer<V> producer) {
         Entry<K, V> entry = search(key, hash);
         if (entry != null) return entry.getValue();
 
@@ -332,7 +319,6 @@ public class MapBuilder<K, V> {
         return hash & (capacity - 1);
       }
     }
-    ;
 
     private static final class WeakSegment<K, V> extends Segment<K, V> {
       private static final int MAX_RECLAIM_BACKOFF = 64;
@@ -369,6 +355,7 @@ public class MapBuilder<K, V> {
         }
 
         reclaimThreshold = 1;
+        reclaimInvocations = 0;
         do {
           if (entry.getValue() == null) continue;
           keyDeletionCallback.apply(entry.getValue());
@@ -403,88 +390,48 @@ public class MapBuilder<K, V> {
     }
 
     private final HashFunction<K> hashFunction;
-
-    private final Segment<K, V>[] segments;
-    private final int segmentMask;
-    private final int segmentShift;
+    private final Segment<K, V> map;
 
     public HashMap(final MapBuilder<K, V> builder) {
       hashFunction = builder.getHashFunction();
-
-      final int concurrencyLevel = builder.getConcurrencyLevel();
-
-      int segmentShift = 0;
-      int segmentCount = 1;
-      while (segmentCount < concurrencyLevel) {
-        ++segmentShift;
-        segmentCount <<= 1;
-      }
-      segmentMask = segmentCount - 1;
-      this.segmentShift = 32 - segmentShift;
-
-      int segmentCapacity = builder.getInitialCapacity() / segmentCount;
-      if (segmentCapacity * segmentCount < builder.getInitialCapacity()) ++segmentCapacity;
-
-      segments = newSegmentArray(segmentCount);
-      for (int i = 0; i < segments.length; ++i) segments[i] = newSegment(builder, segmentCapacity);
+      map = newSegment(builder, builder.getInitialCapacity());
     }
 
     @Override
     public boolean contains(final K key) {
       int hash = hash(key);
 
-      return segmentFor(hash).contains(key, hash);
+      return map.contains(key, hash);
     }
 
     @Override
     public V get(final K key) {
       int hash = hash(key);
 
-      return segmentFor(hash).get(key, hash);
+      return map.get(key, hash);
     }
 
     @Override
     public V getOrPut(final K key, final ValueProducer<V> producer) {
       int hash = hash(key);
 
-      return segmentFor(hash).getOrPut(key, hash, producer);
+      return map.getOrPut(key, hash, producer);
     }
 
     @Override
     public int capacity() {
-      int capacity = 0;
-
-      for (int i = 0; i < segments.length; ++i) capacity += segments[i].capacity();
-
-      return capacity;
+      return map.capacity();
     }
 
     @Override
     public int size() {
-      int size = 0;
-
-      for (int i = 0; i < segments.length; ++i) size += segments[i].size();
-
-      return size;
+      return map.size();
     }
 
-    private Segment<K, V> segmentFor(final int hash) {
-      return segments[(hash >>> segmentShift) & segmentMask];
-    }
-
-    private int hash(final K key) {
+    private final int hash(final K key) {
       int h = hashFunction.compute(key);
-      h += (h << 15) ^ 0xffffcd7d;
-      h ^= h >>> 10;
-      h += h << 3;
-      h ^= h >>> 6;
-      h += (h << 2) + (h << 14);
-      return h ^ (h >>> 16);
-    }
-
-    @SuppressWarnings("unchecked")
-    private Segment<K, V>[] newSegmentArray(final int capacity) {
-      return (Segment<K, V>[]) new Segment[capacity];
+      h ^= (h >>> 20) ^ (h >>> 12);
+      return h ^ (h >>> 7) ^ (h >>> 4);
     }
 
     private Segment<K, V> newSegment(final MapBuilder<K, V> builder, final int capacity) {
@@ -502,39 +449,22 @@ public class MapBuilder<K, V> {
     }
 
     private class Iterator implements Map.Iterator<K, V> {
-      private int segment;
       private int index;
       private Entry<K, V> node;
 
       public Iterator() {
-        segment = 0;
         index = 0;
         advance();
       }
 
       private void advance() {
-        while (index < segments[segment].capacity() && segments[segment].table[index] == null)
-          ++index;
-
-        if (index < segments[segment].capacity()) {
-          node = segments[segment].table[index];
-          return;
-        }
-
-        index = 0;
-
-        do {
-          ++segment;
-        } while (segment < segments.length && segments[segment].size() == 0);
-        if (segment == segments.length) return;
-
-        while (segments[segment].table[index] == null) ++index;
-        node = segments[segment].table[index];
+        while (hasNext() && map.table[index] == null) ++index;
+        if (hasNext()) node = map.table[index];
       }
 
       @Override
       public boolean hasNext() {
-        return segment < segments.length;
+        return index < map.capacity();
       }
 
       @Override
