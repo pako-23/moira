@@ -12,6 +12,7 @@ class Transformer implements ClassFileTransformer {
     "java/lang/",
     "java/net/",
     "java/nio/",
+    "java/text/",
     "java/util/concurrent/locks/",
     "jdk/",
     "junit/",
@@ -22,12 +23,12 @@ class Transformer implements ClassFileTransformer {
   };
   private static String[] SUSPEND_PREFIXES = {
     "java/lang/ClassLoader",
+    "java/lang/invoke/MethodHandleNatives",
     "java/net/URLClassLoader",
     "java/security/SecureClassLoader",
-    "java/lang/invoke/MethodHandleNatives"
   };
 
-  private String profiler;
+  private final String profiler;
 
   public Transformer(final String profiler) {
     this.profiler = profiler;

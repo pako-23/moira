@@ -6,7 +6,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -62,13 +61,8 @@ public class MoiraTest {
       requestMock.when(() -> Request.classes(any())).thenReturn(returnedRequest);
       final int exitCode = new Moira().run(MoiraTest.class.getName());
       assertThat(proxyMock.constructed().size(), is(1));
-      if (success) {
-        verify(proxyMock.constructed().get(0)).dump();
-        assertThat(exitCode, is(0));
-      } else {
-        verify(proxyMock.constructed().get(0), never()).dump();
-        assertThat(exitCode, not(is(0)));
-      }
+      verify(proxyMock.constructed().get(0)).dump();
+      assertThat(exitCode, is(0));
     }
   }
 

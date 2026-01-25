@@ -7,13 +7,13 @@ import moira.collect.Map;
 import moira.collect.MapBuilder;
 
 public final class DOIProfiler {
-  private static ThreadSuspension suspension;
+  private static volatile int runningTest;
+  private static volatile int enabled;
+  private static ThreadLocal<Integer> suspend;
   private static ProfilerDump dump;
   private static Map<String, ReadWriteSet> staticMapping;
   private static Map<Object, Map<Integer, ReadWriteSet>> arrayMapping;
   private static Map<Object, Map<String, ReadWriteSet>> objectMapping;
-  private static volatile int runningTest;
-  private static volatile int enabled;
 
   static {
     setup();
@@ -22,7 +22,9 @@ public final class DOIProfiler {
   private DOIProfiler() {}
 
   public static void setup() {
-    suspension = new ThreadSuspension();
+    runningTest = -1;
+    enabled = 0;
+    suspend = ThreadLocal.withInitial(() -> 0);
     dump = new ProfilerDump();
     staticMapping = MapBuilder.<String, ReadWriteSet>builder().initialCapacity(1 << 10).build();
     arrayMapping =
@@ -39,8 +41,6 @@ public final class DOIProfiler {
             .keyDeletionCallback(DOIProfiler::fieldMappingDump)
             .hashFunction(System::identityHashCode)
             .build();
-    runningTest = -1;
-    enabled = 0;
   }
 
   public static void dump(final String fileName) throws FileNotFoundException {
@@ -51,31 +51,38 @@ public final class DOIProfiler {
   }
 
   public static void suspend() {
-    suspension.suspend();
+    suspend.set(suspend.get() + 1);
   }
 
   public static void resume() {
-    suspension.resume();
+    suspend.set(suspend.get() - 1);
   }
 
-  public static void enable() {
+  public static synchronized void enable() {
     ++enabled;
   }
 
-  public static void disable() {
+  public static synchronized void disable() {
     --enabled;
+  }
+
+  private static boolean suspendedOrSuspend() {
+    final Integer value = suspend.get();
+    if (value != 0) return true;
+    suspend.set(1);
+    return false;
   }
 
   private static void staticFieldEvent(final String field, final byte event) {
     int runningTest = DOIProfiler.runningTest;
     if (runningTest < 0) return;
     if (enabled == 0) return;
-    if (suspension.suspendedOrSuspend()) return;
+    if (suspendedOrSuspend()) return;
 
     synchronized (staticMapping) {
       staticMapping.getOrPut(field, () -> new ReadWriteSet()).update(runningTest, event);
-      resume();
     }
+    resume();
   }
 
   private static void arrayMappingDump() {
@@ -110,7 +117,7 @@ public final class DOIProfiler {
     if (object == null) return;
     if (runningTest < 0) return;
     if (enabled == 0) return;
-    if (suspension.suspendedOrSuspend()) return;
+    if (suspendedOrSuspend()) return;
 
     synchronized (objectMapping) {
       objectMapping
@@ -118,8 +125,8 @@ public final class DOIProfiler {
               object, () -> MapBuilder.<String, ReadWriteSet>builder().initialCapacity(4).build())
           .getOrPut(field, () -> new ReadWriteSet())
           .update(runningTest, event);
-      resume();
     }
+    resume();
   }
 
   private static void arrayEvent(final Object array, final int index, final byte event) {
@@ -127,15 +134,15 @@ public final class DOIProfiler {
     if (array == null) return;
     if (runningTest < 0) return;
     if (enabled == 0) return;
-    if (suspension.suspendedOrSuspend()) return;
+    if (suspendedOrSuspend()) return;
 
     synchronized (arrayMapping) {
       arrayMapping
           .getOrPut(array, () -> new ArrayMap<>(Array.getLength(array)))
           .getOrPut(index, () -> new ReadWriteSet())
           .update(runningTest, event);
-      resume();
     }
+    resume();
   }
 
   public static void writeStaticField(final String field) {

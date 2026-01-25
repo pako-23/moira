@@ -65,7 +65,7 @@ public class TestCaseMangler extends AdviceAdapter {
   }
 
   @Override
-  public void onMethodExit(int opcode) {
+  public void onMethodExit(final int opcode) {
     if (instrument && opcode != Opcodes.ATHROW) {
       mv.visitMethodInsn(
           Opcodes.INVOKESTATIC, profiler, methodNames[1], methodDescriptions[1], false);
@@ -73,7 +73,7 @@ public class TestCaseMangler extends AdviceAdapter {
   }
 
   @Override
-  public void visitMaxs(int maxStack, int maxLocals) {
+  public void visitMaxs(final int maxStack, final int maxLocals) {
     if (instrument) {
       final Label tryEnd = new Label();
       mv.visitTryCatchBlock(tryBegin, tryEnd, tryEnd, null);

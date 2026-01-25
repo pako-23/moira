@@ -25,7 +25,6 @@ public class DOIProfilerTest {
   @BeforeEach
   public void setup() {
     DOIProfiler.setup();
-    DOIProfiler.resume();
   }
 
   private List<String> makeDump(String fileName) {

@@ -26,7 +26,6 @@ public class ObjectProfilerTest {
   @BeforeEach
   public void setup() {
     ObjectProfiler.setup();
-    ObjectProfiler.resume();
   }
 
   private List<String> makeDump(String fileName) {

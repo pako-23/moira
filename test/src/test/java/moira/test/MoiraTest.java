@@ -33,7 +33,7 @@ public class MoiraTest {
   @Test
   public void testSingleFailingTest() throws IOException, InterruptedException {
     final Process process = TestUtils.moiraDefaultsCommand("com.example.SimpleFailingTest");
-    assertThat(process.waitFor(), not(is(0)));
+    assertThat(process.waitFor(), is(0));
   }
 
   @Test
@@ -43,7 +43,7 @@ public class MoiraTest {
             "com.example.SimplePassingTest",
             "com.example.SimpleFailingTest",
             "com.example.OtherPassingTest");
-    assertThat(process.waitFor(), not(is(0)));
+    assertThat(process.waitFor(), is(0));
     final String output = TestUtils.readOutputStream(process.getInputStream());
     assertThat(output, containsString("com.example.SimpleFailingTest"));
   }

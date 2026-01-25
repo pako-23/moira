@@ -5,7 +5,7 @@ import java.lang.ref.WeakReference;
 
 public class MapBuilder<K, V> {
   private static final int DEFAULT_INITIAL_CAPACITY = 1 << 4;
-  private static final float DEFAULT_LOAD_FACTOR = 0.5f;
+  private static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
   private KeyDeletionCallback<V> keyDeletionCallback;
   private HashFunction<K> hashFunction;
@@ -107,8 +107,8 @@ public class MapBuilder<K, V> {
   private static final class StrongEntry<K, V> implements Entry<K, V> {
     private final K key;
     private final int hash;
-    private volatile V value;
-    private volatile Entry<K, V> next;
+    private V value;
+    private Entry<K, V> next;
 
     public StrongEntry(final K key, final int hash) {
       this.key = key;
@@ -150,7 +150,7 @@ public class MapBuilder<K, V> {
 
   private static final class WeakEntry<K, V> extends WeakReference<Object> implements Entry<K, V> {
     private final int hash;
-    private volatile V value;
+    private V value;
     private volatile Entry<K, V> next;
 
     public WeakEntry(final K key, final int hash, final ReferenceQueue<Object> queue) {
@@ -399,21 +399,21 @@ public class MapBuilder<K, V> {
 
     @Override
     public boolean contains(final K key) {
-      int hash = hash(key);
+      int hash = hashFunction.compute(key);
 
       return map.contains(key, hash);
     }
 
     @Override
     public V get(final K key) {
-      int hash = hash(key);
+      int hash = hashFunction.compute(key);
 
       return map.get(key, hash);
     }
 
     @Override
     public V getOrPut(final K key, final ValueProducer<V> producer) {
-      int hash = hash(key);
+      int hash = hashFunction.compute(key);
 
       return map.getOrPut(key, hash, producer);
     }
@@ -426,12 +426,6 @@ public class MapBuilder<K, V> {
     @Override
     public int size() {
       return map.size();
-    }
-
-    private final int hash(final K key) {
-      int h = hashFunction.compute(key);
-      h ^= (h >>> 20) ^ (h >>> 12);
-      return h ^ (h >>> 7) ^ (h >>> 4);
     }
 
     private Segment<K, V> newSegment(final MapBuilder<K, V> builder, final int capacity) {

@@ -1,6 +1,6 @@
 runs := 1 2 3 4 5 6 7 8 9 10
-experiments := obj doi doi-only
-experiment_files := $(foreach exp,$(experiments),$(exp)-conflicts.txt $(exp)-verified.txt)
+experiments := doi-only
+experiment_files := $(foreach exp,$(experiments),$(exp)-conflicts.txt $(exp)-verified.txt) plain.txt
 
 all: $(foreach run,$(runs),$(foreach file,$(experiment_files),run-$(run)/$(file)))
 
@@ -27,8 +27,15 @@ classpath: | target
 	$(call mvn_exec,dependency:build-classpath -DincludeScope=test -Dmdep.outputFile=classpath)
 
 testsuite: | target
-	$(call mvn_exec,test)
+	$(call mvn_exec,test) || true
 	@find target/ -name 'TEST*.xml' -print0 | xargs -0 sed -n -e 's/^<testsuite .* name="\([^"]*\)".*$$/\1/p' | sort -u > testsuite
+
+%plain.txt: testsuite classpath
+	mkdir -p $(dir $@) ; \
+	start_time="$$(date -u +%s)" ; \
+	$(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/ \
+		org.junit.runner.JUnitCore $$(cat testsuite | tr '\n' ' ')) > $@ && \
+	echo "time: $$(expr "$$(date -u +%s)" - "$$start_time")" >> $@
 
 %obj-conflicts.txt: testsuite classpath
 	mkdir -p $(dir $@) ; \
@@ -71,17 +78,16 @@ testsuite: | target
 			echo "$$already_done" | grep -F "$$pair" >> $@; \
 			continue; \
 		fi ; \
-		first="$$(echo "$$pair" | sed -e 's/from: \(.*\), to: .*$$/\1/')"; \
-		second="$$(echo "$$pair" | sed -e 's/from: \(.*\), to: \(.*\)$$/\2/')"; \
+		first="$$(printf "%s\n" "$$pair" | sed -e 's/from: \(.*\), to: .*$$/\1/')"; \
+		second="$$(printf "%s\n" "$$pair" | sed -e 's/from: \(.*\), to: \(.*\)$$/\2/')"; \
 		ordered="$$($(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/util/build/libs/util.jar moira.util.cli.MoiraUtil verify "$$first" "$$second") | grep OK)" ; \
 		reversed="$$($(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/util/build/libs/util.jar moira.util.cli.MoiraUtil verify "$$second" "$$first") | grep OK)" ; \
 		if test "$$ordered" = "$$reversed"; then \
-			echo "$$pair -> INVALID" >> $@; \
+			printf "%s, outcome: INVALID\n" "$$pair" >> $@; \
 		else \
-			echo "$$pair -> VALID" >> $@; \
+			printf "%s, outcome: VALID\n" "$$pair" >> $@; \
 		fi; \
 	done < $^
-
 
 .PHONY: clean
 clean:

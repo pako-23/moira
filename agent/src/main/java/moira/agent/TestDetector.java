@@ -63,8 +63,7 @@ public class TestDetector {
 
   private void solveClassHierarcy(final String className) {
     final Map<String, Void> inserted =
-        junit4TestsCache.getOrPut(
-            className, () -> MapBuilder.<String, Void>builder().initialCapacity(8).build());
+        MapBuilder.<String, Void>builder().initialCapacity(8).build();
 
     try (InputStream stream =
         ClassLoader.getSystemClassLoader().getResourceAsStream(className + ".class")) {
@@ -107,6 +106,10 @@ public class TestDetector {
           },
           ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
     } catch (IOException e) {
+    }
+
+    synchronized (junit4TestsCache) {
+      junit4TestsCache.getOrPut(className, () -> inserted);
     }
   }
 }

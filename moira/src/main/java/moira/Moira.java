@@ -4,7 +4,6 @@ import org.junit.internal.RealSystem;
 import org.junit.internal.TextListener;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Request;
-import org.junit.runner.Result;
 
 public class Moira {
   private static final String DEFAULT_PROFILER = "moira.profiler.NullProfiler";
@@ -39,9 +38,7 @@ public class Moira {
       junit.addListener(new MoiraListener(profilerProxy));
 
       System.out.println("JUnit version " + junit.getVersion());
-      final Result result = junit.run(request);
-
-      if (!result.wasSuccessful()) return 1;
+      junit.run(request);
 
       profilerProxy.dump();
       return 0;

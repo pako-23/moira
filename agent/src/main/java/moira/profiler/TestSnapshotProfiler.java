@@ -7,13 +7,13 @@ import moira.collect.Map;
 import moira.collect.MapBuilder;
 
 public final class TestSnapshotProfiler {
+  private static volatile int enabled;
+  private static ThreadLocal<Integer> suspend;
+  private static int runningTest;
   private static ProfilerDump dump;
-  private static ThreadSuspension suspension;
   private static Map<String, Event> staticMapping;
   private static Map<Object, Map<String, Event>> objectMapping;
   private static Map<Object, Map<Integer, Event>> arrayMapping;
-  private static volatile int enabled;
-  private static int runningTest;
   private static TestSnapshot snapshots;
 
   private static class Event {
@@ -113,14 +113,37 @@ public final class TestSnapshotProfiler {
   private TestSnapshotProfiler() {}
 
   public static void setup() {
+    runningTest = -1;
+    enabled = 0;
+    suspend = ThreadLocal.withInitial(() -> 0);
     dump = new ProfilerDump();
-    suspension = new ThreadSuspension();
     staticMapping = null;
     objectMapping = null;
     arrayMapping = null;
-    enabled = 0;
-    runningTest = -1;
     snapshots = null;
+  }
+
+  public static void suspend() {
+    suspend.set(suspend.get() + 1);
+  }
+
+  public static void resume() {
+    suspend.set(suspend.get() - 1);
+  }
+
+  public static synchronized void enable() {
+    ++enabled;
+  }
+
+  public static synchronized void disable() {
+    --enabled;
+  }
+
+  private static boolean suspendedOrSuspend() {
+    final Integer value = suspend.get();
+    if (value != 0) return true;
+    suspend.set(1);
+    return false;
   }
 
   public static void dump(final String fileName) throws FileNotFoundException {
@@ -134,25 +157,9 @@ public final class TestSnapshotProfiler {
     dump.dump(fileName);
   }
 
-  public static void suspend() {
-    suspension.suspend();
-  }
-
-  public static void resume() {
-    suspension.resume();
-  }
-
-  public static void enable() {
-    ++enabled;
-  }
-
-  public static void disable() {
-    --enabled;
-  }
-
   private static void staticFieldEvent(final String field, final byte event) {
     if (enabled == 0) return;
-    if (suspension.suspendedOrSuspend()) return;
+    if (suspendedOrSuspend()) return;
 
     synchronized (staticMapping) {
       staticMapping.getOrPut(field, () -> new Event()).update(event);
@@ -163,7 +170,7 @@ public final class TestSnapshotProfiler {
   private static void objectEvent(final Object object, final String field, final byte event) {
     if (object == null) return;
     if (enabled == 0) return;
-    if (suspension.suspendedOrSuspend()) return;
+    if (suspendedOrSuspend()) return;
 
     synchronized (objectMapping) {
       objectMapping
@@ -177,7 +184,7 @@ public final class TestSnapshotProfiler {
   private static void arrayEvent(final Object array, final int index, final byte event) {
     if (array == null) return;
     if (enabled == 0) return;
-    if (suspension.suspendedOrSuspend()) return;
+    if (suspendedOrSuspend()) return;
 
     synchronized (arrayMapping) {
       arrayMapping

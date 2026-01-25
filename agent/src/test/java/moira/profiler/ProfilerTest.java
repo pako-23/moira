@@ -157,7 +157,6 @@ public class ProfilerTest {
             argument -> {
               final Class<?> profiler = (Class<?>) argument.get()[0];
               setup(profiler);
-              resume(profiler);
             });
   }
 
@@ -214,6 +213,7 @@ public class ProfilerTest {
     writeStaticField(profiler, FIELD);
     readObjectField(profiler, OBJECT, FIELD);
     writeObjectField(profiler, OBJECT, FIELD);
+    resume(profiler);
     disable(profiler);
     exitTestMethod(profiler);
     assertThat(dump(profiler, prefix, "suspended").size(), is(0));

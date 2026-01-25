@@ -43,7 +43,7 @@ public final class SuspendMangler extends AdviceAdapter {
   }
 
   @Override
-  public void visitMaxs(int maxStack, int maxLocals) {
+  public void visitMaxs(final int maxStack, final int maxLocals) {
     Label tryEnd = new Label();
     mv.visitTryCatchBlock(tryBegin, tryEnd, tryEnd, null);
     mv.visitLabel(tryEnd);

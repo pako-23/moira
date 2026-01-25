@@ -25,7 +25,6 @@ public class TestSnapshotProfilerTest {
   @BeforeEach
   public void setup() {
     TestSnapshotProfiler.setup();
-    TestSnapshotProfiler.resume();
   }
 
   private List<String> makeDump(String fileName) {
