@@ -49,10 +49,14 @@ public class VerifyCommand implements Runnable {
 
   @Override
   public void run() {
-    if (new PairVerifier(firstTest, secondTest).verify()) {
+    final long start = System.currentTimeMillis();
+    final boolean passed = new PairVerifier(firstTest, secondTest).verify();
+    final long end = System.currentTimeMillis();
+    if (passed) {
       System.out.println("OK");
     } else {
       System.out.println("NOT OK");
     }
+    System.out.println("Time: " + (end - start) / 1000f);
   }
 }

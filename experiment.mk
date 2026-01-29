@@ -2,7 +2,7 @@ runs := 1 2 3 4 5 6 7 8 9 10
 experiments := doi-only
 experiment_files := $(foreach exp,$(experiments),$(exp)-conflicts.txt $(exp)-verified.txt) plain.txt
 
-all: $(foreach run,$(runs),$(foreach file,$(experiment_files),run-$(run)/$(file)))
+all: $(foreach run,$(runs),$(foreach file,$(experiment_files),run-$(run)/$(file))) access-logs
 
 define mvn_exec
 @if test -f mvnw; then \
@@ -70,6 +70,15 @@ testsuite: | target
 		-Dmoira.profiler.filename=$@ \
 		moira.Moira $$(cat testsuite | tr '\n' ' ')) && \
 	echo "doi-only-profiler: $$(expr "$$(date -u +%s)" - "$$start_time")" >> running-times
+
+access-logs:
+	conflicts="$$(mktemp)" ; \
+	$(call java_exec,-cp $$(cat classpath):target/classes/:target/test-classes/:$(top_srcdir)/moira/build/libs/moira.jar \
+		-javaagent:$(top_srcdir)/agent/build/libs/agent.jar \
+		-Xbootclasspath/a:$(top_srcdir)/agent/build/libs/agent.jar \
+		-Dmoira.profiler.name=DOIProfiler \
+		-Dmoira.profiler.filename=$$conflicts \
+		moira.Moira $$(cat testsuite | tr '\n' ' ')  > $@)
 
 %-verified.txt: %-conflicts.txt
 	already_done="$$(find . -name '*-verified.txt' -print0 | grep -vFz "$@" | xargs -0 sort | uniq)" ; \
