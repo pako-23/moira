@@ -1,7 +1,7 @@
 # Moira
 
 Moira is a dynamic analysis tool designed to uncover hidden
-dependencies within JUnit test suites. By leveraging a Java Agent,
+dependencies within  JUnit test suites. By leveraging a Java Agent,
 Moira monitors execution in real-time to identify shared state and
 side effects that cause tests to pass or fail depending on their
 execution order.
@@ -43,7 +43,7 @@ coverage.  The coverage report in HTML format is available at
 
 ## Usage
 
-Once the agent is built, it can be used to detect dependeices among
+Once the agent is built, it can be used to detect dependencies among
 tests.  The general command structure to execute a test suite with
 Moira is the following:
 
@@ -51,7 +51,7 @@ Moira is the following:
 ``` bash
 java -javaagent:agent/build/libs/agent.jar \
     -Xbootclasspath/a:agent/build/libs/agent.jar \
-    -cp <test-suite-classpaht>:agent/build/libs/agent.jar \
+    -cp <test-suite-classpaht>:moira/build/libs/moira.jar \
     -Dmoira.profiler.name=OnlineProfiler \
     moira.Moira TEST_CLASS...
 ```
