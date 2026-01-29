@@ -6,7 +6,7 @@ import moira.collect.ArrayMap;
 import moira.collect.Map;
 import moira.collect.MapBuilder;
 
-public final class DOIProfiler {
+public final class OnlineProfiler {
   private static volatile int runningTest;
   private static volatile int enabled;
   private static ThreadLocal<Integer> suspend;
@@ -28,7 +28,7 @@ public final class DOIProfiler {
     setup();
   }
 
-  private DOIProfiler() {}
+  private OnlineProfiler() {}
 
   public static void setup() {
     runningTest = -1;
@@ -43,7 +43,7 @@ public final class DOIProfiler {
             .keyDeletionCallback(
                 mapping -> {
                   ++arrayCreated;
-                  DOIProfiler.fieldMappingDump(mapping);
+                  OnlineProfiler.fieldMappingDump(mapping);
                 })
             .hashFunction(System::identityHashCode)
             .build();
@@ -54,7 +54,7 @@ public final class DOIProfiler {
             .keyDeletionCallback(
                 mapping -> {
                   ++objectCreated;
-                  DOIProfiler.fieldMappingDump(mapping);
+                  OnlineProfiler.fieldMappingDump(mapping);
                 })
             .hashFunction(System::identityHashCode)
             .build();
@@ -109,7 +109,7 @@ public final class DOIProfiler {
   }
 
   private static void staticFieldEvent(final String field, final byte event) {
-    int runningTest = DOIProfiler.runningTest;
+    int runningTest = OnlineProfiler.runningTest;
     if (runningTest < 0) return;
     if (enabled == 0) return;
     if (suspendedOrSuspend()) return;
@@ -152,7 +152,7 @@ public final class DOIProfiler {
   }
 
   private static void objectEvent(final Object object, final String field, final byte event) {
-    int runningTest = DOIProfiler.runningTest;
+    int runningTest = OnlineProfiler.runningTest;
     if (object == null) return;
     if (runningTest < 0) return;
     if (enabled == 0) return;
@@ -171,7 +171,7 @@ public final class DOIProfiler {
   }
 
   private static void arrayEvent(final Object array, final int index, final byte event) {
-    int runningTest = DOIProfiler.runningTest;
+    int runningTest = OnlineProfiler.runningTest;
     if (array == null) return;
     if (runningTest < 0) return;
     if (enabled == 0) return;

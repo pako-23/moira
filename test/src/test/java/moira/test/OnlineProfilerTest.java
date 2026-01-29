@@ -9,12 +9,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
-public class TestSnapshotProfilerTest {
+public class OnlineProfilerTest {
   @Test
   public void testMultiplePassingTest() throws IOException, InterruptedException {
-    final String fileName = "test-snapshot-no-dependency";
+    final String fileName = "online-no-dependency";
     final Process process =
-        TestUtils.moiraTestSnapshotProfilerCommand(
+        TestUtils.moiraOnlineProfilerCommand(
             fileName, "com.example.SimplePassingTest", "com.example.OtherPassingTest");
     assertThat(process.waitFor(), is(0));
     assertThat(TestUtils.readFileLines(fileName).size(), is(0));
@@ -22,9 +22,9 @@ public class TestSnapshotProfilerTest {
 
   @Test
   public void testStaticFieldDependency() throws IOException, InterruptedException {
-    final String fileName = "test-snapshot-static-field-dependency";
+    final String fileName = "online-static-field-dependency";
     final Process process =
-        TestUtils.moiraTestSnapshotProfilerCommand(fileName, "com.example.AppStaticFieldTest");
+        TestUtils.moiraOnlineProfilerCommand(fileName, "com.example.AppStaticFieldTest");
     assertThat(process.waitFor(), is(0));
     final List<String> lines = TestUtils.readFileLines(fileName);
     assertThat(lines.size(), is(2));
@@ -40,9 +40,9 @@ public class TestSnapshotProfilerTest {
 
   @Test
   public void testObjectFieldDependency() throws IOException, InterruptedException {
-    final String fileName = "test-snapshot-object-field-dependency";
+    final String fileName = "online-object-field-dependency";
     final Process process =
-        TestUtils.moiraTestSnapshotProfilerCommand(fileName, "com.example.AppObjectFieldTest");
+        TestUtils.moiraOnlineProfilerCommand(fileName, "com.example.AppObjectFieldTest");
     assertThat(process.waitFor(), is(0));
     final List<String> lines = TestUtils.readFileLines(fileName);
     assertThat(lines.size(), is(2));
@@ -58,9 +58,9 @@ public class TestSnapshotProfilerTest {
 
   @Test
   public void testArrayDependency() throws IOException, InterruptedException {
-    final String fileName = "test-snapshot-array-dependency";
+    final String fileName = "online-array-dependency";
     final Process process =
-        TestUtils.moiraTestSnapshotProfilerCommand(fileName, "com.example.AppArrayTest");
+        TestUtils.moiraOnlineProfilerCommand(fileName, "com.example.AppArrayTest");
     assertThat(process.waitFor(), is(0));
     final List<String> lines = TestUtils.readFileLines(fileName);
     assertThat(lines.size(), is(2));

@@ -9,12 +9,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
-public class DOIProfilerTest {
+public class NaiveProfilerTest {
   @Test
   public void testMultiplePassingTest() throws IOException, InterruptedException {
-    final String fileName = "doi-no-dependency";
+    final String fileName = "naive-no-dependency";
     final Process process =
-        TestUtils.moiraDOIProfilerCommand(
+        TestUtils.moiraNaiveProfilerCommand(
             fileName, "com.example.SimplePassingTest", "com.example.OtherPassingTest");
     assertThat(process.waitFor(), is(0));
     assertThat(TestUtils.readFileLines(fileName).size(), is(0));
@@ -22,9 +22,9 @@ public class DOIProfilerTest {
 
   @Test
   public void testStaticFieldDependency() throws IOException, InterruptedException {
-    final String fileName = "doi-static-field-dependency";
+    final String fileName = "naive-static-field-dependency";
     final Process process =
-        TestUtils.moiraDOIProfilerCommand(fileName, "com.example.AppStaticFieldTest");
+        TestUtils.moiraNaiveProfilerCommand(fileName, "com.example.AppStaticFieldTest");
     assertThat(process.waitFor(), is(0));
     final List<String> lines = TestUtils.readFileLines(fileName);
     assertThat(lines.size(), is(2));
@@ -40,9 +40,9 @@ public class DOIProfilerTest {
 
   @Test
   public void testObjectFieldDependency() throws IOException, InterruptedException {
-    final String fileName = "doi-object-field-dependency";
+    final String fileName = "naive-object-field-dependency";
     final Process process =
-        TestUtils.moiraDOIProfilerCommand(fileName, "com.example.AppObjectFieldTest");
+        TestUtils.moiraNaiveProfilerCommand(fileName, "com.example.AppObjectFieldTest");
     assertThat(process.waitFor(), is(0));
     final List<String> lines = TestUtils.readFileLines(fileName);
     assertThat(lines.size(), is(2));
@@ -58,8 +58,9 @@ public class DOIProfilerTest {
 
   @Test
   public void testArrayDependency() throws IOException, InterruptedException {
-    final String fileName = "doi-array-dependency";
-    final Process process = TestUtils.moiraDOIProfilerCommand(fileName, "com.example.AppArrayTest");
+    final String fileName = "naive-array-dependency";
+    final Process process =
+        TestUtils.moiraNaiveProfilerCommand(fileName, "com.example.AppArrayTest");
     assertThat(process.waitFor(), is(0));
     final List<String> lines = TestUtils.readFileLines(fileName);
     assertThat(lines.size(), is(2));

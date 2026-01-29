@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class DOIProfilerTest {
+public class OnlineProfilerTest {
 
   private static final String FIELD = "testField";
   private static final Object OBJECT = new Object();
@@ -24,17 +24,17 @@ public class DOIProfilerTest {
 
   @BeforeEach
   public void setup() {
-    DOIProfiler.setup();
+    OnlineProfiler.setup();
   }
 
   private List<String> makeDump(String fileName) {
     List<String> lines = null;
-    fileName = "doi-prof-" + fileName;
+    fileName = "online-prof-" + fileName;
 
     try {
       File file = new File(fileName);
       file.deleteOnExit();
-      DOIProfiler.dump(fileName);
+      OnlineProfiler.dump(fileName);
       lines =
           Files.readAllLines(Paths.get(fileName)).stream().sorted().collect(Collectors.toList());
     } catch (IOException e) {
@@ -46,34 +46,34 @@ public class DOIProfilerTest {
 
   @Test
   public void testObjectDependencyOtherField() {
-    DOIProfiler.enterTestMethod(TEST_NAME[0]);
-    DOIProfiler.enable();
-    DOIProfiler.writeObjectField(OBJECT, FIELD);
-    DOIProfiler.disable();
-    DOIProfiler.exitTestMethod();
+    OnlineProfiler.enterTestMethod(TEST_NAME[0]);
+    OnlineProfiler.enable();
+    OnlineProfiler.writeObjectField(OBJECT, FIELD);
+    OnlineProfiler.disable();
+    OnlineProfiler.exitTestMethod();
 
-    DOIProfiler.enterTestMethod(TEST_NAME[1]);
-    DOIProfiler.enable();
-    DOIProfiler.readObjectField(OBJECT, FIELD + "o");
-    DOIProfiler.disable();
-    DOIProfiler.exitTestMethod();
+    OnlineProfiler.enterTestMethod(TEST_NAME[1]);
+    OnlineProfiler.enable();
+    OnlineProfiler.readObjectField(OBJECT, FIELD + "o");
+    OnlineProfiler.disable();
+    OnlineProfiler.exitTestMethod();
 
     assertThat(makeDump("object-field-dependency").size(), is(0));
   }
 
   @Test
   public void testArrayDependencyOtherIndex() {
-    DOIProfiler.enterTestMethod(TEST_NAME[0]);
-    DOIProfiler.enable();
-    DOIProfiler.writeArrayElement(ARRAY, INDEX);
-    DOIProfiler.disable();
-    DOIProfiler.exitTestMethod();
+    OnlineProfiler.enterTestMethod(TEST_NAME[0]);
+    OnlineProfiler.enable();
+    OnlineProfiler.writeArrayElement(ARRAY, INDEX);
+    OnlineProfiler.disable();
+    OnlineProfiler.exitTestMethod();
 
-    DOIProfiler.enterTestMethod(TEST_NAME[1]);
-    DOIProfiler.enable();
-    DOIProfiler.readArrayElement(ARRAY, INDEX + 1);
-    DOIProfiler.disable();
-    DOIProfiler.exitTestMethod();
+    OnlineProfiler.enterTestMethod(TEST_NAME[1]);
+    OnlineProfiler.enable();
+    OnlineProfiler.readArrayElement(ARRAY, INDEX + 1);
+    OnlineProfiler.disable();
+    OnlineProfiler.exitTestMethod();
 
     assertThat(makeDump("array-field-dependency").size(), is(0));
   }
@@ -82,14 +82,14 @@ public class DOIProfilerTest {
   public void testGCObjectDependency() {
     Object[] objects = new Object[512];
 
-    DOIProfiler.enterTestMethod(TEST_NAME[0]);
-    DOIProfiler.enable();
+    OnlineProfiler.enterTestMethod(TEST_NAME[0]);
+    OnlineProfiler.enable();
     for (int i = 0; i < objects.length; ++i) {
       objects[i] = new Object();
       ObjectProfiler.writeObjectField(objects[i], FIELD);
     }
-    DOIProfiler.disable();
-    DOIProfiler.exitTestMethod();
+    OnlineProfiler.disable();
+    OnlineProfiler.exitTestMethod();
 
     WeakReference<Object> reference = new WeakReference<>(objects);
     objects = null;
@@ -97,11 +97,11 @@ public class DOIProfilerTest {
       System.gc();
     }
 
-    DOIProfiler.enterTestMethod(TEST_NAME[1]);
-    DOIProfiler.enable();
-    DOIProfiler.readObjectField(new Object(), FIELD);
-    DOIProfiler.disable();
-    DOIProfiler.exitTestMethod();
+    OnlineProfiler.enterTestMethod(TEST_NAME[1]);
+    OnlineProfiler.enable();
+    OnlineProfiler.readObjectField(new Object(), FIELD);
+    OnlineProfiler.disable();
+    OnlineProfiler.exitTestMethod();
 
     assertThat(makeDump("object-gc-dependency").size(), is(0));
   }
@@ -110,14 +110,14 @@ public class DOIProfilerTest {
   public void testGCArrayDependency() {
     int[][] items = new int[512][];
 
-    DOIProfiler.enterTestMethod(TEST_NAME[0]);
-    DOIProfiler.enable();
+    OnlineProfiler.enterTestMethod(TEST_NAME[0]);
+    OnlineProfiler.enable();
     for (int i = 0; i < 512; ++i) {
       items[i] = new int[10];
-      DOIProfiler.writeArrayElement(items, INDEX);
+      OnlineProfiler.writeArrayElement(items, INDEX);
     }
-    DOIProfiler.disable();
-    DOIProfiler.exitTestMethod();
+    OnlineProfiler.disable();
+    OnlineProfiler.exitTestMethod();
 
     WeakReference<Object> reference = new WeakReference<>(items);
     items = null;
@@ -125,11 +125,11 @@ public class DOIProfilerTest {
       System.gc();
     }
 
-    DOIProfiler.enterTestMethod(TEST_NAME[1]);
-    DOIProfiler.enable();
-    DOIProfiler.readArrayElement(new int[10], INDEX);
-    DOIProfiler.disable();
-    DOIProfiler.exitTestMethod();
+    OnlineProfiler.enterTestMethod(TEST_NAME[1]);
+    OnlineProfiler.enable();
+    OnlineProfiler.readArrayElement(new int[10], INDEX);
+    OnlineProfiler.disable();
+    OnlineProfiler.exitTestMethod();
 
     assertThat(makeDump("array-gc-dependency").size(), is(0));
   }

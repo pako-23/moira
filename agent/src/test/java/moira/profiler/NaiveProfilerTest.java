@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class TestSnapshotProfilerTest {
+public class NaiveProfilerTest {
 
   private static final String FIELD = "testField";
   private static final Object OBJECT = new Object();
@@ -24,7 +24,7 @@ public class TestSnapshotProfilerTest {
 
   @BeforeEach
   public void setup() {
-    TestSnapshotProfiler.setup();
+    NaiveProfiler.setup();
   }
 
   private List<String> makeDump(String fileName) {
@@ -34,7 +34,7 @@ public class TestSnapshotProfilerTest {
     try {
       File file = new File(fileName);
       file.deleteOnExit();
-      TestSnapshotProfiler.dump(fileName);
+      NaiveProfiler.dump(fileName);
       lines =
           Files.readAllLines(Paths.get(fileName)).stream().sorted().collect(Collectors.toList());
     } catch (IOException e) {
@@ -46,34 +46,34 @@ public class TestSnapshotProfilerTest {
 
   @Test
   public void testObjectDependencyOtherField() {
-    TestSnapshotProfiler.enterTestMethod(TEST_NAME[0]);
-    TestSnapshotProfiler.enable();
-    TestSnapshotProfiler.writeObjectField(OBJECT, FIELD);
-    TestSnapshotProfiler.disable();
-    TestSnapshotProfiler.exitTestMethod();
+    NaiveProfiler.enterTestMethod(TEST_NAME[0]);
+    NaiveProfiler.enable();
+    NaiveProfiler.writeObjectField(OBJECT, FIELD);
+    NaiveProfiler.disable();
+    NaiveProfiler.exitTestMethod();
 
-    TestSnapshotProfiler.enterTestMethod(TEST_NAME[1]);
-    TestSnapshotProfiler.enable();
-    TestSnapshotProfiler.readObjectField(OBJECT, FIELD + "o");
-    TestSnapshotProfiler.disable();
-    TestSnapshotProfiler.exitTestMethod();
+    NaiveProfiler.enterTestMethod(TEST_NAME[1]);
+    NaiveProfiler.enable();
+    NaiveProfiler.readObjectField(OBJECT, FIELD + "o");
+    NaiveProfiler.disable();
+    NaiveProfiler.exitTestMethod();
 
     assertThat(makeDump("object-field-dependency").size(), is(0));
   }
 
   @Test
   public void testArrayDependencyOtherIndex() {
-    TestSnapshotProfiler.enterTestMethod(TEST_NAME[0]);
-    TestSnapshotProfiler.enable();
-    TestSnapshotProfiler.writeArrayElement(ARRAY, INDEX);
-    TestSnapshotProfiler.disable();
-    TestSnapshotProfiler.exitTestMethod();
+    NaiveProfiler.enterTestMethod(TEST_NAME[0]);
+    NaiveProfiler.enable();
+    NaiveProfiler.writeArrayElement(ARRAY, INDEX);
+    NaiveProfiler.disable();
+    NaiveProfiler.exitTestMethod();
 
-    TestSnapshotProfiler.enterTestMethod(TEST_NAME[1]);
-    TestSnapshotProfiler.enable();
-    TestSnapshotProfiler.readArrayElement(ARRAY, INDEX + 1);
-    TestSnapshotProfiler.disable();
-    TestSnapshotProfiler.exitTestMethod();
+    NaiveProfiler.enterTestMethod(TEST_NAME[1]);
+    NaiveProfiler.enable();
+    NaiveProfiler.readArrayElement(ARRAY, INDEX + 1);
+    NaiveProfiler.disable();
+    NaiveProfiler.exitTestMethod();
 
     assertThat(makeDump("array-field-dependency").size(), is(0));
   }

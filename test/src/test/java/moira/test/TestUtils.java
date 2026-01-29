@@ -47,14 +47,14 @@ public class TestUtils {
     return moiraCommand("ObjectProfiler", dumpFileName, args);
   }
 
-  public static Process moiraDOIProfilerCommand(final String dumpFileName, final String... args)
+  public static Process moiraOnlineProfilerCommand(final String dumpFileName, final String... args)
       throws IOException {
-    return moiraCommand("DOIProfiler", dumpFileName, args);
+    return moiraCommand("OnlineProfiler", dumpFileName, args);
   }
 
-  public static Process moiraTestSnapshotProfilerCommand(
-      final String dumpFileName, final String... args) throws IOException {
-    return moiraCommand("TestSnapshotProfiler", dumpFileName, args);
+  public static Process moiraNaiveProfilerCommand(final String dumpFileName, final String... args)
+      throws IOException {
+    return moiraCommand("NaiveProfiler", dumpFileName, args);
   }
 
   public static Process moiraDefaultsCommand(final String... args) throws IOException {

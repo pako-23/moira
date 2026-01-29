@@ -6,7 +6,7 @@ import moira.collect.ArrayMap;
 import moira.collect.Map;
 import moira.collect.MapBuilder;
 
-public final class TestSnapshotProfiler {
+public final class NaiveProfiler {
   private static volatile int enabled;
   private static ThreadLocal<Integer> suspend;
   private static int runningTest;
@@ -46,9 +46,9 @@ public final class TestSnapshotProfiler {
 
     private TestSnapshot(final int test) {
       this.test = test;
-      this.staticMapping = TestSnapshotProfiler.staticMapping;
-      this.objectMapping = TestSnapshotProfiler.objectMapping;
-      this.arrayMapping = TestSnapshotProfiler.arrayMapping;
+      this.staticMapping = NaiveProfiler.staticMapping;
+      this.objectMapping = NaiveProfiler.objectMapping;
+      this.arrayMapping = NaiveProfiler.arrayMapping;
       this.next = null;
     }
 
@@ -110,7 +110,7 @@ public final class TestSnapshotProfiler {
     setup();
   }
 
-  private TestSnapshotProfiler() {}
+  private NaiveProfiler() {}
 
   public static void setup() {
     runningTest = -1;

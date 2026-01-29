@@ -163,8 +163,8 @@ public class ProfilerTest {
   private static Stream<Arguments> profilers() {
     return Stream.of(
         Arguments.of(ObjectProfiler.class, "obj-prof"),
-        Arguments.of(DOIProfiler.class, "doi-prof"),
-        Arguments.of(TestSnapshotProfiler.class, "test-snapshot-prof"));
+        Arguments.of(OnlineProfiler.class, "online-prof"),
+        Arguments.of(NaiveProfiler.class, "naive-prof"));
   }
 
   @ParameterizedTest
@@ -179,7 +179,7 @@ public class ProfilerTest {
   @MethodSource("profilers")
   public void testFinalClass(final Class<?> profiler, final String prefix)
       throws NoSuchMethodException {
-    assertThat(Modifier.isFinal(TestSnapshotProfiler.class.getModifiers()), is(true));
+    assertThat(Modifier.isFinal(NaiveProfiler.class.getModifiers()), is(true));
   }
 
   @ParameterizedTest
