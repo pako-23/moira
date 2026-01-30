@@ -15,15 +15,6 @@ public final class OnlineProfiler {
   private static Map<Object, Map<Integer, ReadWriteSet>> arrayMapping;
   private static Map<Object, Map<String, ReadWriteSet>> objectMapping;
 
-  private static long arrayReads;
-  private static long arrayWrites;
-  private static long objectReads;
-  private static long objectWrites;
-  private static long staticReads;
-  private static long staticWrites;
-  private static long arrayCreated;
-  private static long objectCreated;
-
   static {
     setup();
   }
@@ -40,32 +31,16 @@ public final class OnlineProfiler {
         MapBuilder.<Object, Map<Integer, ReadWriteSet>>builder()
             .initialCapacity(1 << 11)
             .weakKeys()
-            .keyDeletionCallback(
-                mapping -> {
-                  ++arrayCreated;
-                  OnlineProfiler.fieldMappingDump(mapping);
-                })
+            .keyDeletionCallback(OnlineProfiler::fieldMappingDump)
             .hashFunction(System::identityHashCode)
             .build();
     objectMapping =
         MapBuilder.<Object, Map<String, ReadWriteSet>>builder()
             .initialCapacity(1 << 11)
             .weakKeys()
-            .keyDeletionCallback(
-                mapping -> {
-                  ++objectCreated;
-                  OnlineProfiler.fieldMappingDump(mapping);
-                })
+            .keyDeletionCallback(OnlineProfiler::fieldMappingDump)
             .hashFunction(System::identityHashCode)
             .build();
-    arrayReads = 0;
-    arrayWrites = 0;
-    objectReads = 0;
-    objectWrites = 0;
-    staticReads = 0;
-    staticWrites = 0;
-    arrayCreated = 0;
-    objectCreated = 0;
   }
 
   public static void dump(final String fileName) throws FileNotFoundException {
@@ -73,16 +48,6 @@ public final class OnlineProfiler {
     arrayMappingDump();
     objectMappingDump();
     dump.dump(fileName);
-
-    System.out.println("total reads on arrays: " + arrayReads);
-    System.out.println("total writes on arrays: " + arrayWrites);
-    System.out.println("total reads on objects: " + objectReads);
-    System.out.println("total writes on objects: " + objectWrites);
-    System.out.println("total reads on static fields: " + staticReads);
-    System.out.println("total writes on static fields: " + staticWrites);
-    System.out.println("total arrays created: " + arrayCreated);
-    System.out.println("total objects created: " + objectCreated);
-    System.out.println("total static fields accessed: " + staticMapping.size());
   }
 
   public static void suspend() {
@@ -115,8 +80,6 @@ public final class OnlineProfiler {
     if (suspendedOrSuspend()) return;
 
     synchronized (staticMapping) {
-      if (event == ReadWriteSet.READ) ++staticReads;
-      else ++staticWrites;
       staticMapping.getOrPut(field, () -> new ReadWriteSet()).update(runningTest, event);
     }
     resume();
@@ -126,7 +89,6 @@ public final class OnlineProfiler {
     Map.Iterator<?, Map<Integer, ReadWriteSet>> it = arrayMapping.iterator();
 
     while (it.hasNext()) {
-      ++arrayCreated;
       fieldMappingDump(it.value());
       it.next();
     }
@@ -136,7 +98,6 @@ public final class OnlineProfiler {
     Map.Iterator<?, Map<String, ReadWriteSet>> it = objectMapping.iterator();
 
     while (it.hasNext()) {
-      ++objectCreated;
       fieldMappingDump(it.value());
       it.next();
     }
@@ -159,8 +120,6 @@ public final class OnlineProfiler {
     if (suspendedOrSuspend()) return;
 
     synchronized (objectMapping) {
-      if (event == ReadWriteSet.READ) ++objectReads;
-      else ++objectWrites;
       objectMapping
           .getOrPut(
               object, () -> MapBuilder.<String, ReadWriteSet>builder().initialCapacity(4).build())
@@ -178,8 +137,6 @@ public final class OnlineProfiler {
     if (suspendedOrSuspend()) return;
 
     synchronized (arrayMapping) {
-      if (event == ReadWriteSet.READ) ++arrayReads;
-      else ++arrayWrites;
       arrayMapping
           .getOrPut(array, () -> new ArrayMap<>(Array.getLength(array)))
           .getOrPut(index, () -> new ReadWriteSet())
