@@ -19,16 +19,18 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
 import org.mockito.MockitoAnnotations;
+import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 public class TestCaseManglerTest {
-  private static final String PROFILER = "moira/agent/SomeProfiler";
+  @Mock private AnnotationVisitor annotationVisitor;
   @Mock private MethodVisitor methodVisitorMock;
   @Mock private TestDetector detectorMock;
-  private TestDetector detector;
   private Field detectorField;
+  private TestDetector detector;
+  private static final String PROFILER = "moira/agent/SomeProfiler";
 
   @BeforeEach
   public void setup() throws IllegalAccessException, NoSuchFieldException {
@@ -112,8 +114,10 @@ public class TestCaseManglerTest {
   @ParameterizedTest
   @ValueSource(ints = {Opcodes.IRETURN, Opcodes.ATHROW, Opcodes.FRETURN})
   public void testVisitNonTest(final int opcode) {
-    when(detectorMock.isJUint4TestMethod(anyString(), anyString(), anyString())).thenReturn(false);
-    when(detectorMock.isJUnit3TestClass(anyString(), anyString())).thenReturn(false);
+    when(detectorMock.isJUnit4TestMethod(anyString(), anyString(), anyString())).thenReturn(false);
+    when(detectorMock.isJUnit3TestMethod(
+            anyString(), anyInt(), anyString(), anyString(), anyString()))
+        .thenReturn(false);
 
     final TestCaseMangler mangler =
         new TestCaseMangler(
@@ -124,6 +128,8 @@ public class TestCaseManglerTest {
             "com/example/Example",
             "method",
             "()V");
+
+    verify(detectorMock).registerClass("java/lang/Object", "com/example/Example");
     makeNonInstrumentedChecks(mangler, opcode);
   }
 
@@ -137,8 +143,10 @@ public class TestCaseManglerTest {
   @ParameterizedTest
   @MethodSource("testVisitJUnit3TestParams")
   public void testVisitJUnit3Test(final int opcode, final String methodName) {
-    when(detectorMock.isJUnit3TestClass(anyString(), anyString())).thenReturn(true);
-    when(detectorMock.isJUint4TestMethod(anyString(), anyString(), anyString())).thenReturn(false);
+    when(detectorMock.isJUnit3TestMethod(
+            anyString(), anyInt(), anyString(), anyString(), anyString()))
+        .thenReturn(true);
+    when(detectorMock.isJUnit4TestMethod(anyString(), anyString(), anyString())).thenReturn(false);
 
     final TestCaseMangler mangler =
         new TestCaseMangler(
@@ -149,13 +157,17 @@ public class TestCaseManglerTest {
             "com/example/Example",
             methodName,
             "()V");
+
+    verify(detectorMock).registerClass("junit/framework/TestCase", "com/example/Example");
     makeInstrumentedChecks(mangler, opcode);
   }
 
   @Test
   public void testVisitJUnit3PrivateTest() {
-    when(detectorMock.isJUint4TestMethod(anyString(), anyString(), anyString())).thenReturn(false);
-    when(detectorMock.isJUnit3TestClass(anyString(), anyString())).thenReturn(true);
+    when(detectorMock.isJUnit4TestMethod(anyString(), anyString(), anyString())).thenReturn(false);
+    when(detectorMock.isJUnit3TestMethod(
+            anyString(), anyInt(), anyString(), anyString(), anyString()))
+        .thenReturn(false);
 
     final TestCaseMangler mangler =
         new TestCaseMangler(
@@ -166,13 +178,17 @@ public class TestCaseManglerTest {
             "com/example/Example",
             "testMethod",
             "()V");
+
+    verify(detectorMock).registerClass("java/lang/Object", "com/example/Example");
     makeNonInstrumentedChecks(mangler, Opcodes.IRETURN);
   }
 
   @Test
   public void testVisitJUnit3NotTest() {
-    when(detectorMock.isJUint4TestMethod(anyString(), anyString(), anyString())).thenReturn(false);
-    when(detectorMock.isJUnit3TestClass(anyString(), anyString())).thenReturn(true);
+    when(detectorMock.isJUnit4TestMethod(anyString(), anyString(), anyString())).thenReturn(false);
+    when(detectorMock.isJUnit3TestMethod(
+            anyString(), anyInt(), anyString(), anyString(), anyString()))
+        .thenReturn(false);
 
     final TestCaseMangler mangler =
         new TestCaseMangler(
@@ -183,13 +199,17 @@ public class TestCaseManglerTest {
             "com/example/Example",
             "someMethod",
             "()V");
+
+    verify(detectorMock).registerClass("java/lang/Object", "com/example/Example");
     makeNonInstrumentedChecks(mangler, Opcodes.IRETURN);
   }
 
   @Test
   public void testVisitJUnit3NonValidTestDescription() {
-    when(detectorMock.isJUint4TestMethod(anyString(), anyString(), anyString())).thenReturn(false);
-    when(detectorMock.isJUnit3TestClass(anyString(), anyString())).thenReturn(true);
+    when(detectorMock.isJUnit4TestMethod(anyString(), anyString(), anyString())).thenReturn(false);
+    when(detectorMock.isJUnit3TestMethod(
+            anyString(), anyInt(), anyString(), anyString(), anyString()))
+        .thenReturn(false);
 
     final TestCaseMangler mangler =
         new TestCaseMangler(
@@ -200,24 +220,84 @@ public class TestCaseManglerTest {
             "com/example/Example",
             "runTest",
             "(I)V");
+
+    verify(detectorMock).registerClass("java/lang/Object", "com/example/Example");
     makeNonInstrumentedChecks(mangler, Opcodes.IRETURN);
   }
 
   @ParameterizedTest
   @ValueSource(ints = {Opcodes.IRETURN, Opcodes.ATHROW, Opcodes.FRETURN})
   public void testVisitJUnit4Test(final int opcode) {
-    when(detectorMock.isJUnit3TestClass(anyString(), anyString())).thenReturn(false);
-    when(detectorMock.isJUint4TestMethod(anyString(), anyString(), anyString())).thenReturn(true);
+    when(detectorMock.isJUnit3TestMethod(
+            anyString(), anyInt(), anyString(), anyString(), anyString()))
+        .thenReturn(false);
+    when(detectorMock.isJUnit4TestMethod(anyString(), anyString(), anyString())).thenReturn(false);
+    when(methodVisitorMock.visitAnnotation(anyString(), anyBoolean()))
+        .thenReturn(annotationVisitor);
 
     final TestCaseMangler mangler =
         new TestCaseMangler(
             methodVisitorMock,
             PROFILER,
-            "java/lang/Object",
+            "com/example/SuperExample",
             Opcodes.ACC_PUBLIC,
             "com/example/Example",
             "testSomething",
             "()V");
+
+    verify(detectorMock).registerClass("com/example/SuperExample", "com/example/Example");
+    assertThat(mangler.visitAnnotation("Lorg/junit/Test;", true), is(annotationVisitor));
+    verify(methodVisitorMock).visitAnnotation("Lorg/junit/Test;", true);
+    verify(detectorMock).registerJUint4TestMethod("com/example/Example", "testSomething", "()V");
+    makeInstrumentedChecks(mangler, opcode);
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {Opcodes.IRETURN, Opcodes.ATHROW, Opcodes.FRETURN})
+  public void testVisitNonJUnit4Test(final int opcode) {
+    when(detectorMock.isJUnit3TestMethod(
+            anyString(), anyInt(), anyString(), anyString(), anyString()))
+        .thenReturn(false);
+    when(detectorMock.isJUnit4TestMethod(anyString(), anyString(), anyString())).thenReturn(false);
+    when(methodVisitorMock.visitAnnotation(anyString(), anyBoolean()))
+        .thenReturn(annotationVisitor);
+
+    final TestCaseMangler mangler =
+        new TestCaseMangler(
+            methodVisitorMock,
+            PROFILER,
+            "com/example/SuperExample",
+            Opcodes.ACC_PUBLIC,
+            "com/example/Example",
+            "testSomething",
+            "()V");
+
+    verify(detectorMock).registerClass("com/example/SuperExample", "com/example/Example");
+    assertThat(mangler.visitAnnotation("Lcom/example/Annotation;", true), is(annotationVisitor));
+    verify(methodVisitorMock).visitAnnotation("Lcom/example/Annotation;", true);
+    verify(detectorMock, never()).registerJUint4TestMethod(anyString(), anyString(), anyString());
+    makeNonInstrumentedChecks(mangler, opcode);
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {Opcodes.IRETURN, Opcodes.ATHROW, Opcodes.FRETURN})
+  public void testVisitJUnit4TestSubclassInherited(final int opcode) {
+    when(detectorMock.isJUnit3TestMethod(
+            anyString(), anyInt(), anyString(), anyString(), anyString()))
+        .thenReturn(false);
+    when(detectorMock.isJUnit4TestMethod(anyString(), anyString(), anyString())).thenReturn(true);
+
+    final TestCaseMangler mangler =
+        new TestCaseMangler(
+            methodVisitorMock,
+            PROFILER,
+            "com/example/SuperExample",
+            Opcodes.ACC_PUBLIC,
+            "com/example/Example",
+            "testSomething",
+            "()V");
+
+    verify(detectorMock).registerClass("com/example/SuperExample", "com/example/Example");
     makeInstrumentedChecks(mangler, opcode);
   }
 }

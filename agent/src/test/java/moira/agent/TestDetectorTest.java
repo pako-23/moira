@@ -3,15 +3,12 @@ package moira.agent;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.objectweb.asm.Opcodes;
 
 public class TestDetectorTest {
   private TestDetector detector;
@@ -22,23 +19,16 @@ public class TestDetectorTest {
 
   private static class JUnit3TestBase extends JUnit3Test {}
 
-  @Retention(RetentionPolicy.RUNTIME)
-  @Target({ElementType.METHOD})
-  private @interface DummyAnnotation {}
-
   private abstract static class JUnit4TestMiddle {
     @org.junit.Test
-    @DummyAnnotation
     public abstract void testMethodInherited();
   }
 
   private static class JUnit4Test extends JUnit4TestMiddle {
     @Override
-    @DummyAnnotation
     public void testMethodInherited() {}
 
     @org.junit.Test
-    @DummyAnnotation
     public void testMethodSimple() {}
   }
 
@@ -48,161 +38,283 @@ public class TestDetectorTest {
   }
 
   @Test
-  public void testJUnit3TestClass() {
+  public void testJUnit3TestMethod() {
+    final String superName = "junit/framework/TestCase";
+    final String className = "com/example/Example";
+
+    detector.registerClass(superName, className);
     assertThat(
-        detector.isJUnit3TestClass("junit/framework/TestCase", "com/example/Example"), is(true));
+        detector.isJUnit3TestMethod(
+            superName, Opcodes.ACC_PUBLIC, className, "testSomething", "()V"),
+        is(true));
+  }
+
+  @Test
+  public void testJUnit3PrivateTestMethod() {
+    final String superName = "junit/framework/TestCase";
+    final String className = "com/example/Example";
+
+    detector.registerClass(superName, className);
+    assertThat(
+        detector.isJUnit3TestMethod(
+            superName, Opcodes.ACC_PRIVATE, className, "testSomething", "()V"),
+        is(false));
+  }
+
+  @Test
+  public void testJUnit3RunTestOverrideMethod() {
+    final String superName = "junit/framework/TestCase";
+    final String className = "com/example/Example";
+
+    detector.registerClass(superName, className);
+    assertThat(
+        detector.isJUnit3TestMethod(superName, Opcodes.ACC_PUBLIC, className, "runTest", "()V"),
+        is(true));
+  }
+
+  @Test
+  public void testJUnit3RunTestInvalidOverrideMethod() {
+    final String superName = "junit/framework/TestCase";
+    final String className = "com/example/Example";
+
+    detector.registerClass(superName, className);
+    assertThat(
+        detector.isJUnit3TestMethod(superName, Opcodes.ACC_PUBLIC, className, "runTest", "(I)V"),
+        is(false));
+  }
+
+  @Test
+  public void testJUnit3TestClassNonTestMethod() {
+    final String superName = "junit/framework/TestCase";
+    final String className = "com/example/Example";
+
+    detector.registerClass(superName, className);
+    assertThat(
+        detector.isJUnit3TestMethod(superName, Opcodes.ACC_PRIVATE, className, "something", "()I"),
+        is(false));
   }
 
   @Test
   public void testJUnit3TestClassCached() {
+    final String superName = "junit/framework/TestCase";
+    final String className = "com/example/Example";
+
+    detector.registerClass(superName, className);
     assertThat(
-        detector.isJUnit3TestClass("junit/framework/TestCase", "com/example/Example"), is(true));
+        detector.isJUnit3TestMethod(
+            superName, Opcodes.ACC_PUBLIC, className, "testSomething", "()V"),
+        is(true));
     assertThat(
-        detector.isJUnit3TestClass("junit/framework/TestCase", "com/example/Example"), is(true));
+        detector.isJUnit3TestMethod(
+            superName, Opcodes.ACC_PUBLIC, className, "testSomething", "()V"),
+        is(true));
   }
 
   @ParameterizedTest
   @ValueSource(strings = "java/lang/Object")
   @NullSource
   public void testNotJUnit3TestClass(final String superName) {
-    assertThat(detector.isJUnit3TestClass(superName, "com/example/Example"), is(false));
+    final String className = "com/example/Example";
+
+    detector.registerClass(superName, className);
+    assertThat(
+        detector.isJUnit3TestMethod(
+            superName, Opcodes.ACC_PUBLIC, className, "testSomething", "()V"),
+        is(false));
   }
 
   @ParameterizedTest
   @ValueSource(strings = "java/lang/Object")
   @NullSource
   public void testNotJUnit3TestClassCached(final String superName) {
-    assertThat(detector.isJUnit3TestClass(superName, "com/example/Example"), is(false));
-    assertThat(detector.isJUnit3TestClass(superName, "com/example/Example"), is(false));
+    final String className = "com/example/Example";
+
+    detector.registerClass(superName, className);
+    assertThat(
+        detector.isJUnit3TestMethod(
+            superName, Opcodes.ACC_PUBLIC, className, "testSomething", "()V"),
+        is(false));
+    assertThat(
+        detector.isJUnit3TestMethod(
+            superName, Opcodes.ACC_PUBLIC, className, "testSomething", "()V"),
+        is(false));
   }
 
   @Test
   public void testJUnit3TestHierarchy() {
+    detector.registerClass(
+        JUnit3TestMiddle.class.getSuperclass().getName().replace(".", "/"),
+        JUnit3TestMiddle.class.getName().replace(".", "/"));
+
     assertThat(
-        detector.isJUnit3TestClass(
-            JUnit3Test.class.getSuperclass().getName().replace(".", "/"),
-            JUnit3Test.class.getName().replace(".", "/")),
+        detector.isJUnit3TestMethod(
+            JUnit3TestMiddle.class.getSuperclass().getName().replace(".", "/"),
+            Opcodes.ACC_PUBLIC,
+            JUnit3TestMiddle.class.getName().replace(".", "/"),
+            "testSomething",
+            "()V"),
         is(true));
   }
 
   @Test
   public void testJUnit3TestHierarchyOfThree() {
+    detector.registerClass(
+        JUnit3TestMiddle.class.getSuperclass().getName().replace(".", "/"),
+        JUnit3TestMiddle.class.getName().replace(".", "/"));
+    detector.registerClass(
+        JUnit3Test.class.getSuperclass().getName().replace(".", "/"),
+        JUnit3Test.class.getName().replace(".", "/"));
+    detector.registerClass(
+        JUnit3TestBase.class.getSuperclass().getName().replace(".", "/"),
+        JUnit3TestBase.class.getName().replace(".", "/"));
+
     assertThat(
-        detector.isJUnit3TestClass(
+        detector.isJUnit3TestMethod(
             JUnit3TestBase.class.getSuperclass().getName().replace(".", "/"),
-            JUnit3TestBase.class.getName().replace(".", "/")),
+            Opcodes.ACC_PUBLIC,
+            JUnit3TestBase.class.getName().replace(".", "/"),
+            "testSomething",
+            "()V"),
         is(true));
   }
 
   @Test
   public void testJUnit3TestHierarchyCaching() {
+    detector.registerClass(
+        JUnit3TestMiddle.class.getSuperclass().getName().replace(".", "/"),
+        JUnit3TestMiddle.class.getName().replace(".", "/"));
+    detector.registerClass(
+        JUnit3Test.class.getSuperclass().getName().replace(".", "/"),
+        JUnit3Test.class.getName().replace(".", "/"));
+    detector.registerClass(
+        JUnit3TestBase.class.getSuperclass().getName().replace(".", "/"),
+        JUnit3TestBase.class.getName().replace(".", "/"));
+
     assertThat(
-        detector.isJUnit3TestClass(
-            JUnit3Test.class.getSuperclass().getName().replace(".", "/"),
-            JUnit3Test.class.getName().replace(".", "/")),
-        is(true));
-    assertThat(
-        detector.isJUnit3TestClass(
+        detector.isJUnit3TestMethod(
             JUnit3TestMiddle.class.getSuperclass().getName().replace(".", "/"),
-            JUnit3TestMiddle.class.getName().replace(".", "/")),
+            Opcodes.ACC_PUBLIC,
+            JUnit3TestMiddle.class.getName().replace(".", "/"),
+            "testSomething",
+            "()V"),
+        is(true));
+
+    assertThat(
+        detector.isJUnit3TestMethod(
+            JUnit3TestBase.class.getSuperclass().getName().replace(".", "/"),
+            Opcodes.ACC_PUBLIC,
+            JUnit3TestBase.class.getName().replace(".", "/"),
+            "testSomething",
+            "()V"),
         is(true));
   }
 
   @Test
   public void testJUnit3NonTestHierarchy() {
+    detector.registerClass(
+        java.util.HashMap.class.getSuperclass().getName().replace(".", "/"),
+        java.util.HashMap.class.getName().replace(".", "/"));
+
     assertThat(
-        detector.isJUnit3TestClass(
+        detector.isJUnit3TestMethod(
             java.util.HashMap.class.getSuperclass().getName().replace(".", "/"),
-            java.util.HashMap.class.getName().replace(".", "/")),
+            Opcodes.ACC_PUBLIC,
+            java.util.HashMap.class.getName().replace(".", "/"),
+            "size",
+            "()I"),
         is(false));
   }
 
   @Test
   public void testJUnit3NonTestHierarchyCaching() {
-    assertThat(
-        detector.isJUnit3TestClass(
-            java.util.HashMap.class.getSuperclass().getName().replace(".", "/"),
-            java.util.HashMap.class.getName().replace(".", "/")),
-        is(false));
-    assertThat(
-        detector.isJUnit3TestClass(
-            java.util.AbstractMap.class.getSuperclass().getName().replace(".", "/"),
-            java.util.AbstractMap.class.getName().replace(".", "/")),
-        is(false));
-  }
+    detector.registerClass(
+        java.util.HashMap.class.getSuperclass().getName().replace(".", "/"),
+        java.util.HashMap.class.getName().replace(".", "/"));
 
-  @Test
-  public void testJUnit3FailRead() {
     assertThat(
-        detector.isJUnit3TestClass("com/example/Example", "com/example/ExampleBase"), is(false));
+        detector.isJUnit3TestMethod(
+            java.util.HashMap.class.getSuperclass().getName().replace(".", "/"),
+            Opcodes.ACC_PUBLIC,
+            java.util.HashMap.class.getName().replace(".", "/"),
+            "size",
+            "()I"),
+        is(false));
+    assertThat(
+        detector.isJUnit3TestMethod(
+            java.util.HashMap.class.getSuperclass().getName().replace(".", "/"),
+            Opcodes.ACC_PUBLIC,
+            java.util.HashMap.class.getName().replace(".", "/"),
+            "size",
+            "()I"),
+        is(false));
   }
 
   @Test
   public void testJUnit4ObjectClass() {
-    assertThat(detector.isJUint4TestMethod("java/lang/Object", "hashCode", "()I"), is(false));
+    assertThat(detector.isJUnit4TestMethod("java/lang/Object", "hashCode", "()I"), is(false));
   }
 
   @Test
   public void testJUnit4TestMethod() {
+    detector.registerClass(
+        JUnit4Test.class.getSuperclass().getName().replace(".", "/"),
+        JUnit4Test.class.getName().replace(".", "/"));
+    detector.registerJUint4TestMethod(
+        JUnit4Test.class.getName().replace(".", "/"), "testMethodSimple", "()V");
+
     assertThat(
-        detector.isJUint4TestMethod(
+        detector.isJUnit4TestMethod(
             JUnit4Test.class.getName().replace(".", "/"), "testMethodSimple", "()V"),
         is(true));
   }
 
   @Test
   public void testJUnit4Hierarchy() {
+    detector.registerClass(
+        JUnit4TestMiddle.class.getSuperclass().getName().replace(".", "/"),
+        JUnit4TestMiddle.class.getName().replace(".", "/"));
+    detector.registerClass(
+        JUnit4Test.class.getSuperclass().getName().replace(".", "/"),
+        JUnit4Test.class.getName().replace(".", "/"));
+    detector.registerJUint4TestMethod(
+        JUnit4TestMiddle.class.getName().replace(".", "/"), "testMethodInherited", "()V");
+
     assertThat(
-        detector.isJUint4TestMethod(
+        detector.isJUnit4TestMethod(
             JUnit4Test.class.getName().replace(".", "/"), "testMethodInherited", "()V"),
         is(true));
   }
 
   @Test
   public void testJUnit4HierarchySuperCaching() {
+    detector.registerClass(
+        JUnit4TestMiddle.class.getSuperclass().getName().replace(".", "/"),
+        JUnit4TestMiddle.class.getName().replace(".", "/"));
+    detector.registerClass(
+        JUnit4Test.class.getSuperclass().getName().replace(".", "/"),
+        JUnit4Test.class.getName().replace(".", "/"));
+    detector.registerJUint4TestMethod(
+        JUnit4TestMiddle.class.getName().replace(".", "/"), "testMethodInherited", "()V");
+
     assertThat(
-        detector.isJUint4TestMethod(
+        detector.isJUnit4TestMethod(
+            JUnit4Test.class.getName().replace(".", "/"), "testMethodInherited", "()V"),
+        is(true));
+    assertThat(
+        detector.isJUnit4TestMethod(
             JUnit4TestMiddle.class.getName().replace(".", "/"), "testMethodInherited", "()V"),
-        is(true));
-    assertThat(
-        detector.isJUint4TestMethod(
-            JUnit4Test.class.getName().replace(".", "/"), "testMethodInherited", "()V"),
-        is(true));
-  }
-
-  @Test
-  public void testJUnit4TestMethodCaching() {
-    assertThat(
-        detector.isJUint4TestMethod(
-            JUnit4Test.class.getName().replace(".", "/"), "testMethodSimple", "()V"),
-        is(true));
-    assertThat(
-        detector.isJUint4TestMethod(
-            JUnit4Test.class.getName().replace(".", "/"), "testMethodSimple", "()V"),
-        is(true));
-  }
-
-  @Test
-  public void testJUnit4HierarchyCaching() {
-    assertThat(
-        detector.isJUint4TestMethod(
-            JUnit4Test.class.getName().replace(".", "/"), "testMethodInherited", "()V"),
-        is(true));
-    assertThat(
-        detector.isJUint4TestMethod(
-            JUnit4Test.class.getName().replace(".", "/"), "testMethodInherited", "()V"),
         is(true));
   }
 
   @Test
   public void testJUnit4FailRead() {
-    assertThat(detector.isJUint4TestMethod("com/example/Example", "someMethod", "()V"), is(false));
+    assertThat(detector.isJUnit4TestMethod("com/example/Example", "someMethod", "()V"), is(false));
   }
 
   @Test
   public void testJUnit4NonTest() {
     assertThat(
-        detector.isJUint4TestMethod(
+        detector.isJUnit4TestMethod(
             java.util.HashMap.class.getName().replace(".", "/"), "size", "()I"),
         is(false));
   }
@@ -210,7 +322,7 @@ public class TestDetectorTest {
   @Test
   public void testJUnit4NonTestCaching() {
     assertThat(
-        detector.isJUint4TestMethod(
+        detector.isJUnit4TestMethod(
             java.util.HashMap.class.getName().replace(".", "/"), "size", "()I"),
         is(false));
   }

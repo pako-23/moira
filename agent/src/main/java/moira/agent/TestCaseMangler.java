@@ -1,5 +1,6 @@
 package moira.agent;
 
+import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -16,8 +17,11 @@ public class TestCaseMangler extends AdviceAdapter {
 
   private static final TestDetector detector = new TestDetector();
 
-  private boolean instrument;
   private Label tryBegin;
+  private boolean instrument;
+  private final String className;
+  private final String methodDescription;
+  private final String methodName;
   private final String profiler;
 
   public TestCaseMangler(
@@ -30,21 +34,24 @@ public class TestCaseMangler extends AdviceAdapter {
       final String description) {
     super(Opcodes.ASM9, mv, access, methodName, description);
 
+    detector.registerClass(superName, className);
     instrument =
-        isJUint3TestMethod(superName, access, className, methodName, description)
-            || detector.isJUint4TestMethod(className, methodName, description);
+        detector.isJUnit3TestMethod(superName, access, className, methodName, description)
+            || detector.isJUnit4TestMethod(className, methodName, description);
+    this.className = className;
+    this.methodDescription = description;
+    this.methodName = methodName;
     this.profiler = profiler;
   }
 
-  private boolean isJUint3TestMethod(
-      final String superName,
-      final int access,
-      final String className,
-      final String methodName,
-      final String description) {
-    return detector.isJUnit3TestClass(superName, className)
-        && ((methodName.startsWith("test") && (access & Opcodes.ACC_PUBLIC) != 0)
-            || (methodName.equals("runTest") && description.equals("()V")));
+  @Override
+  public AnnotationVisitor visitAnnotation(final String descriptor, boolean visible) {
+    if (descriptor.equals("Lorg/junit/Test;")) {
+      instrument = true;
+      detector.registerJUint4TestMethod(this.className, this.methodName, this.methodDescription);
+    }
+
+    return mv.visitAnnotation(descriptor, visible);
   }
 
   @Override
