@@ -37,7 +37,10 @@ public class TestUtils {
       command.add("-Dmoira.profiler.filename=" + dumpFileName);
     }
     command.add("moira.Moira");
-    command.addAll(Stream.of(args).collect(Collectors.toList()));
+
+    final String classListFile = Files.createTempFile("moira-classes-", ".txt").toString();
+    Files.write(Paths.get(classListFile), String.join("\n", args).getBytes());
+    command.add(classListFile);
 
     return new ProcessBuilder(command).start();
   }

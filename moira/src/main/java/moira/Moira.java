@@ -1,5 +1,8 @@
 package moira;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import org.junit.internal.RealSystem;
 import org.junit.internal.TextListener;
 import org.junit.runner.JUnitCore;
@@ -49,6 +52,19 @@ public class Moira {
   }
 
   public static void main(final String[] args) {
-    System.exit(new Moira().run(args));
+    if (args.length != 1) {
+      System.err.println("Usage: Moira <file>");
+      System.exit(1);
+    }
+
+    try {
+      final String[] classes =
+          Files.lines(Paths.get(args[0])).map(String::trim).toArray(size -> new String[size]);
+      int code = new Moira().run(classes);
+      System.exit(code);
+    } catch (final IOException e) {
+      System.err.println("Could not read file: " + args[0]);
+      System.exit(1);
+    }
   }
 }
