@@ -8,7 +8,7 @@ import picocli.CommandLine.Spec;
 
 @Command(
     name = "moira.util.cli.MoiraUtil",
-    subcommands = {VerifyCommand.class, HelpCommand.class},
+    subcommands = {ListCommand.class, VerifyCommand.class, TuscanCommand.class, HelpCommand.class},
     version = "MoiraUtil 0.1",
     usageHelpAutoWidth = true)
 public class MoiraUtil implements Runnable {

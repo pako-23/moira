@@ -53,17 +53,17 @@ public class Moira {
 
   public static void main(final String[] args) {
     if (args.length != 1) {
-      System.err.println("Usage: Moira <file>");
+      System.err.println("usage: moira.Moira <file>");
       System.exit(1);
     }
 
     try {
       final String[] classes =
-          Files.lines(Paths.get(args[0])).map(String::trim).toArray(size -> new String[size]);
+          Files.lines(Paths.get(args[0])).map(String::trim).toArray(String[]::new);
       int code = new Moira().run(classes);
       System.exit(code);
     } catch (final IOException e) {
-      System.err.println("Could not read file: " + args[0]);
+      System.err.println("could not read file: " + e.getMessage());
       System.exit(1);
     }
   }
