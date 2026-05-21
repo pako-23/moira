@@ -33,7 +33,7 @@ public class TestSuite {
                 })
             .collect(Collectors.toMap(Function.identity(), test -> new ArrayList<TestCase>()));
 
-    addTestClasses(testsuite.keySet().stream().toArray(Class<?>[]::new));
+    findTestCases(testsuite.keySet().stream().toArray(Class<?>[]::new));
   }
 
   public int size() {
@@ -57,12 +57,18 @@ public class TestSuite {
   }
 
   public void addTestClasses(final Class<?>... classes) {
+    final Map<Class<?>, List<TestCase>> testcases =
+        Stream.of(classes)
+            .filter(testClass -> !testsuite.containsKey(testClass))
+            .collect(Collectors.toMap(Function.identity(), test -> new ArrayList<TestCase>()));
+
+    testsuite.putAll(testcases);
+    findTestCases(testcases.keySet().stream().toArray(Class<?>[]::new));
+  }
+
+  private void findTestCases(final Class<?>... classes) {
     final Request request =
-        Request.classes(
-                Stream.of(classes)
-                    .distinct()
-                    .filter(testClass -> !testsuite.containsKey(testClass))
-                    .toArray(Class<?>[]::new))
+        Request.classes(classes)
             .filterWith(
                 new Filter() {
                   @Override
