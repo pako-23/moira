@@ -22,14 +22,14 @@ import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 
 public class PairVerifierTest {
-  private static final TestMethod firstTest =
-      new TestMethod(
+  private static final TestCase firstTest =
+      new TestCase(
           PairVerifierTest.class.getName() + "[first(" + PairVerifierTest.class.getName() + ")]");
-  private static final TestMethod secondTest =
-      new TestMethod(
+  private static final TestCase secondTest =
+      new TestCase(
           PairVerifierTest.class.getName() + "[second(" + PairVerifierTest.class.getName() + ")]");
-  private static final TestMethod otherTest =
-      new TestMethod(
+  private static final TestCase otherTest =
+      new TestCase(
           PairVerifier.class.getName() + "[sometest(" + PairVerifier.class.getName() + ")]");
 
   @Test
@@ -121,7 +121,7 @@ public class PairVerifierTest {
 
   @ParameterizedTest
   @MethodSource("testVerifyParams")
-  public void testVerifyPass(final TestMethod first, final TestMethod second) {
+  public void testVerifyPass(final TestCase first, final TestCase second) {
     final Result successResult = mock(Result.class);
     when(successResult.wasSuccessful()).thenReturn(true);
 
@@ -141,7 +141,7 @@ public class PairVerifierTest {
 
   @ParameterizedTest
   @MethodSource("testVerifyParams")
-  public void testVerifyFail(final TestMethod first, final TestMethod second) {
+  public void testVerifyFail(final TestCase first, final TestCase second) {
     final Result failResult = mock(Result.class);
     when(failResult.wasSuccessful()).thenReturn(false);
 

@@ -1,7 +1,7 @@
 package moira.util.cli;
 
 import moira.util.PairVerifier;
-import moira.util.TestMethod;
+import moira.util.TestCase;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.Option;
@@ -20,15 +20,15 @@ public class VerifyCommand implements Runnable {
       paramLabel = "<first-test>",
       description = "The first test in the pair to verify.",
       arity = "1",
-      converter = TestMethodConverter.class)
-  private TestMethod firstTest;
+      converter = TestCaseConverter.class)
+  private TestCase firstTest;
 
   @Parameters(
       paramLabel = "<second-test>",
       description = "The second test in the pair to verify.",
       arity = "1",
-      converter = TestMethodConverter.class)
-  private TestMethod secondTest;
+      converter = TestCaseConverter.class)
+  private TestCase secondTest;
 
   @Option(
       names = {"-h", "-help"},
@@ -36,11 +36,11 @@ public class VerifyCommand implements Runnable {
       description = "Display this help and exit.")
   private boolean help;
 
-  private static class TestMethodConverter implements ITypeConverter<TestMethod> {
+  private static class TestCaseConverter implements ITypeConverter<TestCase> {
     @Override
-    public TestMethod convert(final String value) throws TypeConversionException {
+    public TestCase convert(final String value) throws TypeConversionException {
       try {
-        return new TestMethod(value);
+        return new TestCase(value);
       } catch (final IllegalArgumentException e) {
         throw new TypeConversionException(e.getMessage());
       }

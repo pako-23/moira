@@ -2,11 +2,11 @@ package moira.util;
 
 import org.junit.runner.Description;
 
-public class TestMethod {
+public class TestCase {
   private final Class<?> testClass;
   private final String description;
 
-  public TestMethod(final String identifier) {
+  public TestCase(final String identifier) {
     final int beginDescription = identifier.indexOf('[');
     final int endDescription = identifier.lastIndexOf(']');
 

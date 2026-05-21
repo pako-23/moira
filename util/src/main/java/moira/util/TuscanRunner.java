@@ -16,7 +16,7 @@ import org.junit.runner.manipulation.Filter;
 public class TuscanRunner {
   private final Request request;
 
-  public TuscanRunner(final List<TestMethod> testsuite) {
+  public TuscanRunner(final List<TestCase> testsuite) {
     final List<AbstractMap.SimpleEntry<Class<?>, Set<String>>> classes =
         new ArrayList<>(testsuite.size());
 
@@ -26,7 +26,7 @@ public class TuscanRunner {
             Stream.of(testsuite.get(0).toString()).collect(Collectors.toSet())));
 
     for (int i = 1; i < testsuite.size(); ++i) {
-      final TestMethod method = testsuite.get(i);
+      final TestCase method = testsuite.get(i);
       final AbstractMap.SimpleEntry<Class<?>, Set<String>> pair = classes.get(classes.size() - 1);
 
       if (method.getTestClass().equals(pair.getKey())) pair.getValue().add(method.toString());
@@ -57,7 +57,7 @@ public class TuscanRunner {
                     if (lastIndex >= classes.size()) return false;
                     if (description.isSuite()) return true;
 
-                    final String testId = TestMethod.descriptionToTestID(description);
+                    final String testId = TestCase.descriptionToTestID(description);
                     final Set<String> tests = classes.get(lastIndex).getValue();
 
                     if (!tests.contains(testId)) return false;
@@ -72,8 +72,8 @@ public class TuscanRunner {
                 (a, b) -> {
                   if (a.isSuite() || b.isSuite()) return 0;
 
-                  final int firstIndex = order.get(TestMethod.descriptionToTestID(a));
-                  final int secondIndex = order.get(TestMethod.descriptionToTestID(b));
+                  final int firstIndex = order.get(TestCase.descriptionToTestID(a));
+                  final int secondIndex = order.get(TestCase.descriptionToTestID(b));
 
                   return firstIndex - secondIndex;
                 });

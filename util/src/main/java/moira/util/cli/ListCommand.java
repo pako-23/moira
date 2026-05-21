@@ -2,7 +2,7 @@ package moira.util.cli;
 
 import java.io.File;
 import java.io.IOException;
-import moira.util.TestSuiteLister;
+import moira.util.TestSuite;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -30,8 +30,7 @@ public class ListCommand implements Runnable {
   @Override
   public void run() {
     try {
-      final TestSuiteLister lister = new TestSuiteLister(suite);
-      lister.getTestMethods().stream().forEach(System.out::println);
+      new TestSuite(suite).getTestCases().stream().forEach(System.out::println);
     } catch (final IOException e) {
       System.err.println("could not read file: " + e.getMessage());
       System.exit(1);

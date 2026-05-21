@@ -32,7 +32,7 @@ public class ScheduleListener extends RunListener {
 
     for (int i = 0; i < schedule.size(); ++i) {
       final String outcome = outcomes.get(i) ? "PASS" : "FAIL";
-      stream.println("  " + TestMethod.descriptionToTestID(schedule.get(i)) + " -> " + outcome);
+      stream.println("  " + TestCase.descriptionToTestID(schedule.get(i)) + " -> " + outcome);
     }
   }
 }

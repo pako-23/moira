@@ -27,7 +27,7 @@ public class ScheduleListenerTest {
     final String expected =
         String.format(
             "Running schedule:\n  %s -> PASS\n  %s -> PASS\n",
-            TestMethod.descriptionToTestID(first), TestMethod.descriptionToTestID(second));
+            TestCase.descriptionToTestID(first), TestCase.descriptionToTestID(second));
     assertThat(buffer.toString(), is(expected));
   }
 
@@ -50,7 +50,7 @@ public class ScheduleListenerTest {
     final String expected =
         String.format(
             "Running schedule:\n  %s -> FAIL\n  %s -> FAIL\n",
-            TestMethod.descriptionToTestID(first), TestMethod.descriptionToTestID(second));
+            TestCase.descriptionToTestID(first), TestCase.descriptionToTestID(second));
     assertThat(buffer.toString(), is(expected));
   }
 
@@ -72,7 +72,7 @@ public class ScheduleListenerTest {
     final String expected =
         String.format(
             "Running schedule:\n  %s -> FAIL\n  %s -> PASS\n",
-            TestMethod.descriptionToTestID(first), TestMethod.descriptionToTestID(second));
+            TestCase.descriptionToTestID(first), TestCase.descriptionToTestID(second));
     assertThat(buffer.toString(), is(expected));
   }
 }

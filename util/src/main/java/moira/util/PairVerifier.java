@@ -8,11 +8,11 @@ import org.junit.runner.manipulation.Filter;
 public class PairVerifier {
   private final Request request;
 
-  public PairVerifier(final TestMethod first, final TestMethod second) {
+  public PairVerifier(final TestCase first, final TestCase second) {
     request = buildRequest(first, second);
   }
 
-  private Request buildRequest(final TestMethod first, final TestMethod second) {
+  private Request buildRequest(final TestCase first, final TestCase second) {
     if (first.getTestClass().equals(second.getTestClass())) {
       return singleClassRunner(first, second);
     } else {
@@ -20,7 +20,7 @@ public class PairVerifier {
     }
   }
 
-  private Request multipleClassesRunner(final TestMethod first, final TestMethod second) {
+  private Request multipleClassesRunner(final TestCase first, final TestCase second) {
     return Request.classes(first.getTestClass(), second.getTestClass())
         .filterWith(
             new Filter() {
@@ -33,7 +33,7 @@ public class PairVerifier {
               public boolean shouldRun(final Description description) {
                 if (description.isSuite()) return true;
 
-                final String testIdentifier = TestMethod.descriptionToTestID(description);
+                final String testIdentifier = TestCase.descriptionToTestID(description);
 
                 return testIdentifier.equals(first.toString())
                     || testIdentifier.equals(second.toString());
@@ -41,7 +41,7 @@ public class PairVerifier {
             });
   }
 
-  private Request singleClassRunner(final TestMethod first, final TestMethod second) {
+  private Request singleClassRunner(final TestCase first, final TestCase second) {
     return Request.aClass(first.getTestClass())
         .filterWith(
             new Filter() {
@@ -52,13 +52,13 @@ public class PairVerifier {
 
               @Override
               public boolean shouldRun(final Description description) {
-                final String testIdentifier = TestMethod.descriptionToTestID(description);
+                final String testIdentifier = TestCase.descriptionToTestID(description);
 
                 return testIdentifier.equals(first.toString())
                     || testIdentifier.equals(second.toString());
               }
             })
-        .sortWith((a, b) -> first.toString().equals(TestMethod.descriptionToTestID(a)) ? 1 : -1);
+        .sortWith((a, b) -> first.toString().equals(TestCase.descriptionToTestID(a)) ? 1 : -1);
   }
 
   public boolean verify() {

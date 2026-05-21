@@ -2,8 +2,8 @@ package moira.util.cli;
 
 import java.io.File;
 import java.io.IOException;
-import moira.util.TestSuiteLister;
-import moira.util.TuscanRunner;
+import moira.util.TestSuite;
+import moira.util.tuscan.TuscanClassOnly;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -31,7 +31,7 @@ public class TuscanCommand implements Runnable {
   @Override
   public void run() {
     try {
-      new TuscanRunner(new TestSuiteLister(suite).getTestMethods()).run();
+      new TuscanClassOnly(new TestSuite(suite));
     } catch (final IOException e) {
       System.err.println("could not read file: " + e.getMessage());
       System.exit(1);
