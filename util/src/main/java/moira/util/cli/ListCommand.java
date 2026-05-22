@@ -30,7 +30,11 @@ public class ListCommand implements Runnable {
   @Override
   public void run() {
     try {
-      new TestSuite(suite).getTestCases().stream().forEach(System.out::println);
+
+      final TestSuite testSuite = new TestSuite(suite);
+
+      for (int i = 0; i < testSuite.numberOfTestCases(); ++i)
+        System.out.println(testSuite.getTestCase(i));
     } catch (final IOException e) {
       System.err.println("could not read file: " + e.getMessage());
       System.exit(1);

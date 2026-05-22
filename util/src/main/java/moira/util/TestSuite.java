@@ -4,10 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.runner.Description;
 import org.junit.runner.JUnitCore;
@@ -15,60 +14,66 @@ import org.junit.runner.Request;
 import org.junit.runner.manipulation.Filter;
 
 public class TestSuite {
-  private final Map<Class<?>, List<TestCase>> testsuite;
+  private final List<Class<?>> testClasses;
+  private final List<TestCase> testCases;
+  private final Map<Class<?>, Range> testClassToCases;
 
-  public TestSuite(final File suiteFile) throws IOException {
-    testsuite =
-        Files.lines(suiteFile.toPath())
-            .map(String::trim)
-            .distinct()
-            .map(
-                className -> {
-                  try {
-                    return Class.forName(className);
-                  } catch (final ClassNotFoundException e) {
-                    throw new IllegalArgumentException(
-                        "could not find test class: " + e.getMessage());
-                  }
-                })
-            .collect(Collectors.toMap(Function.identity(), test -> new ArrayList<TestCase>()));
+  public TestSuite(final File testSuiteFile) throws IOException {
+    testClasses = new ArrayList<>();
+    testCases = new ArrayList<>();
+    testClassToCases = new HashMap<>();
 
-    findTestCases(testsuite.keySet().stream().toArray(Class<?>[]::new));
+    Files.lines(testSuiteFile.toPath())
+        .map(String::trim)
+        .distinct()
+        .map(
+            className -> {
+              try {
+                return Class.forName(className);
+              } catch (final ClassNotFoundException e) {
+                throw new IllegalArgumentException("could not find test class: " + e.getMessage());
+              }
+            })
+        .forEach(testClass -> this.registerTestClass(testClass));
   }
 
-  public int size() {
-    return testsuite.values().stream().map(List::size).reduce(0, Integer::sum);
+  public int numberOfTestCases() {
+    return testCases.size();
   }
 
-  public int testClassesSize() {
-    return testsuite.size();
+  public TestCase getTestCase(final int index) {
+    return testCases.get(index);
   }
 
-  public List<TestCase> getTestCases() {
-    return testsuite.values().stream().flatMap(c -> c.stream()).collect(Collectors.toList());
+  public int numberOfTestClasses() {
+    return testClasses.size();
   }
 
-  public List<Class<?>> getTestClasses() {
-    return testsuite.keySet().stream().collect(Collectors.toList());
+  public Class<?> getTestClass(final int index) {
+    return testClasses.get(index);
   }
 
-  public List<TestCase> getClassTestCases(final Class<?> testClass) {
-    return testsuite.get(testClass);
+  public Range getTestClassCases(final Class<?> testClass) {
+    return testClassToCases.get(testClass);
+  }
+
+  private void registerTestClass(final Class<?> testClass) {
+    final List<TestCase> cases = findTestCases(testClass);
+    testClasses.add(testClass);
+    testClassToCases.put(testClass, new Range(testCases.size(), testCases.size() + cases.size()));
+    testCases.addAll(cases);
   }
 
   public void addTestClasses(final Class<?>... classes) {
-    final Map<Class<?>, List<TestCase>> testcases =
-        Stream.of(classes)
-            .filter(testClass -> !testsuite.containsKey(testClass))
-            .collect(Collectors.toMap(Function.identity(), test -> new ArrayList<TestCase>()));
-
-    testsuite.putAll(testcases);
-    findTestCases(testcases.keySet().stream().toArray(Class<?>[]::new));
+    Stream.of(classes)
+        .filter(testClass -> !testClassToCases.containsKey(testClass))
+        .forEach(testClass -> this.registerTestClass(testClass));
   }
 
-  private void findTestCases(final Class<?>... classes) {
+  private List<TestCase> findTestCases(final Class<?> testClass) {
+    final List<TestCase> testClassCases = new ArrayList<>();
     final Request request =
-        Request.classes(classes)
+        Request.aClass(testClass)
             .filterWith(
                 new Filter() {
                   @Override
@@ -80,15 +85,17 @@ public class TestSuite {
                   public boolean shouldRun(final Description description) {
                     if (description.isSuite()) return true;
 
-                    testsuite
-                        .get(description.getTestClass())
-                        .add(new TestCase(TestCase.descriptionToTestID(description)));
+                    testClassCases.add(new TestCase(TestCase.descriptionToTestID(description)));
 
                     return false;
                   }
                 });
+
     final JUnitCore junit = new JUnitCore();
 
     junit.run(request);
+    ;
+
+    return testClassCases;
   }
 }
