@@ -94,7 +94,6 @@ public class TestSuite {
     final JUnitCore junit = new JUnitCore();
 
     junit.run(request);
-    ;
 
     return testClassCases;
   }

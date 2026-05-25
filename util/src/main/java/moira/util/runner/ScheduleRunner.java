@@ -17,18 +17,36 @@ public class ScheduleRunner {
 
   private Process createChildRunner() throws IOException {
     return new ProcessBuilder(
-            System.getProperty("java.home") + File.separator + "bin" + File.separator + "java",
+            String.join(File.separator, System.getProperty("java.home"), "bin", "java"),
             "-classpath",
             System.getProperty("java.class.path"),
             "moira.util.runner.ChildRunner")
         .start();
   }
 
-  public Future<boolean[]> submit(final TestCase[] schedule) {
+  public static class Outcome {
+    private final TestCase testCase;
+    private final boolean pass;
+
+    private Outcome(final TestCase testCase, final boolean pass) {
+      this.testCase = testCase;
+      this.pass = pass;
+    }
+
+    public boolean pass() {
+      return pass;
+    }
+
+    public TestCase testCase() {
+      return testCase;
+    }
+  }
+
+  public Future<Outcome[]> submit(final TestCase[] schedule) {
     return executor.submit(
-        new Callable<boolean[]>() {
+        new Callable<Outcome[]>() {
           @Override
-          public boolean[] call() throws IOException, InterruptedException {
+          public Outcome[] call() throws IOException, InterruptedException {
             final Process runner = createChildRunner();
             try (BufferedWriter writer =
                 new BufferedWriter(new OutputStreamWriter(runner.getOutputStream()))) {
@@ -38,7 +56,7 @@ public class ScheduleRunner {
               }
             }
 
-            final boolean[] outcomes = new boolean[schedule.length];
+            final Outcome[] outcomes = new Outcome[schedule.length];
             try (BufferedReader reader =
                 new BufferedReader(new InputStreamReader(runner.getInputStream()))) {
               for (int i = 0; i < outcomes.length; ++i) {
@@ -46,7 +64,7 @@ public class ScheduleRunner {
                 if (line == null)
                   throw new RuntimeException("failed to read test case execution result");
 
-                outcomes[i] = Boolean.parseBoolean(line);
+                outcomes[i] = new Outcome(schedule[i], Boolean.parseBoolean(line));
               }
             }
 

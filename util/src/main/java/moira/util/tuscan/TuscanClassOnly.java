@@ -1,32 +1,41 @@
 package moira.util.tuscan;
 
 import moira.util.Range;
+import moira.util.TestCase;
 import moira.util.TestSuite;
 
-public class TuscanClassOnly extends TuscanSquare {
+public final class TuscanClassOnly implements SchedulesGenerator {
+  private final TestSuite suite;
+  private final int[][] square;
+  private int index;
 
   public TuscanClassOnly(final TestSuite suite) {
-    super(suite);
+    this.suite = suite;
+    this.square = TuscanSquare.make(suite.numberOfTestClasses());
+    this.index = 0;
   }
 
   @Override
-  protected int[][] buildTuscanSquare() {
-    if (suite.numberOfTestClasses() % 2 == 1)
-      suite.addTestClasses(moira.util.tuscan.DummyTest.class);
-    final int[][] classSquare = createEvenSizeTuscanSquare(suite.numberOfTestClasses());
-    final int[][] square = new int[classSquare.length][suite.numberOfTestCases()];
+  public boolean done() {
+    return index >= square.length;
+  }
 
-    for (int i = 0; i < square.length; ++i) {
-      int j = 0;
+  @Override
+  public TestCase[] generate() {
+    final int[] row = square[index++];
 
-      for (final int classIndex : classSquare[i]) {
-        final Class<?> testClass = suite.getTestClass(classIndex);
-        final Range range = suite.getTestClassCases(testClass);
+    final TestCase[] schedule = new TestCase[suite.numberOfTestCases()];
+    int j = 0;
 
-        for (int k = range.min(); k < range.max(); ++k, ++j) square[i][j] = k;
-      }
+    for (final int classIndex : row) {
+      if (classIndex == suite.numberOfTestClasses()) continue;
+
+      final Class<?> testClass = suite.getTestClass(classIndex);
+      final Range range = suite.getTestClassCases(testClass);
+
+      for (int i = range.min(); i < range.max(); ++i, ++j) schedule[j] = suite.getTestCase(i);
     }
 
-    return square;
+    return schedule;
   }
 }

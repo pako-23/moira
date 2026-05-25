@@ -1,15 +1,35 @@
 package moira.util.tuscan;
 
+import moira.util.TestCase;
 import moira.util.TestSuite;
 
-public class TuscanPacked extends TuscanSquare {
+public final class TuscanPacked implements SchedulesGenerator {
+  private final TestSuite suite;
+  private final int[][] square;
+  private int index;
+
   public TuscanPacked(final TestSuite suite) {
-    super(suite);
+    this.suite = suite;
+    this.square = TuscanSquare.make(suite.numberOfTestCases());
+    this.index = 0;
   }
 
   @Override
-  protected int[][] buildTuscanSquare() {
-    if (suite.numberOfTestCases() % 2 == 1) suite.addTestClasses(moira.util.tuscan.DummyTest.class);
-    return createEvenSizeTuscanSquare(suite.numberOfTestCases());
+  public boolean done() {
+    return index >= square.length;
+  }
+
+  @Override
+  public TestCase[] generate() {
+    final int[] row = square[index++];
+    final TestCase[] schedule = new TestCase[suite.numberOfTestCases()];
+
+    int j = 0;
+    for (final int i : row) {
+      if (i == suite.numberOfTestCases()) continue;
+      schedule[j++] = suite.getTestCase(i);
+    }
+
+    return schedule;
   }
 }
