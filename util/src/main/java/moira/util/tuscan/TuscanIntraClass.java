@@ -51,6 +51,7 @@ public class TuscanIntraClass implements SchedulesGenerator {
       final Class<?> testClass = suite.getTestClass(classIndex);
       final Range range = suite.getTestClassCases(testClass);
       final int[][] intraClassSquare = intraClassSquares.get(classIndex);
+      if (intraClassSquare.length == 0) continue;
       final int[] intraClassRow = intraClassSquare[iteration % intraClassSquare.length];
 
       for (final int index : intraClassRow) {
