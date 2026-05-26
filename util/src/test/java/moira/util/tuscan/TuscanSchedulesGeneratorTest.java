@@ -23,7 +23,7 @@ public class TuscanSchedulesGeneratorTest {
     Integer.class, String.class, Boolean.class,
     Double.class, Long.class, Map.class,
   };
-  private static final int[] rangeSizes = {0, 0, 2, 10, 13, 23};
+  private static final int[] rangeSizes = {0, 0, 2, 6, 5, 13};
 
   @Mock private TestSuite suite;
 
@@ -34,7 +34,7 @@ public class TuscanSchedulesGeneratorTest {
 
   @ParameterizedTest
   @MethodSource("testSuiteOrders")
-  public void testTuscanClassOnlyConstruction(final int[] order) {
+  public void testTuscanClassOnlyConstruction(final Class<?>[] order) {
     mockTestSuite(order);
 
     assertThat(new TuscanClassOnly(suite), isTuscanClassOnlySquare(suite));
@@ -42,30 +42,76 @@ public class TuscanSchedulesGeneratorTest {
 
   @ParameterizedTest
   @MethodSource("testSuiteOrders")
-  public void testTuscanPackedConstruction(final int[] order) {
+  public void testTuscanPackedIsClassOnlySquare(final Class<?>[] order) {
     mockTestSuite(order);
 
     assertThat(new TuscanPacked(suite), isTuscanClassOnlySquare(suite));
+  }
+
+  @ParameterizedTest
+  @MethodSource("testSuiteOrders")
+  public void testTuscanPackedIsIntraClassSquare(final Class<?>[] order) {
+    mockTestSuite(order);
+
     assertThat(new TuscanPacked(suite), isTuscanIntraClassSquare(suite));
+  }
+
+  @ParameterizedTest
+  @MethodSource("testSuiteOrders")
+  public void testTuscanPackedHasAllPairs(final Class<?>[] order) {
+    mockTestSuite(order);
+
     assertThat(new TuscanPacked(suite), isAllPairsTuscanSquare(suite));
   }
 
   @ParameterizedTest
   @MethodSource("testSuiteOrders")
-  public void testTuscanIntraClassConstruction(final int[] order) {
+  public void testTuscanIntraClassIsClassOnlySquare(final Class<?>[] order) {
     mockTestSuite(order);
 
     assertThat(new TuscanIntraClass(suite), isTuscanClassOnlySquare(suite));
+  }
+
+  @ParameterizedTest
+  @MethodSource("testSuiteOrders")
+  public void testTuscanIntraClassConstruction(final Class<?>[] order) {
+    mockTestSuite(order);
+
     assertThat(new TuscanIntraClass(suite), isTuscanIntraClassSquare(suite));
   }
 
-  private void mockTestSuite(final int[] order) {
+  @ParameterizedTest
+  @MethodSource("testSuiteOrders")
+  public void testTuscanInterClassIsClassOnlySquare(final Class<?>[] order) {
+    mockTestSuite(order);
+
+    assertThat(new TuscanInterClass(suite), isTuscanClassOnlySquare(suite));
+  }
+
+  @ParameterizedTest
+  @MethodSource("testSuiteOrders")
+  public void testTuscanInterClassIsIntraClassSquare(final Class<?>[] order) {
+    mockTestSuite(order);
+
+    assertThat(new TuscanInterClass(suite), isTuscanIntraClassSquare(suite));
+  }
+
+  @ParameterizedTest
+  @MethodSource("testSuiteOrders")
+  public void testTuscanInterClassHasAllPairs(final Class<?>[] order) {
+    mockTestSuite(order);
+
+    assertThat(new TuscanInterClass(suite), isAllPairsTuscanSquare(suite));
+  }
+
+  private void mockTestSuite(final Class<?>[] order) {
     int testCases = 0;
 
     when(suite.numberOfTestClasses()).thenReturn(order.length);
 
     for (int i = 0; i < order.length; ++i) {
-      int index = order[i];
+      int index = 0;
+      for (; index < classes.length; ++index) if (order[i].equals(classes[index])) break;
       doReturn(classes[index]).when(suite).getTestClass(i);
       when(suite.getTestClassCases(classes[index]))
           .thenReturn(new Range(testCases, testCases + rangeSizes[index]));
@@ -82,13 +128,21 @@ public class TuscanSchedulesGeneratorTest {
 
   private static Stream<Arguments> testSuiteOrders() {
     return Stream.of(
-        Arguments.of(new int[] {2}),
-        Arguments.of(new int[] {2, 3}),
-        Arguments.of(new int[] {4}),
-        Arguments.of(new int[] {4, 5}),
-        Arguments.of(new int[] {0}),
-        Arguments.of(new int[] {}),
-        Arguments.of(new int[] {2, 0, 3, 4, 1, 5}),
-        Arguments.of(new int[] {2, 0, 4, 3, 5}));
+        Arguments.of((Object) new Class<?>[] {Boolean.class}),
+        Arguments.of((Object) new Class<?>[] {Boolean.class, Double.class}),
+        Arguments.of((Object) new Class<?>[] {Long.class}),
+        Arguments.of((Object) new Class<?>[] {Long.class, Map.class}),
+        Arguments.of((Object) new Class<?>[] {}),
+        Arguments.of((Object) new Class<?>[] {Long.class, Map.class, String.class}),
+        Arguments.of(
+            (Object)
+                new Class<?>[] {
+                  Boolean.class, Integer.class, Double.class, Long.class, String.class, Map.class
+                }),
+        Arguments.of(
+            (Object)
+                new Class<?>[] {
+                  Boolean.class, Integer.class, Long.class, Double.class, Map.class
+                }));
   }
 }
