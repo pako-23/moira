@@ -1,12 +1,18 @@
 package moira.util.tuscan;
 
+import static moira.util.tuscan.PairCoverMatcher.*;
 import static moira.util.tuscan.TuscanAllPairsMatcher.*;
 import static moira.util.tuscan.TuscanClassOnlyMatcher.*;
 import static moira.util.tuscan.TuscanIntraClassMatcher.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.*;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import moira.util.Range;
 import moira.util.TestCase;
@@ -18,7 +24,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-public class TuscanSchedulesGeneratorTest {
+public class ScheduleGeneratorsTest {
   private static final Class<?>[] classes = {
     Integer.class, String.class, Boolean.class,
     Double.class, Long.class, Map.class,
@@ -104,6 +110,15 @@ public class TuscanSchedulesGeneratorTest {
     assertThat(new TuscanInterClass(suite), isAllPairsTuscanSquare(suite));
   }
 
+  @ParameterizedTest
+  @MethodSource("testSuiteOrdersWithSeeds")
+  public void testTargetedPairsCoversAllRandomPairs(final Class<?>[] order, final int seed) {
+    mockTestSuite(order);
+    final Map<TestCase, Set<TestCase>> pairs = generateRandomPairs(seed);
+
+    assertThat(new TargetPairsGenerator(pairs), coversAllPairs(pairs));
+  }
+
   private void mockTestSuite(final Class<?>[] order) {
     int testCases = 0;
 
@@ -124,6 +139,33 @@ public class TuscanSchedulesGeneratorTest {
     }
 
     when(suite.numberOfTestCases()).thenReturn(testCases);
+  }
+
+  private Map<TestCase, Set<TestCase>> generateRandomPairs(final int seed) {
+    final Map<TestCase, Set<TestCase>> pairs = new HashMap<>();
+    final Random random = new Random(seed);
+    final int n = suite.numberOfTestCases();
+
+    if (n == 0) return pairs;
+
+    for (int i = 0; i < n; ++i) {
+      final Set<TestCase> targets = new HashSet<>();
+      for (int j = 0; j < n; ++j) {
+        if (i != j && random.nextBoolean()) targets.add(suite.getTestCase(j));
+      }
+      if (!targets.isEmpty()) pairs.put(suite.getTestCase(i), targets);
+    }
+
+    return pairs;
+  }
+
+  private static Stream<Arguments> testSuiteOrdersWithSeeds() {
+    return testSuiteOrders()
+        .flatMap(
+            args -> {
+              return IntStream.of(0, 1, 3, 10, 11, 12, 42, 100, 120)
+                  .mapToObj(seed -> Arguments.of(args.get()[0], seed));
+            });
   }
 
   private static Stream<Arguments> testSuiteOrders() {
