@@ -1,6 +1,7 @@
 package moira.util.tuscan;
 
 import static moira.util.tuscan.PairCoverMatcher.*;
+import static moira.util.tuscan.PossibleBrittleMatcher.*;
 import static moira.util.tuscan.TuscanAllPairsMatcher.*;
 import static moira.util.tuscan.TuscanClassOnlyMatcher.*;
 import static moira.util.tuscan.TuscanIntraClassMatcher.*;
@@ -117,6 +118,25 @@ public class ScheduleGeneratorsTest {
     final Map<TestCase, Set<TestCase>> pairs = generateRandomPairs(seed);
 
     assertThat(new TargetPairsGenerator(pairs), coversAllPairs(pairs));
+  }
+
+  @ParameterizedTest
+  @MethodSource("testSuiteOrdersWithSeeds")
+  public void testPairCoverCoversAllRandomPairs(final Class<?>[] order, final int seed) {
+    mockTestSuite(order);
+    final Map<TestCase, Set<TestCase>> pairs = generateRandomPairs(seed);
+
+    assertThat(new PairCover(pairs), coversAllPairs(pairs));
+  }
+
+  @ParameterizedTest
+  @MethodSource("testSuiteOrdersWithSeeds")
+  public void testPairCoverCoversPossibleBrittleForRandomPairs(
+      final Class<?>[] order, final int seed) {
+    mockTestSuite(order);
+    final Map<TestCase, Set<TestCase>> pairs = generateRandomPairs(seed);
+
+    assertThat(new PairCover(pairs), coversPossibleBrittleTests(pairs));
   }
 
   private void mockTestSuite(final Class<?>[] order) {
