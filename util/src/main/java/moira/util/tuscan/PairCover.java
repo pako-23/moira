@@ -1,8 +1,10 @@
 package moira.util.tuscan;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import moira.util.TestCase;
@@ -10,23 +12,53 @@ import moira.util.TestCase;
 public final class PairCover implements SchedulesGenerator {
 
   private final Map<TestCase, Set<TestCase>> pairs;
+  private final Map<TestCase, Set<TestCase>> invertedPairs;
 
   public PairCover(final Map<TestCase, Set<TestCase>> pairs) {
     this.pairs = pairs;
+    this.invertedPairs = new HashMap<>();
+    for (final Map.Entry<TestCase, Set<TestCase>> entry : pairs.entrySet()) {
+      for (final TestCase testCase : entry.getValue()) {
+        this.invertedPairs.computeIfAbsent(testCase, key -> new HashSet<>()).add(entry.getKey());
+      }
+    }
   }
 
   @Override
   public boolean done() {
-    return pairs.isEmpty();
+    return pairs.isEmpty() && invertedPairs.isEmpty();
   }
 
   @Override
   public TestCase[] generate() {
+    if (pairs.isEmpty()) return generateToCoverInvertedPairs();
+
+    return generateToCoverPairs();
+  }
+
+  private TestCase[] generateToCoverPairs() {
     final TestCase[] schedule = buildSchedule();
 
     removeCoveredPairs(schedule);
+    removeCoveredInvertedPairs(schedule);
 
     return schedule;
+  }
+
+  private TestCase[] generateToCoverInvertedPairs() {
+    final List<TestCase> schedule = new ArrayList<TestCase>();
+    final Set<TestCase> scheduled = new HashSet<>();
+
+    for (final Map.Entry<TestCase, Set<TestCase>> entry : invertedPairs.entrySet()) {
+      if (intersects(entry.getValue(), scheduled)) continue;
+
+      scheduled.add(entry.getKey());
+      schedule.add(entry.getKey());
+    }
+
+    for (final TestCase testCase : scheduled) invertedPairs.remove(testCase);
+
+    return schedule.stream().toArray(TestCase[]::new);
   }
 
   private TestCase[] buildSchedule() {
@@ -78,5 +110,22 @@ public final class PairCover implements SchedulesGenerator {
       targets.remove(second);
       if (targets.isEmpty()) pairs.remove(first);
     }
+  }
+
+  private void removeCoveredInvertedPairs(final TestCase[] schedule) {
+    final Set<TestCase> scheduled = new HashSet<>(schedule.length);
+
+    for (final TestCase testCase : schedule) {
+      final Set<TestCase> setters = invertedPairs.get(testCase);
+      if (setters != null && !intersects(setters, scheduled)) invertedPairs.remove(testCase);
+
+      scheduled.add(testCase);
+    }
+  }
+
+  private static boolean intersects(final Set<TestCase> a, final Set<TestCase> b) {
+    for (final TestCase testCase : a) if (b.contains(testCase)) return true;
+
+    return false;
   }
 }

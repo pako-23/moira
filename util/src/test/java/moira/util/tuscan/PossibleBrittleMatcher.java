@@ -1,5 +1,6 @@
 package moira.util.tuscan;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -9,28 +10,29 @@ import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 
 public class PossibleBrittleMatcher extends TypeSafeMatcher<SchedulesGenerator> {
-  private final Map<TestCase, Set<TestCase>> pairs;
+  private final Map<TestCase, Set<TestCase>> invertedPairs;
 
   public PossibleBrittleMatcher(final Map<TestCase, Set<TestCase>> pairs) {
-    this.pairs = pairs;
+    this.invertedPairs = new HashMap<>();
+
+    for (final Map.Entry<TestCase, Set<TestCase>> entry : pairs.entrySet()) {
+      for (final TestCase testCase : entry.getValue()) {
+        this.invertedPairs.computeIfAbsent(testCase, key -> new HashSet<>()).add(entry.getKey());
+      }
+    }
   }
 
   @Override
   protected boolean matchesSafely(final SchedulesGenerator generator) {
-    final Set<TestCase> brittleCovered = new HashSet<>();
-
     while (!generator.done()) {
       final TestCase[] schedule = generator.generate();
 
       for (int i = 0; i < schedule.length; ++i) {
-        if (coversBrittleTestCase(schedule, i)) brittleCovered.add(schedule[i]);
+        if (coversBrittleTestCase(schedule, i)) invertedPairs.remove(schedule[i]);
       }
     }
 
-    for (final TestCase testCase : pairs.keySet())
-      if (!brittleCovered.contains(testCase)) return false;
-
-    return true;
+    return invertedPairs.isEmpty();
   }
 
   @Override
@@ -44,7 +46,7 @@ public class PossibleBrittleMatcher extends TypeSafeMatcher<SchedulesGenerator> 
   }
 
   private boolean coversBrittleTestCase(final TestCase[] schedule, int testIndex) {
-    final Set<TestCase> targets = pairs.get(schedule[testIndex]);
+    final Set<TestCase> targets = invertedPairs.get(schedule[testIndex]);
     if (targets == null) return false;
 
     for (int j = 0; j < testIndex; ++j) if (targets.contains(schedule[j])) return false;

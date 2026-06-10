@@ -34,11 +34,11 @@ public class PairCoverMatcher extends TypeSafeMatcher<SchedulesGenerator> {
     }
 
     for (final Map.Entry<TestCase, Set<TestCase>> entry : pairs.entrySet()) {
-      final Set<TestCase> testCaseDependencies = coveredPairs.get(entry.getKey());
-      if (testCaseDependencies == null) return false;
+      final Set<TestCase> covered = coveredPairs.get(entry.getKey());
+      if (covered == null) return false;
 
       for (final TestCase testCase : entry.getValue())
-        if (!testCaseDependencies.contains(testCase)) return false;
+        if (!covered.contains(testCase)) return false;
     }
 
     return true;
