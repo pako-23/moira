@@ -251,7 +251,7 @@ public class ProfilerTest {
 
     final List<String> lines = dump(profiler, prefix, "static-field-double-write-dependency");
     final List<String> expected =
-        Stream.of("from: " + TEST_NAME[1] + ", to: " + TEST_NAME[0])
+        Stream.of("from: " + TEST_NAME[0] + ", to: " + TEST_NAME[1])
             .sorted()
             .collect(Collectors.toList());
 
@@ -293,7 +293,7 @@ public class ProfilerTest {
 
     final List<String> lines = dump(profiler, prefix, "static-field-dependency");
     final List<String> expected =
-        Stream.of("from: " + TEST_NAME[1] + ", to: " + TEST_NAME[0])
+        Stream.of("from: " + TEST_NAME[0] + ", to: " + TEST_NAME[1])
             .sorted()
             .collect(Collectors.toList());
 
@@ -317,7 +317,7 @@ public class ProfilerTest {
 
     final List<String> lines = dump(profiler, prefix, "static-field-dependency-inverted");
     final List<String> expected =
-        Stream.of("from: " + TEST_NAME[1] + ", to: " + TEST_NAME[0])
+        Stream.of("from: " + TEST_NAME[0] + ", to: " + TEST_NAME[1])
             .sorted()
             .collect(Collectors.toList());
 
@@ -341,7 +341,7 @@ public class ProfilerTest {
 
     final List<String> lines = dump(profiler, prefix, "object-dependency");
     final List<String> expected =
-        Stream.of("from: " + TEST_NAME[1] + ", to: " + TEST_NAME[0])
+        Stream.of("from: " + TEST_NAME[0] + ", to: " + TEST_NAME[1])
             .sorted()
             .collect(Collectors.toList());
 
@@ -385,7 +385,7 @@ public class ProfilerTest {
 
     final List<String> lines = dump(profiler, prefix, "object-double-write-dependency");
     final List<String> expected =
-        Stream.of("from: " + TEST_NAME[1] + ", to: " + TEST_NAME[0])
+        Stream.of("from: " + TEST_NAME[0] + ", to: " + TEST_NAME[1])
             .sorted()
             .collect(Collectors.toList());
 
@@ -409,7 +409,7 @@ public class ProfilerTest {
 
     final List<String> lines = dump(profiler, prefix, "object-dependency-inverted");
     final List<String> expected =
-        Stream.of("from: " + TEST_NAME[1] + ", to: " + TEST_NAME[0])
+        Stream.of("from: " + TEST_NAME[0] + ", to: " + TEST_NAME[1])
             .sorted()
             .collect(Collectors.toList());
 
@@ -454,7 +454,7 @@ public class ProfilerTest {
 
     final List<String> lines = dump(profiler, prefix, "array-double-write-dependency");
     final List<String> expected =
-        Stream.of("from: " + TEST_NAME[1] + ", to: " + TEST_NAME[0])
+        Stream.of("from: " + TEST_NAME[0] + ", to: " + TEST_NAME[1])
             .sorted()
             .collect(Collectors.toList());
 
@@ -497,7 +497,7 @@ public class ProfilerTest {
 
     final List<String> lines = dump(profiler, prefix, "array-dependency");
     final List<String> expected =
-        Stream.of("from: " + TEST_NAME[1] + ", to: " + TEST_NAME[0])
+        Stream.of("from: " + TEST_NAME[0] + ", to: " + TEST_NAME[1])
             .sorted()
             .collect(Collectors.toList());
 
@@ -521,7 +521,7 @@ public class ProfilerTest {
 
     final List<String> lines = dump(profiler, prefix, "array-dependency-inverted");
     final List<String> expected =
-        Stream.of("from: " + TEST_NAME[1] + ", to: " + TEST_NAME[0])
+        Stream.of("from: " + TEST_NAME[0] + ", to: " + TEST_NAME[1])
             .sorted()
             .collect(Collectors.toList());
 
@@ -611,7 +611,7 @@ public class ProfilerTest {
 
     final List<String> lines = dump(profiler, prefix, "many-object-dependency");
     final List<String> expected =
-        Stream.of("from: " + TEST_NAME[1] + ", to: " + TEST_NAME[0])
+        Stream.of("from: " + TEST_NAME[0] + ", to: " + TEST_NAME[1])
             .sorted()
             .collect(Collectors.toList());
 
@@ -639,7 +639,7 @@ public class ProfilerTest {
 
     final List<String> lines = dump(profiler, prefix, "many-array-dependency");
     final List<String> expected =
-        Stream.of("from: " + TEST_NAME[1] + ", to: " + TEST_NAME[0])
+        Stream.of("from: " + TEST_NAME[0] + ", to: " + TEST_NAME[1])
             .sorted()
             .collect(Collectors.toList());
 

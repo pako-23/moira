@@ -29,6 +29,14 @@ public class ReadWriteSet {
     return tests[i];
   }
 
+  public boolean isWriteEvent(final int element) {
+    return (getMask(element) & ReadWriteSet.WRITE) != 0;
+  }
+
+  public boolean isReadBeforeWriteEvent(final int element) {
+    return (getMask(element) & ReadWriteSet.READ_BEFORE_WRITE) != 0;
+  }
+
   public void update(int test, byte event) {
     int i;
 

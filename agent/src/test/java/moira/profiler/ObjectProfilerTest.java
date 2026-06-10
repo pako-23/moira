@@ -61,7 +61,7 @@ public class ObjectProfilerTest {
 
     final List<String> lines = makeDump("object-field-dependency");
     final List<String> expected =
-        Stream.of("from: " + TEST_NAME[1] + ", to: " + TEST_NAME[0])
+        Stream.of("from: " + TEST_NAME[0] + ", to: " + TEST_NAME[1])
             .sorted()
             .collect(Collectors.toList());
 
@@ -84,7 +84,7 @@ public class ObjectProfilerTest {
 
     final List<String> lines = makeDump("array-field-dependency");
     final List<String> expected =
-        Stream.of("from: " + TEST_NAME[1] + ", to: " + TEST_NAME[0])
+        Stream.of("from: " + TEST_NAME[0] + ", to: " + TEST_NAME[1])
             .sorted()
             .collect(Collectors.toList());
 

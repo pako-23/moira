@@ -8,7 +8,7 @@ public final class ObjectProfiler {
   private static volatile int runningTest;
   private static volatile int enabled;
   private static ThreadLocal<Integer> suspend;
-  private static ProfilerDump dump;
+  private static DataFlows dataFlows;
   private static Map<String, ReadWriteSet> staticMapping;
   private static Map<Object, ReadWriteSet> arrayMapping;
   private static Map<Object, ReadWriteSet> objectMapping;
@@ -23,20 +23,20 @@ public final class ObjectProfiler {
     runningTest = -1;
     enabled = 0;
     suspend = ThreadLocal.withInitial(() -> 0);
-    dump = new ProfilerDump();
+    dataFlows = new DataFlows();
     staticMapping = MapBuilder.<String, ReadWriteSet>builder().initialCapacity(1 << 10).build();
     arrayMapping =
         MapBuilder.<Object, ReadWriteSet>builder()
             .initialCapacity(1 << 11)
             .weakKeys()
-            .keyDeletionCallback(ObjectProfiler::computeConflicts)
+            .keyDeletionCallback(ObjectProfiler::computeDataFlows)
             .hashFunction(System::identityHashCode)
             .build();
     objectMapping =
         MapBuilder.<Object, ReadWriteSet>builder()
             .initialCapacity(1 << 24)
             .weakKeys()
-            .keyDeletionCallback(ObjectProfiler::computeConflicts)
+            .keyDeletionCallback(ObjectProfiler::computeDataFlows)
             .hashFunction(System::identityHashCode)
             .build();
   }
@@ -64,15 +64,15 @@ public final class ObjectProfiler {
     return false;
   }
 
-  private static void computeConflicts(final ReadWriteSet set) {
-    dump.computeConflicts(set);
+  private static void computeDataFlows(final ReadWriteSet set) {
+    dataFlows.update(set);
   }
 
   public static void dump(final String fileName) throws FileNotFoundException {
     mappingDump(staticMapping);
     mappingDump(arrayMapping);
     mappingDump(objectMapping);
-    dump.dump(fileName);
+    dataFlows.dump(fileName);
   }
 
   private static void staticFieldEvent(final String field, final byte event) {
@@ -117,7 +117,7 @@ public final class ObjectProfiler {
     Map.Iterator<?, ReadWriteSet> it = mapping.iterator();
 
     while (it.hasNext()) {
-      dump.computeConflicts(it.value());
+      dataFlows.update(it.value());
       it.next();
     }
   }
@@ -147,7 +147,7 @@ public final class ObjectProfiler {
   }
 
   public static void enterTestMethod(final String test) {
-    runningTest = dump.registerTest(test);
+    runningTest = dataFlows.registerTest(test);
   }
 
   public static void exitTestMethod() {

@@ -8,7 +8,7 @@ public final class TargetedPairsProfiler {
   private static volatile int runningTest;
   private static volatile int enabled;
   private static ThreadLocal<Integer> suspend;
-  private static ProfilerDump dump;
+  private static DataFlows dataFlows;
   private static Map<String, ReadWriteSet> mapping;
 
   static {
@@ -21,7 +21,7 @@ public final class TargetedPairsProfiler {
     runningTest = -1;
     enabled = 0;
     suspend = ThreadLocal.withInitial(() -> 0);
-    dump = new ProfilerDump();
+    dataFlows = new DataFlows();
     mapping = MapBuilder.<String, ReadWriteSet>builder().initialCapacity(1 << 10).build();
   }
 
@@ -79,7 +79,7 @@ public final class TargetedPairsProfiler {
   public static void readObjectField(final Object object, final String field) {}
 
   public static void enterTestMethod(final String test) {
-    runningTest = dump.registerTest(test);
+    runningTest = dataFlows.registerTest(test);
   }
 
   public static void exitTestMethod() {
@@ -90,11 +90,10 @@ public final class TargetedPairsProfiler {
     Map.Iterator<String, ReadWriteSet> it = mapping.iterator();
 
     while (it.hasNext()) {
-      System.out.println(it.key());
-      dump.computeConflicts(it.value());
+      dataFlows.update(it.value());
       it.next();
     }
 
-    dump.dump(fileName);
+    dataFlows.dump(fileName);
   }
 }

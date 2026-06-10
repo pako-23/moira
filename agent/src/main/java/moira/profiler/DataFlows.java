@@ -5,30 +5,38 @@ import java.io.PrintWriter;
 import moira.collect.Map;
 import moira.collect.MapBuilder;
 
-public class ProfilerDump {
+public class DataFlows {
   private int capacity;
   private int size;
   private TestCase[] tests;
 
   private static class TestCase {
     public final String name;
-    public Map<Integer, Void> dependencies;
+    public Map<Integer, Void> flows;
 
     public TestCase(final String name) {
       this.name = name;
-      dependencies = null;
+      flows = null;
     }
 
-    public void registerDependency(final int target) {
-      if (dependencies == null) {
-        dependencies = MapBuilder.<Integer, Void>builder().build();
+    public void registerDataFlow(final int to) {
+      if (flows == null) {
+        flows = MapBuilder.<Integer, Void>builder().build();
       }
 
-      dependencies.getOrPut(target, () -> null);
+      flows.getOrPut(to, () -> null);
+    }
+
+    public boolean hasDataFlows() {
+      return flows != null;
+    }
+
+    public Map.Iterator<Integer, Void> iterator() {
+      return flows.iterator();
     }
   }
 
-  public ProfilerDump() {
+  public DataFlows() {
     capacity = 128;
     size = 0;
     tests = new TestCase[capacity];
@@ -52,11 +60,11 @@ public class ProfilerDump {
     this.tests = tests;
   }
 
-  public void registerDependency(int dependant, int dependee) {
-    this.tests[dependant].registerDependency(dependee);
+  public void registerDataFlow(final int from, final int to) {
+    this.tests[from].registerDataFlow(to);
   }
 
-  public String getTestName(int i) {
+  public String getTestName(final int i) {
     return tests[i].name;
   }
 
@@ -65,23 +73,23 @@ public class ProfilerDump {
       final Iterator it = iterator();
 
       while (it.hasNext()) {
-        int dependant = it.getDependant();
-        int dependee = it.getDependee();
+        final int from = it.getFrom();
+        final int to = it.getTo();
 
-        writer.println("from: " + getTestName(dependant) + ", to: " + getTestName(dependee));
+        writer.println("from: " + getTestName(from) + ", to: " + getTestName(to));
         it.next();
       }
     }
   }
 
-  public void computeConflicts(final ReadWriteSet set) {
+  public void update(final ReadWriteSet set) {
     for (int i = 0; i < set.size(); ++i) {
-      if ((set.getMask(i) & ReadWriteSet.WRITE) == 0) continue;
+      if (!set.isWriteEvent(i)) continue;
 
       for (int j = 0; j < set.size(); ++j) {
-        if (i == j || (set.getMask(j) & ReadWriteSet.READ_BEFORE_WRITE) == 0) continue;
+        if (i == j || !set.isReadBeforeWriteEvent(j)) continue;
 
-        registerDependency(set.getTest(j), set.getTest(i));
+        registerDataFlow(set.getTest(i), set.getTest(j));
       }
     }
   }
@@ -100,19 +108,19 @@ public class ProfilerDump {
     }
 
     private void advance() {
-      while (index < size && tests[index].dependencies == null) ++index;
+      while (index < size && !tests[index].hasDataFlows()) ++index;
 
       if (index < size) {
-        iterator = tests[index].dependencies.iterator();
+        iterator = tests[index].iterator();
       }
     }
 
-    public int getDependee() {
-      return iterator.key();
+    public int getFrom() {
+      return index;
     }
 
-    public int getDependant() {
-      return index;
+    public int getTo() {
+      return iterator.key();
     }
 
     public boolean hasNext() {

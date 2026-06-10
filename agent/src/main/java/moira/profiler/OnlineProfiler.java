@@ -10,7 +10,7 @@ public final class OnlineProfiler {
   private static volatile int runningTest;
   private static volatile int enabled;
   private static ThreadLocal<Integer> suspend;
-  private static ProfilerDump dump;
+  private static DataFlows dataFlows;
   private static Map<String, ReadWriteSet> staticMapping;
   private static Map<Object, Map<Integer, ReadWriteSet>> arrayMapping;
   private static Map<Object, Map<String, ReadWriteSet>> objectMapping;
@@ -25,7 +25,7 @@ public final class OnlineProfiler {
     runningTest = -1;
     enabled = 0;
     suspend = ThreadLocal.withInitial(() -> 0);
-    dump = new ProfilerDump();
+    dataFlows = new DataFlows();
     staticMapping = MapBuilder.<String, ReadWriteSet>builder().initialCapacity(1 << 10).build();
     arrayMapping =
         MapBuilder.<Object, Map<Integer, ReadWriteSet>>builder()
@@ -47,7 +47,7 @@ public final class OnlineProfiler {
     fieldMappingDump(staticMapping);
     arrayMappingDump();
     objectMappingDump();
-    dump.dump(fileName);
+    dataFlows.dump(fileName);
   }
 
   public static void suspend() {
@@ -107,7 +107,7 @@ public final class OnlineProfiler {
     Map.Iterator<?, ReadWriteSet> it = mapping.iterator();
 
     while (it.hasNext()) {
-      dump.computeConflicts(it.value());
+      dataFlows.update(it.value());
       it.next();
     }
   }
@@ -170,7 +170,7 @@ public final class OnlineProfiler {
   }
 
   public static void enterTestMethod(final String test) {
-    runningTest = dump.registerTest(test);
+    runningTest = dataFlows.registerTest(test);
   }
 
   public static void exitTestMethod() {

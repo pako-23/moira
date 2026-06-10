@@ -10,7 +10,7 @@ public final class NaiveProfiler {
   private static volatile int enabled;
   private static ThreadLocal<Integer> suspend;
   private static int runningTest;
-  private static ProfilerDump dump;
+  private static DataFlows dataFlows;
   private static Map<String, Event> staticMapping;
   private static Map<Object, Map<String, Event>> objectMapping;
   private static Map<Object, Map<Integer, Event>> arrayMapping;
@@ -64,45 +64,48 @@ public final class NaiveProfiler {
       return test;
     }
 
-    private static <K> boolean oneLevelMapDependencies(
+    public boolean hasDataFlow(final TestSnapshot other) {
+      return hasStaticDataFlow(other) || hasObjectDataFlow(other) || hasArrayDataFlow(other);
+    }
+
+    private boolean hasStaticDataFlow(final TestSnapshot other) {
+      return TestSnapshot.<String>oneLevelMapDataFlow(staticMapping, other.staticMapping);
+    }
+
+    private boolean hasArrayDataFlow(final TestSnapshot other) {
+      return TestSnapshot.<Object, Integer>twoLevelMapDataFlow(arrayMapping, other.arrayMapping);
+    }
+
+    private boolean hasObjectDataFlow(final TestSnapshot other) {
+      return TestSnapshot.<Object, String>twoLevelMapDataFlow(objectMapping, other.objectMapping);
+    }
+
+    private static <K> boolean oneLevelMapDataFlow(
         final Map<K, Event> from, final Map<K, Event> to) {
-      final Map.Iterator<K, Event> it = to.iterator();
+      final Map.Iterator<K, Event> it = from.iterator();
+
       for (; it.hasNext(); it.next()) {
         if (!it.value().write()) continue;
-        final Event value = from.get(it.key());
+
+        final Event value = to.get(it.key());
         if (value != null && value.readBeforeWrite()) return true;
       }
+
       return false;
     }
 
-    private static <F, S> boolean twoLevelMapDependencies(
+    private static <F, S> boolean twoLevelMapDataFlow(
         final Map<F, Map<S, Event>> from, final Map<F, Map<S, Event>> to) {
-      final Map.Iterator<F, Map<S, Event>> it = to.iterator();
+      final Map.Iterator<F, Map<S, Event>> it = from.iterator();
+
       for (; it.hasNext(); it.next()) {
-        final Map<S, Event> mapping = from.get(it.key());
+        final Map<S, Event> mapping = to.get(it.key());
         if (mapping == null) continue;
 
-        if (TestSnapshot.<S>oneLevelMapDependencies(mapping, it.value())) return true;
+        if (TestSnapshot.<S>oneLevelMapDataFlow(it.value(), mapping)) return true;
       }
+
       return false;
-    }
-
-    private boolean staticDependencies(final TestSnapshot other) {
-      return TestSnapshot.<String>oneLevelMapDependencies(staticMapping, other.staticMapping);
-    }
-
-    private boolean arrayDependencies(final TestSnapshot other) {
-      return TestSnapshot.<Object, Integer>twoLevelMapDependencies(
-          arrayMapping, other.arrayMapping);
-    }
-
-    private boolean objectDependencies(final TestSnapshot other) {
-      return TestSnapshot.<Object, String>twoLevelMapDependencies(
-          objectMapping, other.objectMapping);
-    }
-
-    public boolean depends(final TestSnapshot other) {
-      return staticDependencies(other) || objectDependencies(other) || arrayDependencies(other);
     }
   }
 
@@ -116,7 +119,7 @@ public final class NaiveProfiler {
     runningTest = -1;
     enabled = 0;
     suspend = ThreadLocal.withInitial(() -> 0);
-    dump = new ProfilerDump();
+    dataFlows = new DataFlows();
     staticMapping = null;
     objectMapping = null;
     arrayMapping = null;
@@ -149,12 +152,14 @@ public final class NaiveProfiler {
   public static void dump(final String fileName) throws FileNotFoundException {
     for (TestSnapshot first = snapshots; first != null; first = first.getNext()) {
       for (TestSnapshot second = first.getNext(); second != null; second = second.getNext()) {
-        if (first.depends(second)) dump.registerDependency(first.getTest(), second.getTest());
-        if (second.depends(first)) dump.registerDependency(second.getTest(), first.getTest());
+        if (first.hasDataFlow(second))
+          dataFlows.registerDataFlow(first.getTest(), second.getTest());
+        if (second.hasDataFlow(first))
+          dataFlows.registerDataFlow(second.getTest(), first.getTest());
       }
     }
 
-    dump.dump(fileName);
+    dataFlows.dump(fileName);
   }
 
   private static void staticFieldEvent(final String field, final byte event) {
@@ -225,7 +230,7 @@ public final class NaiveProfiler {
         MapBuilder.<Object, Map<String, Event>>builder().initialCapacity(1 << 8).build();
     arrayMapping =
         MapBuilder.<Object, Map<Integer, Event>>builder().initialCapacity(1 << 8).build();
-    runningTest = dump.registerTest(test);
+    runningTest = dataFlows.registerTest(test);
   }
 
   public static void exitTestMethod() {
