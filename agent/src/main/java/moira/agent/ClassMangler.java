@@ -10,17 +10,15 @@ public class ClassMangler extends ClassVisitor {
   private static final int METHOD_FILTER =
       Opcodes.ACC_NATIVE | Opcodes.ACC_BRIDGE | Opcodes.ACC_ABSTRACT | Opcodes.ACC_SYNTHETIC;
 
-  private boolean mangle;
   private boolean suspend;
+  private boolean mangle;
   private String superName;
   private String className;
-  private final String profiler;
+  private final ManglerConfig config;
 
-  public ClassMangler(final ClassVisitor cv, final boolean suspend, final String profiler) {
+  public ClassMangler(final ClassVisitor cv, final ManglerConfig config) {
     super(Opcodes.ASM9, cv);
-    mangle = true;
-    this.suspend = suspend;
-    this.profiler = profiler;
+    this.config = config;
   }
 
   @Override
@@ -33,9 +31,14 @@ public class ClassMangler extends ClassVisitor {
       final String[] interfaces) {
     cv.visit(version, access, name, signature, superName, interfaces);
 
-    mangle = (access & CLASS_FILTER) == 0 && !superName.equals("java/lang/reflect/Proxy");
-    className = name;
+    this.className = name;
     this.superName = superName;
+    this.suspend = config.isSuspended(className);
+    this.mangle =
+        this.suspend
+            || ((access & CLASS_FILTER) == 0
+                && config.shouldMangle(className)
+                && !superName.equals("java/lang/reflect/Proxy"));
   }
 
   @Override
@@ -48,11 +51,12 @@ public class ClassMangler extends ClassVisitor {
     final MethodVisitor visitor = cv.visitMethod(access, name, description, signature, exceptions);
     if (visitor == null || !mangle || (access & METHOD_FILTER) != 0) return visitor;
 
-    if (suspend) return new SuspendMangler(visitor, profiler, access, name, description);
+    if (suspend)
+      return new SuspendMangler(visitor, config.getProfiler(), access, name, description);
 
     return new TestCaseMangler(
-        new FieldAccessMangler(visitor, profiler, superName, name),
-        profiler,
+        new FieldAccessMangler(visitor, config.getProfiler(), superName, name),
+        config.getProfiler(),
         superName,
         access,
         className,

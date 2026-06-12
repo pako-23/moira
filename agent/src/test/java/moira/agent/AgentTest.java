@@ -11,13 +11,8 @@ import java.lang.instrument.UnmodifiableClassException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.List;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EmptySource;
-import org.junit.jupiter.params.provider.NullSource;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
@@ -31,36 +26,18 @@ public class AgentTest {
     MockitoAnnotations.openMocks(this);
   }
 
-  @AfterEach
-  public void cleanup() {
-    System.clearProperty("moira.profiler.name");
-  }
-
   @Test
   public void testConstructorIsPrivate() throws NoSuchMethodException {
     Constructor<Agent> constructor = Agent.class.getDeclaredConstructor();
     assertThat(Modifier.isPrivate(constructor.getModifiers()), is(true));
   }
 
-  @ParameterizedTest
-  @ValueSource(strings = {"SomeProfiler"})
-  @EmptySource
-  @NullSource
-  public void testNoRetransformationSupported(final String profiler)
-      throws UnmodifiableClassException {
+  @Test
+  public void testNoRetransformationSupported() throws UnmodifiableClassException {
     when(instrumentationMock.isRetransformClassesSupported()).thenReturn(false);
-    if (profiler != null) System.setProperty("moira.profiler.name", profiler);
 
     try (final MockedConstruction<Transformer> transformerMock =
-        mockConstruction(
-            Transformer.class,
-            (mock, context) -> {
-              assertThat(context.arguments().size(), is(1));
-              final String argument = (String) context.arguments().get(0);
-              if (profiler == null || profiler.isEmpty())
-                assertThat(argument, is("moira/profiler/NullProfiler"));
-              else assertThat(argument, is("moira/profiler/" + profiler));
-            })) {
+        mockConstruction(Transformer.class)) {
       Agent.premain("", instrumentationMock);
       final List<Transformer> transformers = transformerMock.constructed();
       final InOrder order = inOrder(instrumentationMock);

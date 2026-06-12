@@ -23,7 +23,7 @@ public class TransformerTest {
 
   @BeforeEach
   public void setup() {
-    transformer = new Transformer("moira/profiler/NullProfiler");
+    transformer = new Transformer();
   }
 
   private static byte[] classToBytes(final Class<?> clazz) throws IOException {
