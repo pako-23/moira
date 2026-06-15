@@ -6,17 +6,14 @@ import java.util.Map;
 import java.util.Set;
 import moira.util.runner.ScheduleRunner;
 
-public class TuscanSquareCollector implements FlakyPairsCollector {
+public class TuscanSquareCollector extends FlakyPairsCollector {
   private final Map<TestCase, Boolean> outcomeInIsolation;
   private final Map<TestCase, Set<TestCase>> possibleSetters;
-  private final Map<TestCase, Set<TestCase>> brittle;
-  private final Map<TestCase, Set<TestCase>> victims;
 
   public TuscanSquareCollector() {
+    super();
     outcomeInIsolation = new HashMap<>();
     possibleSetters = new HashMap<>();
-    brittle = new HashMap<>();
-    victims = new HashMap<>();
   }
 
   @Override
@@ -28,33 +25,22 @@ public class TuscanSquareCollector implements FlakyPairsCollector {
       final ScheduleRunner.Outcome previous = outcome[i - 1];
 
       if (current.pass() && failsInIsolation(current.testCase()))
-        brittle
-            .computeIfAbsent(current.testCase(), key -> new HashSet<>())
-            .add(previous.testCase());
+        registerBrittleSetter(current.testCase(), previous.testCase());
       else if (current.pass() && !outcomeInIsolation.containsKey(current.testCase()))
         possibleSetters
             .computeIfAbsent(current.testCase(), key -> new HashSet<>())
             .add(previous.testCase());
-      else if (!current.pass())
-        victims
-            .computeIfAbsent(current.testCase(), key -> new HashSet<>())
-            .add(previous.testCase());
+      else if (!current.pass()) registerVictimPolluter(current.testCase(), previous.testCase());
     }
-  }
-
-  @Override
-  public void print() {
-    outputPairs(brittle, "brittle");
-    outputPairs(brittle, "victim");
   }
 
   private void registerOutcomeInIsolation(final ScheduleRunner.Outcome outcome) {
     outcomeInIsolation.put(outcome.testCase(), outcome.pass());
 
-    if (!outcome.pass() && possibleSetters.containsKey(outcome.testCase()))
-      brittle
-          .computeIfAbsent(outcome.testCase(), key -> new HashSet<>())
-          .addAll(possibleSetters.get(outcome.testCase()));
+    if (!outcome.pass() && possibleSetters.containsKey(outcome.testCase())) {
+      for (final TestCase setter : possibleSetters.get(outcome.testCase()))
+        registerBrittleSetter(outcome.testCase(), setter);
+    }
 
     possibleSetters.remove(outcome.testCase());
   }
@@ -62,11 +48,5 @@ public class TuscanSquareCollector implements FlakyPairsCollector {
   private boolean failsInIsolation(final TestCase testCase) {
     final Boolean outcome = outcomeInIsolation.get(testCase);
     return outcome != null && outcome;
-  }
-
-  private void outputPairs(final Map<TestCase, Set<TestCase>> pairs, final String type) {
-    for (final Map.Entry<TestCase, Set<TestCase>> entry : pairs.entrySet())
-      for (final TestCase testCase : entry.getValue())
-        System.out.printf("from: %s, to: %s, type: %s\n", entry.getKey(), testCase, type);
   }
 }

@@ -7,8 +7,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import moira.util.FlakyPairsCollector;
+import moira.util.PairsCollector;
 import moira.util.TestCase;
 import moira.util.TestSuite;
 import moira.util.TuscanSquareCollector;
@@ -85,11 +85,21 @@ public class TuscanCommand implements Runnable {
       public ScheduleGenerator generator(final File input) throws IOException {
         return new TuscanPacked(new TestSuite(input));
       }
+
+      @Override
+      public FlakyPairsCollector collector(final File input) throws IOException {
+        return new TuscanSquareCollector();
+      }
     },
     CLASS_ONLY {
       @Override
       public ScheduleGenerator generator(final File input) throws IOException {
         return new TuscanClassOnly(new TestSuite(input));
+      }
+
+      @Override
+      public FlakyPairsCollector collector(final File input) throws IOException {
+        return new TuscanSquareCollector();
       }
     },
     INTRA_CLASS {
@@ -97,11 +107,21 @@ public class TuscanCommand implements Runnable {
       public ScheduleGenerator generator(final File input) throws IOException {
         return new TuscanIntraClass(new TestSuite(input));
       }
+
+      @Override
+      public FlakyPairsCollector collector(final File input) throws IOException {
+        return new TuscanSquareCollector();
+      }
     },
     INTER_CLASS {
       @Override
       public ScheduleGenerator generator(final File input) throws IOException {
         return new TuscanInterClass(new TestSuite(input));
+      }
+
+      @Override
+      public FlakyPairsCollector collector(final File input) throws IOException {
+        return new TuscanSquareCollector();
       }
     },
     TARGETED_PAIRS {
@@ -109,15 +129,27 @@ public class TuscanCommand implements Runnable {
       public ScheduleGenerator generator(final File input) throws IOException {
         return new TargetPairsGenerator(parsePairs(input));
       }
+
+      @Override
+      public FlakyPairsCollector collector(final File input) throws IOException {
+        return new PairsCollector(parsePairs(input));
+      }
     },
     PAIR_COVER {
       @Override
       public ScheduleGenerator generator(final File input) throws IOException {
         return new PairCover(parsePairs(input));
       }
+
+      @Override
+      public FlakyPairsCollector collector(final File input) throws IOException {
+        return new PairsCollector(parsePairs(input));
+      }
     };
 
     public abstract ScheduleGenerator generator(final File input) throws IOException;
+
+    public abstract FlakyPairsCollector collector(final File input) throws IOException;
   }
 
   @Override
@@ -131,9 +163,9 @@ public class TuscanCommand implements Runnable {
   }
 
   private void findFlakyTests(final ScheduleGenerator generator)
-      throws ExecutionException, InterruptedException {
+      throws InterruptedException, IOException {
     final ScheduleRunner runner = new ScheduleRunner(generator);
-    final FlakyPairsCollector collector = new TuscanSquareCollector();
+    final FlakyPairsCollector collector = mode.collector(file);
 
     runner.run();
 
