@@ -5,8 +5,9 @@ import java.util.List;
 import moira.util.Range;
 import moira.util.TestCase;
 import moira.util.TestSuite;
+import moira.util.runner.ScheduleGenerator;
 
-public final class TuscanInterClass implements SchedulesGenerator {
+public final class TuscanInterClass implements ScheduleGenerator {
   private final TestSuite suite;
   private final int[][] classOnlySquare;
   private final List<int[][]> intraClassSquares;

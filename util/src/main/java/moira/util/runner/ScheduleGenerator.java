@@ -1,8 +1,8 @@
-package moira.util.tuscan;
+package moira.util.runner;
 
 import moira.util.TestCase;
 
-public interface SchedulesGenerator {
+public interface ScheduleGenerator {
   public boolean done();
 
   public TestCase[] generate();

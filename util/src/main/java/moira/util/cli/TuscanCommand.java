@@ -2,20 +2,19 @@ package moira.util.cli;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import moira.util.FlakyPairsCollector;
 import moira.util.TestCase;
 import moira.util.TestSuite;
+import moira.util.TuscanSquareCollector;
+import moira.util.runner.ScheduleGenerator;
 import moira.util.runner.ScheduleRunner;
 import moira.util.tuscan.PairCover;
-import moira.util.tuscan.SchedulesGenerator;
 import moira.util.tuscan.TargetPairsGenerator;
 import moira.util.tuscan.TuscanClassOnly;
 import moira.util.tuscan.TuscanInterClass;
@@ -83,106 +82,69 @@ public class TuscanCommand implements Runnable {
   enum TuscanCommandMode {
     PACKED {
       @Override
-      public SchedulesGenerator generator(final File input) throws IOException {
+      public ScheduleGenerator generator(final File input) throws IOException {
         return new TuscanPacked(new TestSuite(input));
       }
     },
     CLASS_ONLY {
       @Override
-      public SchedulesGenerator generator(final File input) throws IOException {
+      public ScheduleGenerator generator(final File input) throws IOException {
         return new TuscanClassOnly(new TestSuite(input));
       }
     },
     INTRA_CLASS {
       @Override
-      public SchedulesGenerator generator(final File input) throws IOException {
+      public ScheduleGenerator generator(final File input) throws IOException {
         return new TuscanIntraClass(new TestSuite(input));
       }
     },
     INTER_CLASS {
       @Override
-      public SchedulesGenerator generator(final File input) throws IOException {
+      public ScheduleGenerator generator(final File input) throws IOException {
         return new TuscanInterClass(new TestSuite(input));
       }
     },
     TARGETED_PAIRS {
       @Override
-      public SchedulesGenerator generator(final File input) throws IOException {
+      public ScheduleGenerator generator(final File input) throws IOException {
         return new TargetPairsGenerator(parsePairs(input));
       }
     },
     PAIR_COVER {
       @Override
-      public SchedulesGenerator generator(final File input) throws IOException {
+      public ScheduleGenerator generator(final File input) throws IOException {
         return new PairCover(parsePairs(input));
       }
     };
 
-    public abstract SchedulesGenerator generator(final File input) throws IOException;
+    public abstract ScheduleGenerator generator(final File input) throws IOException;
   }
 
   @Override
   public void run() {
     try {
-      final SchedulesGenerator generator = mode.generator(file);
+      final ScheduleGenerator generator = mode.generator(file);
       findFlakyTests(generator);
     } catch (final Exception e) {
       e.printStackTrace();
     }
   }
 
-  private void findFlakyTests(final SchedulesGenerator generator)
+  private void findFlakyTests(final ScheduleGenerator generator)
       throws ExecutionException, InterruptedException {
-    final ScheduleRunner runner = new ScheduleRunner();
-    final List<ScheduleRunner.Outcome[]> results = submitSuitesExecutions(generator, runner);
+    final ScheduleRunner runner = new ScheduleRunner(generator);
+    final FlakyPairsCollector collector = new TuscanSquareCollector();
 
-    final Set<TestCase> failingInIsolation = findFailingInIsolation(results);
-    final Map<TestCase, TestCase> brittle = new HashMap<>();
-    final Map<TestCase, TestCase> victims = new HashMap<>();
+    runner.run();
 
-    for (final ScheduleRunner.Outcome[] outcome : results) {
-      for (int i = 1; i < outcome.length; ++i) {
-        final TestCase test = outcome[i].testCase();
-        final TestCase previousTest = outcome[i - 1].testCase();
-
-        if (outcome[i].pass() && failingInIsolation.contains(test)) brittle.put(test, previousTest);
-        else if (!outcome[i].pass()) victims.put(test, previousTest);
-      }
+    ScheduleRunner.Outcome[] outcome = runner.getOutcome();
+    while (outcome != null) {
+      collector.update(outcome);
+      outcome = runner.getOutcome();
     }
 
-    for (final Map.Entry<TestCase, TestCase> pair : brittle.entrySet())
-      System.out.printf(
-          "from: %s, to: %s, type: brittle\n",
-          pair.getKey().toString(), pair.getValue().toString());
-
-    for (final Map.Entry<TestCase, TestCase> pair : victims.entrySet())
-      System.out.printf(
-          "from: %s, to: %s, type: victim\n", pair.getKey().toString(), pair.getValue().toString());
-  }
-
-  private List<ScheduleRunner.Outcome[]> submitSuitesExecutions(
-      final SchedulesGenerator generator, final ScheduleRunner runner)
-      throws ExecutionException, InterruptedException {
-    final List<ScheduleRunner.Outcome[]> results = new ArrayList<>();
-    final List<Future<ScheduleRunner.Outcome[]>> jobs = new ArrayList<>();
-
-    while (!generator.done()) {
-      jobs.add(runner.submit(generator.generate()));
-    }
-
-    for (final Future<ScheduleRunner.Outcome[]> job : jobs) results.add(job.get());
-
-    return results;
-  }
-
-  private Set<TestCase> findFailingInIsolation(final List<ScheduleRunner.Outcome[]> results) {
-    final Set<TestCase> brittle = new HashSet<>();
-    for (int i = 0; i < results.size(); ++i) {
-      final ScheduleRunner.Outcome[] outcome = results.get(i);
-      if (!outcome[0].pass()) brittle.add(outcome[0].testCase());
-    }
-
-    return brittle;
+    collector.print();
+    runner.join();
   }
 
   private static Map<TestCase, Set<TestCase>> parsePairs(final File input) throws IOException {

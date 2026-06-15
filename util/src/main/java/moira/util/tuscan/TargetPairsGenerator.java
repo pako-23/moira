@@ -13,8 +13,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import moira.util.TestCase;
+import moira.util.runner.ScheduleGenerator;
 
-public final class TargetPairsGenerator implements SchedulesGenerator {
+public final class TargetPairsGenerator implements ScheduleGenerator {
   private final Map<TestCase, Set<TestCase>> crossClassPairs;
   private final Map<TestCase, Set<TestCase>> intraClassPairs;
 

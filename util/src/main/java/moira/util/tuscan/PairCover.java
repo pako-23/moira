@@ -8,8 +8,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import moira.util.TestCase;
+import moira.util.runner.ScheduleGenerator;
 
-public final class PairCover implements SchedulesGenerator {
+public final class PairCover implements ScheduleGenerator {
 
   private final Map<TestCase, Set<TestCase>> pairs;
   private final Map<TestCase, Set<TestCase>> invertedPairs;

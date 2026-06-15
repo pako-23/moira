@@ -5,11 +5,12 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import moira.util.TestCase;
+import moira.util.runner.ScheduleGenerator;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 
-public class PossibleBrittleMatcher extends TypeSafeMatcher<SchedulesGenerator> {
+public class PossibleBrittleMatcher extends TypeSafeMatcher<ScheduleGenerator> {
   private final Map<TestCase, Set<TestCase>> invertedPairs;
 
   public PossibleBrittleMatcher(final Map<TestCase, Set<TestCase>> pairs) {
@@ -23,7 +24,7 @@ public class PossibleBrittleMatcher extends TypeSafeMatcher<SchedulesGenerator> 
   }
 
   @Override
-  protected boolean matchesSafely(final SchedulesGenerator generator) {
+  protected boolean matchesSafely(final ScheduleGenerator generator) {
     while (!generator.done()) {
       final TestCase[] schedule = generator.generate();
 
@@ -40,7 +41,7 @@ public class PossibleBrittleMatcher extends TypeSafeMatcher<SchedulesGenerator> 
     description.appendText("covers all possible brittle tests");
   }
 
-  public static Matcher<SchedulesGenerator> coversPossibleBrittleTests(
+  public static Matcher<ScheduleGenerator> coversPossibleBrittleTests(
       final Map<TestCase, Set<TestCase>> pairs) {
     return new PossibleBrittleMatcher(pairs);
   }

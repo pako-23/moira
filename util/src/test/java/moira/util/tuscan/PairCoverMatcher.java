@@ -5,11 +5,12 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import moira.util.TestCase;
+import moira.util.runner.ScheduleGenerator;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 
-public class PairCoverMatcher extends TypeSafeMatcher<SchedulesGenerator> {
+public class PairCoverMatcher extends TypeSafeMatcher<ScheduleGenerator> {
   private final Map<TestCase, Set<TestCase>> pairs;
 
   public PairCoverMatcher(final Map<TestCase, Set<TestCase>> pairs) {
@@ -17,7 +18,7 @@ public class PairCoverMatcher extends TypeSafeMatcher<SchedulesGenerator> {
   }
 
   @Override
-  protected boolean matchesSafely(final SchedulesGenerator generator) {
+  protected boolean matchesSafely(final ScheduleGenerator generator) {
     final Map<TestCase, Set<TestCase>> coveredPairs = new HashMap<>();
 
     while (!generator.done()) {
@@ -60,7 +61,7 @@ public class PairCoverMatcher extends TypeSafeMatcher<SchedulesGenerator> {
     return false;
   }
 
-  public static Matcher<SchedulesGenerator> coversAllPairs(
+  public static Matcher<ScheduleGenerator> coversAllPairs(
       final Map<TestCase, Set<TestCase>> pairs) {
     return new PairCoverMatcher(pairs);
   }

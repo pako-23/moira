@@ -5,11 +5,12 @@ import java.util.Map;
 import moira.util.Range;
 import moira.util.TestCase;
 import moira.util.TestSuite;
+import moira.util.runner.ScheduleGenerator;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 
-public class TuscanIntraClassMatcher extends TypeSafeMatcher<SchedulesGenerator> {
+public class TuscanIntraClassMatcher extends TypeSafeMatcher<ScheduleGenerator> {
   private final TestSuite suite;
 
   public TuscanIntraClassMatcher(final TestSuite suite) {
@@ -17,7 +18,7 @@ public class TuscanIntraClassMatcher extends TypeSafeMatcher<SchedulesGenerator>
   }
 
   @Override
-  protected boolean matchesSafely(final SchedulesGenerator generator) {
+  protected boolean matchesSafely(final ScheduleGenerator generator) {
     final Map<Class<?>, boolean[][]> pairs = new HashMap<>(suite.numberOfTestClasses());
 
     for (int i = 0; i < suite.numberOfTestClasses(); ++i) {
@@ -62,7 +63,7 @@ public class TuscanIntraClassMatcher extends TypeSafeMatcher<SchedulesGenerator>
     description.appendText("contains all pairs between test classes");
   }
 
-  public static Matcher<SchedulesGenerator> isTuscanIntraClassSquare(final TestSuite suite) {
+  public static Matcher<ScheduleGenerator> isTuscanIntraClassSquare(final TestSuite suite) {
     return new TuscanIntraClassMatcher(suite);
   }
 }

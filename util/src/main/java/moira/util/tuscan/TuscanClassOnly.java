@@ -3,8 +3,9 @@ package moira.util.tuscan;
 import moira.util.Range;
 import moira.util.TestCase;
 import moira.util.TestSuite;
+import moira.util.runner.ScheduleGenerator;
 
-public final class TuscanClassOnly implements SchedulesGenerator {
+public final class TuscanClassOnly implements ScheduleGenerator {
   private final TestSuite suite;
   private final int[][] square;
   private int index;
