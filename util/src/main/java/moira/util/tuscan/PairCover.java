@@ -37,6 +37,11 @@ public final class PairCover implements ScheduleGenerator {
     return generateToCoverPairs();
   }
 
+  @Override
+  public int count() {
+    return 0;
+  }
+
   private TestCase[] generateToCoverPairs() {
     final TestCase[] schedule = buildSchedule();
 

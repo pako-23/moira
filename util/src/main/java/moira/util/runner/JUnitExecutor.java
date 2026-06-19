@@ -42,7 +42,18 @@ public class JUnitExecutor {
 
     request =
         Request.classes(
-                classes.stream().map(AbstractMap.SimpleEntry::getKey).toArray(Class<?>[]::new))
+                classes.stream()
+                    .map(AbstractMap.SimpleEntry::getKey)
+                    .map(
+                        className -> {
+                          try {
+                            return Class.forName(className);
+                          } catch (final ClassNotFoundException e) {
+                            return null;
+                          }
+                        })
+                    .filter(clazz -> clazz != null)
+                    .toArray(Class<?>[]::new))
             .filterWith(
                 new Filter() {
 

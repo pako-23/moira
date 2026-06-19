@@ -31,12 +31,17 @@ public final class TuscanClassOnly implements ScheduleGenerator {
     for (final int classIndex : row) {
       if (classIndex == suite.numberOfTestClasses()) continue;
 
-      final Class<?> testClass = suite.getTestClass(classIndex);
+      final String testClass = suite.getTestClass(classIndex);
       final Range range = suite.getTestClassCases(testClass);
 
       for (int i = range.min(); i < range.max(); ++i, ++j) schedule[j] = suite.getTestCase(i);
     }
 
     return schedule;
+  }
+
+  @Override
+  public int count() {
+    return square.length;
   }
 }

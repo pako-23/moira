@@ -20,7 +20,7 @@ public class TuscanIntraClass implements ScheduleGenerator {
 
     this.intraClassSquares = new ArrayList<>(suite.numberOfTestClasses());
     for (int i = 0; i < suite.numberOfTestClasses(); ++i) {
-      final Class<?> testClass = suite.getTestClass(i);
+      final String testClass = suite.getTestClass(i);
       final Range range = suite.getTestClassCases(testClass);
       final int length = range.max() - range.min();
       final int[][] intraClassSquare = TuscanSquare.make(length);
@@ -49,7 +49,7 @@ public class TuscanIntraClass implements ScheduleGenerator {
     for (final int classIndex : classRow) {
       if (classIndex == suite.numberOfTestClasses()) continue;
 
-      final Class<?> testClass = suite.getTestClass(classIndex);
+      final String testClass = suite.getTestClass(classIndex);
       final Range range = suite.getTestClassCases(testClass);
       final int[][] intraClassSquare = intraClassSquares.get(classIndex);
       if (intraClassSquare.length == 0) continue;
@@ -63,5 +63,10 @@ public class TuscanIntraClass implements ScheduleGenerator {
 
     ++iteration;
     return schedule.stream().toArray(TestCase[]::new);
+  }
+
+  @Override
+  public int count() {
+    return size;
   }
 }

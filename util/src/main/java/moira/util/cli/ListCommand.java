@@ -1,9 +1,8 @@
 package moira.util.cli;
 
 import java.io.File;
-import java.io.IOException;
-
 import moira.util.docker.DockerExecutor;
+import moira.util.list.TestSuiteBuilder;
 import moira.util.model.TestSuite;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -21,7 +20,7 @@ public class ListCommand implements Runnable {
       paramLabel = "<testsuite>",
       description = "The path to a file containing the test suite.",
       arity = "1")
-  private File suite;
+  private File file;
 
   @Option(
       names = {"-app-cp"},
@@ -37,18 +36,12 @@ public class ListCommand implements Runnable {
   @Override
   public void run() {
 
-      final DockerExecutor executor = new DockerExecutor(classpath);
-    // try {
-        
-          
+    final TestSuite suite =
+        TestSuiteBuilder.builder()
+            .withDockerExecutor(new DockerExecutor(classpath))
+            .withTestClassesFile(file)
+            .build();
 
-    //   final TestSuite testSuite = new TestSuite(suite);
-
-    //   for (int i = 0; i < testSuite.numberOfTestCases(); ++i)
-    //     System.out.println(testSuite.getTestCase(i));
-    // } catch (final IOException e) {
-    //   System.err.println("could not read file: " + e.getMessage());
-    //   System.exit(1);
-    // }
+    for (int i = 0; i < suite.numberOfTestCases(); ++i) System.out.println(suite.getTestCase(i));
   }
 }

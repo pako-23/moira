@@ -10,11 +10,13 @@ import java.util.Set;
 import moira.util.FlakyPairsCollector;
 import moira.util.PairsCollector;
 import moira.util.TuscanSquareCollector;
+import moira.util.docker.DockerExecutor;
+import moira.util.list.TestSuiteBuilder;
 import moira.util.model.Outcome;
 import moira.util.model.TestCase;
-import moira.util.model.TestSuite;
 import moira.util.runner.ScheduleGenerator;
 import moira.util.runner.ScheduleRunner;
+import moira.util.runner.ScheduleRunnerBuilder;
 import moira.util.tuscan.PairCover;
 import moira.util.tuscan.TargetPairsGenerator;
 import moira.util.tuscan.TuscanClassOnly;
@@ -42,13 +44,12 @@ public class TuscanCommand implements Runnable {
   private File file;
 
   @Option(
-      names = {"-h", "-help"},
-      usageHelp = true,
-      description = "Display this help and exit.")
-  private boolean help;
+      names = {"-app-cp"},
+      description = "The application's classpath.")
+  private String classpath;
 
   @Option(
-      names = {"-m", "--mode"},
+      names = {"-m", "-mode"},
       paramLabel = "<mode>",
       description =
           "Algorithm variant. Valid values: packed, class-only, intra-class, inter-class, targeted-pairs, pair-cover"
@@ -56,6 +57,12 @@ public class TuscanCommand implements Runnable {
       defaultValue = "packed",
       converter = TuscanCommandModeConverter.class)
   private TuscanCommandMode mode;
+
+  @Option(
+      names = {"-h", "-help"},
+      usageHelp = true,
+      description = "Display this help and exit.")
+  private boolean help;
 
   private static class TuscanCommandModeConverter implements ITypeConverter<TuscanCommandMode> {
     @Override
@@ -81,108 +88,108 @@ public class TuscanCommand implements Runnable {
   }
 
   enum TuscanCommandMode {
-    PACKED {
-      @Override
-      public ScheduleGenerator generator(final File input) throws IOException {
-        return new TuscanPacked(new TestSuite(input));
-      }
-
-      @Override
-      public FlakyPairsCollector collector(final File input) throws IOException {
-        return new TuscanSquareCollector();
-      }
-    },
-    CLASS_ONLY {
-      @Override
-      public ScheduleGenerator generator(final File input) throws IOException {
-        return new TuscanClassOnly(new TestSuite(input));
-      }
-
-      @Override
-      public FlakyPairsCollector collector(final File input) throws IOException {
-        return new TuscanSquareCollector();
-      }
-    },
-    INTRA_CLASS {
-      @Override
-      public ScheduleGenerator generator(final File input) throws IOException {
-        return new TuscanIntraClass(new TestSuite(input));
-      }
-
-      @Override
-      public FlakyPairsCollector collector(final File input) throws IOException {
-        return new TuscanSquareCollector();
-      }
-    },
-    INTER_CLASS {
-      @Override
-      public ScheduleGenerator generator(final File input) throws IOException {
-        return new TuscanInterClass(new TestSuite(input));
-      }
-
-      @Override
-      public FlakyPairsCollector collector(final File input) throws IOException {
-        return new TuscanSquareCollector();
-      }
-    },
-    TARGETED_PAIRS {
-      @Override
-      public ScheduleGenerator generator(final File input) throws IOException {
-        return new TargetPairsGenerator(parsePairs(input));
-      }
-
-      @Override
-      public FlakyPairsCollector collector(final File input) throws IOException {
-        return new PairsCollector(parsePairs(input));
-      }
-    },
-    PAIR_COVER {
-      @Override
-      public ScheduleGenerator generator(final File input) throws IOException {
-        return new PairCover(parsePairs(input));
-      }
-
-      @Override
-      public FlakyPairsCollector collector(final File input) throws IOException {
-        return new PairsCollector(parsePairs(input));
-      }
-    };
-
-    public abstract ScheduleGenerator generator(final File input) throws IOException;
-
-    public abstract FlakyPairsCollector collector(final File input) throws IOException;
+    PACKED,
+    CLASS_ONLY,
+    INTRA_CLASS,
+    INTER_CLASS,
+    TARGETED_PAIRS,
+    PAIR_COVER;
   }
 
   @Override
   public void run() {
+    final DockerExecutor executor = new DockerExecutor(classpath);
+
+    final ScheduleRunner runner =
+        ScheduleRunnerBuilder.builder()
+            .withDockerExecutor(executor)
+            .withScheduleGenerator(constructScheduleGenerator(executor))
+            .build();
+    final FlakyPairsCollector collector = constructFlakyTestsCollector();
+
     try {
-      final ScheduleGenerator generator = mode.generator(file);
-      findFlakyTests(generator);
+      runner.start();
+
+      Outcome[] outcome;
+      while ((outcome = runner.getOutcome()) != null) collector.update(outcome);
+
+      runner.join();
+      collector.print();
     } catch (final Exception e) {
       e.printStackTrace();
     }
   }
 
-  private void findFlakyTests(final ScheduleGenerator generator)
-      throws InterruptedException, IOException {
-    final ScheduleRunner runner = new ScheduleRunner(generator);
-    final FlakyPairsCollector collector = mode.collector(file);
-
-    runner.run();
-
-    Outcome[] outcome = runner.getOutcome();
-    while (outcome != null) {
-      collector.update(outcome);
-      outcome = runner.getOutcome();
+  private ScheduleGenerator constructScheduleGenerator(final DockerExecutor executor) {
+    switch (mode) {
+      case PACKED:
+        return new TuscanPacked(
+            TestSuiteBuilder.builder()
+                .withDockerExecutor(executor)
+                .withTestClassesFile(file)
+                .build());
+      case CLASS_ONLY:
+        return new TuscanClassOnly(
+            TestSuiteBuilder.builder()
+                .withDockerExecutor(executor)
+                .withTestClassesFile(file)
+                .build());
+      case INTRA_CLASS:
+        return new TuscanIntraClass(
+            TestSuiteBuilder.builder()
+                .withDockerExecutor(executor)
+                .withTestClassesFile(file)
+                .build());
+      case INTER_CLASS:
+        return new TuscanInterClass(
+            TestSuiteBuilder.builder()
+                .withDockerExecutor(executor)
+                .withTestClassesFile(file)
+                .build());
+      case TARGETED_PAIRS:
+        return new TargetPairsGenerator(parsePairs(file));
+      case PAIR_COVER:
+        return new PairCover(parsePairs(file));
+      default:
+        throw new RuntimeException("invalid mode provided");
     }
-
-    collector.print();
-    runner.join();
   }
 
-  private static Map<TestCase, Set<TestCase>> parsePairs(final File input) throws IOException {
+  private FlakyPairsCollector constructFlakyTestsCollector() {
+    switch (mode) {
+      case PACKED:
+      case CLASS_ONLY:
+      case INTRA_CLASS:
+      case INTER_CLASS:
+        return new TuscanSquareCollector();
+      case TARGETED_PAIRS:
+      case PAIR_COVER:
+        return new PairsCollector(parsePairs(file));
+      default:
+        throw new RuntimeException("invalid mode provided");
+    }
+  }
+
+  // private void findFlakyTests(final ScheduleGenerator generator)
+  //     throws InterruptedException, IOException {
+  //   final ScheduleRunner runner = new ScheduleRunner(generator);
+  //   final FlakyPairsCollector collector = mode.collector(file);
+
+  //   runner.run();
+
+  //   Outcome[] outcome = runner.getOutcome();
+  //   while (outcome != null) {
+  //     collector.update(outcome);
+  //     outcome = runner.getOutcome();
+  //   }
+
+  //   collector.print();
+  //   runner.join();
+  // }
+
+  private static Map<TestCase, Set<TestCase>> parsePairs(final File input) {
     final Map<TestCase, Set<TestCase>> pairs = new HashMap<>();
-    try (Scanner scanner = new Scanner(input)) {
+    try (final Scanner scanner = new Scanner(input)) {
       while (scanner.hasNextLine()) {
         final String line = scanner.nextLine().trim();
         if (line.isEmpty()) continue;
@@ -194,6 +201,8 @@ public class TuscanCommand implements Runnable {
         final String to = parts[1].substring("to: ".length());
         pairs.computeIfAbsent(new TestCase(from), key -> new HashSet<>()).add(new TestCase(to));
       }
+    } catch (final IOException e) {
+      throw new RuntimeException("failed to read pair files: " + e.getMessage());
     }
 
     return pairs;

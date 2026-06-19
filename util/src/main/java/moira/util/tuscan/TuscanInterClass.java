@@ -25,7 +25,7 @@ public final class TuscanInterClass implements ScheduleGenerator {
     this.intraClassSquares = new ArrayList<>(suite.numberOfTestClasses());
 
     for (int i = 0; i < suite.numberOfTestClasses(); ++i) {
-      final Class<?> testClass = suite.getTestClass(i);
+      final String testClass = suite.getTestClass(i);
       final Range range = suite.getTestClassCases(testClass);
       final int length = range.max() - range.min();
       final int[][] intraClassSquare = TuscanSquare.make(length);
@@ -58,12 +58,17 @@ public final class TuscanInterClass implements ScheduleGenerator {
     return schedule.stream().toArray(TestCase[]::new);
   }
 
+  @Override
+  public int count() {
+    return 0;
+  }
+
   private List<TestCase> produceSchedule(
       final int classOnlyColumnIndex, final int intraClassRowIndex) {
     final int[] classOnlyRow = classOnlySquare[classOnlyRowIndex];
     final int testClassIndex = classOnlyRow[classOnlyColumnIndex];
     final int[] testCases = intraClassSquares.get(testClassIndex)[intraClassRowIndex];
-    final Class<?> testClass = suite.getTestClass(testClassIndex);
+    final String testClass = suite.getTestClass(testClassIndex);
     final Range range = suite.getTestClassCases(testClass);
     final List<TestCase> schedule = new ArrayList<>(testCases.length);
 
@@ -129,7 +134,7 @@ public final class TuscanInterClass implements ScheduleGenerator {
   }
 
   private boolean isEmptyTestClass(final int index) {
-    final Class<?> testClass = suite.getTestClass(index);
+    final String testClass = suite.getTestClass(index);
     final Range range = suite.getTestClassCases(testClass);
 
     return range.max() == range.min();

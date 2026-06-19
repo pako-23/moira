@@ -33,4 +33,9 @@ public final class TuscanPacked implements ScheduleGenerator {
 
     return schedule;
   }
+
+  @Override
+  public int count() {
+    return square.length;
+  }
 }

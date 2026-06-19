@@ -20,6 +20,8 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class DockerExecutor {
   private static final SELContext selinuxContext = detectSelinuxContext();
@@ -98,8 +100,14 @@ public class DockerExecutor {
   }
 
   private String[] fullClasspath(final String classpath) {
-
-    return String.join(":", classpath, System.getProperty("java.class.path")).split(":");
+    return String.join(
+            ":",
+            classpath,
+            Stream.of(System.getProperty("java.class.path").split(":"))
+                .map(File::new)
+                .map(File::getAbsolutePath)
+                .collect(Collectors.joining(":")))
+        .split(":");
   }
 
   private static SELContext detectSelinuxContext() {

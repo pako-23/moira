@@ -1,39 +1,39 @@
 package moira.util.model;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.junit.runner.Description;
-import org.junit.runner.JUnitCore;
-import org.junit.runner.Request;
-import org.junit.runner.manipulation.Filter;
 
 public class TestSuite {
-  private final List<Class<?>> testClasses;
+  private final List<String> testClasses;
   private final List<TestCase> testCases;
-  private final Map<Class<?>, Range> testClassToCases;
+  private final Map<String, Range> testClassToCases;
 
-  public TestSuite(final File testSuiteFile) throws IOException {
-    testClasses = new ArrayList<>();
+  public TestSuite(final List<TestCase> cases) throws IOException {
+    testClasses = new ArrayList<>(cases.size());
     testCases = new ArrayList<>();
     testClassToCases = new HashMap<>();
 
-    Files.lines(testSuiteFile.toPath())
-        .map(String::trim)
-        .distinct()
-        .map(
-            className -> {
-              try {
-                return Class.forName(className);
-              } catch (final ClassNotFoundException e) {
-                throw new IllegalArgumentException("could not find test class: " + e.getMessage());
-              }
-            })
-        .forEach(testClass -> this.registerTestClass(testClass));
+    if (cases.size() == 0) return;
+
+    testCases.add(cases.get(0));
+
+    int min = 0;
+    for (int i = 1; i < cases.size(); ++i) {
+      final TestCase current = cases.get(i);
+      final TestCase previous = cases.get(i - 1);
+
+      if (!previous.getTestClass().equals(current.getTestClass())) {
+        registerTestClass(min);
+        min = i;
+      }
+
+      testCases.add(cases.get(i));
+    }
+
+    registerTestClass(min);
   }
 
   public int numberOfTestCases() {
@@ -48,49 +48,20 @@ public class TestSuite {
     return testClasses.size();
   }
 
-  public Class<?> getTestClass(final int index) {
+  public String getTestClass(final int index) {
     return testClasses.get(index);
   }
 
-  public Range getTestClassCases(final Class<?> testClass) {
+  public Range getTestClassCases(final String testClass) {
     return testClassToCases.get(testClass);
   }
 
-  private void registerTestClass(final Class<?> testClass) {
-    final List<TestCase> cases = findTestCases(testClass);
-    testClasses.add(testClass);
-    testClassToCases.put(testClass, new Range(testCases.size(), testCases.size() + cases.size()));
-    testCases.addAll(cases);
-  }
+  private void registerTestClass(final int min) {
+    final int lastTestCaseIndex = testCases.size() - 1;
+    final TestCase lastTestCase = testCases.get(lastTestCaseIndex);
+    final String className = lastTestCase.getTestClass();
 
-  private List<TestCase> findTestCases(final Class<?> testClass) {
-    final List<TestCase> testClassCases = new ArrayList<>();
-    final Request request =
-        Request.aClass(testClass)
-            .filterWith(
-                new Filter() {
-                  @Override
-                  public String describe() {
-                    return "list filter";
-                  }
-
-                  @Override
-                  public boolean shouldRun(final Description description) {
-                    if (description.isSuite()) return true;
-
-                    testClassCases.add(
-                        new TestCase(
-                            TestCase.identifier(
-                                description.getClassName(), description.toString())));
-
-                    return false;
-                  }
-                });
-
-    final JUnitCore junit = new JUnitCore();
-
-    junit.run(request);
-
-    return testClassCases;
+    testClasses.add(className);
+    testClassToCases.put(className, new Range(min, lastTestCaseIndex + 1));
   }
 }

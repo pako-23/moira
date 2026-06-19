@@ -53,6 +53,11 @@ public final class TargetPairsGenerator implements ScheduleGenerator {
     return schedule;
   }
 
+  @Override
+  public int count() {
+    return 0;
+  }
+
   private List<TestCase> buildSchedule() {
 
     if (crossClassPairs.isEmpty()) return buildIntraClassSchedule();
