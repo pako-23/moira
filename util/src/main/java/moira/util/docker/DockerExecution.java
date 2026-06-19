@@ -110,7 +110,8 @@ public class DockerExecution {
         .withAttachStdin(stdin != null)
         .withStdinOpen(stdin != null)
         .withCmd(arguments)
-        .withHostConfig(HostConfig.newHostConfig().withBinds(executor.getVolumeBinds()))
+        .withHostConfig(
+            HostConfig.newHostConfig().withOomScoreAdj(200).withBinds(executor.getVolumeBinds()))
         .exec();
   }
 

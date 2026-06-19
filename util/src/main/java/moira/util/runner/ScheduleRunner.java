@@ -1,5 +1,7 @@
 package moira.util.runner;
 
+import com.sun.jna.Library;
+import com.sun.jna.Native;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
@@ -11,6 +13,7 @@ import moira.util.model.Outcome;
 import moira.util.model.TestCase;
 
 public class ScheduleRunner extends Thread {
+  private static final boolean isStderrTerminal = CLibrary.INSTANCE.isatty(2) != 0;
 
   private final DockerExecutor executor;
   private final ScheduleGenerator generator;
@@ -33,7 +36,8 @@ public class ScheduleRunner extends Thread {
   @Override
   public void run() {
     try {
-      while (!generator.done()) {
+      printProgress();
+      for (int i = 0; i < count; ++i) {
         final TestCase[] schedule = generator.generate();
 
         semaphore.acquire();
@@ -54,6 +58,7 @@ public class ScheduleRunner extends Thread {
       semaphore.release();
 
       ++completed;
+      printProgress();
 
       return future.get();
     } catch (final InterruptedException | ExecutionException e) {
@@ -63,41 +68,14 @@ public class ScheduleRunner extends Thread {
     }
   }
 
-  // private Outcome[] executeSchedule(final TestCase[] schedule)
-  //     throws IOException, InterruptedException {
-  //   final Process runner = createChildRunner();
-  //   try (BufferedWriter writer =
-  //       new BufferedWriter(new OutputStreamWriter(runner.getOutputStream()))) {
-  //     for (final TestCase test : schedule) {
-  //       writer.write(test.toString());
-  //       writer.newLine();
-  //     }
-  //   }
+  private void printProgress() {
+    if (isStderrTerminal) System.out.printf("progress %d\r", completed);
+    else System.out.printf("progress %d\n", completed);
+  }
 
-  //   final Outcome[] outcomes = new Outcome[schedule.length];
-  //   try (BufferedReader reader =
-  //       new BufferedReader(new InputStreamReader(runner.getInputStream()))) {
-  //     for (int i = 0; i < outcomes.length; ++i) {
-  //       final String line = reader.readLine();
-  //       if (line == null) throw new RuntimeException("failed to read test case execution
-  // result");
+  private interface CLibrary extends Library {
+    final CLibrary INSTANCE = Native.load("c", CLibrary.class);
 
-  //       outcomes[i] = new Outcome(schedule[i], Boolean.parseBoolean(line));
-  //     }
-  //   }
-
-  //   final int code = runner.waitFor();
-  //   if (code != 0) throw new RuntimeException("runner returned with non zero stauts: " + code);
-
-  //   return outcomes;
-  // }
-
-  // private Process createChildRunner() throws IOException {
-  //   return new ProcessBuilder(
-  //           String.join(File.separator, System.getProperty("java.home"), "bin", "java"),
-  //           "-classpath",
-  //           System.getProperty("java.class.path"),
-  //           "moira.util.runner.ChildRunner")
-  //       .start();
-  // }
+    int isatty(int fd);
+  }
 }
