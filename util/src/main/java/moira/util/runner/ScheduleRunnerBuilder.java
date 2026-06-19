@@ -4,7 +4,8 @@ import moira.util.docker.DockerExecutor;
 
 public class ScheduleRunnerBuilder {
 
-  private final int DEFAULT_CONCURRENCY_LEVEL = Runtime.getRuntime().availableProcessors() / 2;
+  public static final int DEFAULT_CONCURRENCY_LEVEL =
+      Runtime.getRuntime().availableProcessors() / 2;
 
   private DockerExecutor executor;
   private ScheduleGenerator generator;

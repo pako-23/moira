@@ -49,6 +49,11 @@ public class TuscanCommand implements Runnable {
   private String classpath;
 
   @Option(
+      names = {"-p", "-parallelism"},
+      description = "The maximum number of parallel threads.")
+  private int parallelism = ScheduleRunnerBuilder.DEFAULT_CONCURRENCY_LEVEL;
+
+  @Option(
       names = {"-m", "-mode"},
       paramLabel = "<mode>",
       description =
@@ -103,6 +108,7 @@ public class TuscanCommand implements Runnable {
     final ScheduleRunner runner =
         ScheduleRunnerBuilder.builder()
             .withDockerExecutor(executor)
+            .withConcurrencyLevel(parallelism)
             .withScheduleGenerator(constructScheduleGenerator(executor))
             .build();
     final FlakyPairsCollector collector = constructFlakyTestsCollector();
