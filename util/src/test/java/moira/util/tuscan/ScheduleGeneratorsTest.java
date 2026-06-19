@@ -15,9 +15,9 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import moira.util.Range;
-import moira.util.TestCase;
-import moira.util.TestSuite;
+import moira.util.model.Range;
+import moira.util.model.TestCase;
+import moira.util.model.TestSuite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -147,12 +147,12 @@ public class ScheduleGeneratorsTest {
     for (int i = 0; i < order.length; ++i) {
       int index = 0;
       for (; index < classes.length; ++index) if (order[i].equals(classes[index])) break;
-      doReturn(classes[index]).when(suite).getTestClass(i);
-      when(suite.getTestClassCases(classes[index]))
+      doReturn(classes[index].getName()).when(suite).getTestClass(i);
+      when(suite.getTestClassCases(classes[index].getName()))
           .thenReturn(new Range(testCases, testCases + rangeSizes[index]));
       for (int j = 0; j < rangeSizes[index]; ++j) {
         final TestCase testCase = mock(TestCase.class);
-        doReturn(classes[index]).when(testCase).getTestClass();
+        doReturn(classes[index].getName()).when(testCase).getTestClass();
         when(suite.getTestCase(testCases)).thenReturn(testCase);
         ++testCases;
       }

@@ -1,4 +1,4 @@
-package moira.util;
+package moira.util.model;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -16,13 +16,13 @@ public class TestCaseTest {
   @ParameterizedTest
   @ValueSource(
       strings = {
-        "moira.util.TestCaseTest[sometestdescription]",
-        "moira.util.TestCaseTest[somete[stdescrip]tion]",
-        "moira.util.TestCase[somete[stdescrip]tion]"
+        "moira.util.model.TestCaseTest[sometestdescription]",
+        "moira.util.model.TestCaseTest[somete[stdescrip]tion]",
+        "moira.util.model.TestCase[somete[stdescrip]tion]"
       })
-  public void testTestCaseConstructor(final String identifier) throws ClassNotFoundException {
+  public void testTestCaseConstructor(final String identifier) {
     final TestCase method = new TestCase(identifier);
-    final Class<?> testClass = Class.forName(identifier.substring(0, identifier.indexOf('[')));
+    final String testClass = identifier.substring(0, identifier.indexOf('['));
 
     assertThat(method.toString(), is(identifier));
     assertThat(method.getTestClass(), is(testClass));
@@ -43,15 +43,6 @@ public class TestCaseTest {
 
     assertThat(
         thrown.getMessage(), is("tests should have the form <class-name>[<test-description>]"));
-  }
-
-  @Test
-  public void testTestCaseMissingClass() {
-    final String identifier = "aaaaaaaa[description]";
-    final IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> new TestCase(identifier));
-
-    assertThat(thrown.getMessage(), is("failed to find testclass for test: " + identifier));
   }
 
   @Test
@@ -77,6 +68,7 @@ public class TestCaseTest {
     final Description description = Description.createTestDescription(clazz, name);
     final String expected =
         String.format("%s[%s]", description.getClassName(), description.toString());
-    assertThat(TestCase.descriptionToTestID(description), is(expected));
+    assertThat(
+        TestCase.identifier(description.getClassName(), description.toString()), is(expected));
   }
 }

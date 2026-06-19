@@ -2,8 +2,8 @@ package moira.util.tuscan;
 
 import java.util.HashMap;
 import java.util.Map;
-import moira.util.TestCase;
-import moira.util.TestSuite;
+import moira.util.model.TestCase;
+import moira.util.model.TestSuite;
 import moira.util.runner.ScheduleGenerator;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;

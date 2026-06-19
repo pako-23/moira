@@ -2,9 +2,9 @@ package moira.util.tuscan;
 
 import java.util.HashMap;
 import java.util.Map;
-import moira.util.Range;
-import moira.util.TestCase;
-import moira.util.TestSuite;
+import moira.util.model.Range;
+import moira.util.model.TestCase;
+import moira.util.model.TestSuite;
 import moira.util.runner.ScheduleGenerator;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -19,10 +19,10 @@ public class TuscanIntraClassMatcher extends TypeSafeMatcher<ScheduleGenerator> 
 
   @Override
   protected boolean matchesSafely(final ScheduleGenerator generator) {
-    final Map<Class<?>, boolean[][]> pairs = new HashMap<>(suite.numberOfTestClasses());
+    final Map<String, boolean[][]> pairs = new HashMap<>(suite.numberOfTestClasses());
 
     for (int i = 0; i < suite.numberOfTestClasses(); ++i) {
-      final Class<?> testClass = suite.getTestClass(i);
+      final String testClass = suite.getTestClass(i);
       final Range range = suite.getTestClassCases(testClass);
       final int length = range.max() - range.min();
 
@@ -39,7 +39,7 @@ public class TuscanIntraClassMatcher extends TypeSafeMatcher<ScheduleGenerator> 
         final TestCase test = schedule[i];
         final TestCase previousTest = schedule[i - 1];
         if (!test.getTestClass().equals(previousTest.getTestClass())) continue;
-        final Class<?> testClass = test.getTestClass();
+        final String testClass = test.getTestClass();
         final Range range = suite.getTestClassCases(testClass);
         final boolean[][] matrix = pairs.get(testClass);
         ;
@@ -48,7 +48,7 @@ public class TuscanIntraClassMatcher extends TypeSafeMatcher<ScheduleGenerator> 
       }
     }
 
-    for (final Map.Entry<Class<?>, boolean[][]> entry : pairs.entrySet()) {
+    for (final Map.Entry<String, boolean[][]> entry : pairs.entrySet()) {
       final boolean[][] classPairs = entry.getValue();
       for (int i = 0; i < classPairs.length; ++i)
         for (int j = 0; j < classPairs[i].length; ++j)

@@ -2,9 +2,9 @@ package moira.util.tuscan;
 
 import java.util.HashMap;
 import java.util.Map;
-import moira.util.Range;
-import moira.util.TestCase;
-import moira.util.TestSuite;
+import moira.util.model.Range;
+import moira.util.model.TestCase;
+import moira.util.model.TestSuite;
 import moira.util.runner.ScheduleGenerator;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -22,9 +22,9 @@ public class TuscanClassOnlyMatcher extends TypeSafeMatcher<ScheduleGenerator> {
     final int n = suite.numberOfTestClasses();
     final boolean[][] pairs = new boolean[n][n];
 
-    final Map<Class<?>, Integer> indices = new HashMap<>();
+    final Map<String, Integer> indices = new HashMap<>();
     for (int i = 0; i < n; ++i) {
-      final Class<?> testClass = suite.getTestClass(i);
+      final String testClass = suite.getTestClass(i);
       final Range range = suite.getTestClassCases(testClass);
       indices.put(suite.getTestClass(i), i);
       if (range.max() != range.min()) continue;
@@ -35,8 +35,8 @@ public class TuscanClassOnlyMatcher extends TypeSafeMatcher<ScheduleGenerator> {
       final TestCase[] schedule = generator.generate();
 
       for (int i = 1; i < schedule.length; ++i) {
-        final Class<?> testClass = schedule[i].getTestClass();
-        final Class<?> previousTestClass = schedule[i - 1].getTestClass();
+        final String testClass = schedule[i].getTestClass();
+        final String previousTestClass = schedule[i - 1].getTestClass();
 
         pairs[indices.get(previousTestClass)][indices.get(testClass)] = true;
       }

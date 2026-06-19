@@ -8,6 +8,7 @@ import static org.mockito.Mockito.*;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
+import moira.util.model.TestCase;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -33,7 +34,7 @@ public class PairVerifierTest {
           PairVerifier.class.getName() + "[sometest(" + PairVerifier.class.getName() + ")]");
 
   @Test
-  public void testSingleClassTestSchedules() {
+  public void testSingleClassTestSchedules() throws ClassNotFoundException {
     final ArgumentCaptor<Filter> filterCaptor = ArgumentCaptor.forClass(Filter.class);
     @SuppressWarnings("unchecked")
     final ArgumentCaptor<Comparator<Description>> comparatorCaptor =
@@ -43,7 +44,9 @@ public class PairVerifierTest {
       final Request returnedRequest = mock(Request.class);
       when(returnedRequest.filterWith(filterCaptor.capture())).thenReturn(returnedRequest);
       when(returnedRequest.sortWith(comparatorCaptor.capture())).thenReturn(returnedRequest);
-      requestMock.when(() -> Request.aClass(firstTest.getTestClass())).thenReturn(returnedRequest);
+      requestMock
+          .when(() -> Request.aClass(Class.forName(firstTest.getTestClass())))
+          .thenReturn(returnedRequest);
 
       new PairVerifier(firstTest, secondTest);
       final List<Filter> filters = filterCaptor.getAllValues();
@@ -72,17 +75,25 @@ public class PairVerifierTest {
   }
 
   @Test
-  public void testTwoClassesTestSchedules() {
+  public void testTwoClassesTestSchedules() throws ClassNotFoundException {
     final ArgumentCaptor<Filter> filterCaptor = ArgumentCaptor.forClass(Filter.class);
 
     try (final MockedStatic<Request> requestMock = mockStatic(Request.class)) {
       final Request returnedRequest = mock(Request.class);
       when(returnedRequest.filterWith(filterCaptor.capture())).thenReturn(returnedRequest);
       requestMock
-          .when(() -> Request.classes(otherTest.getTestClass(), firstTest.getTestClass()))
+          .when(
+              () ->
+                  Request.classes(
+                      Class.forName(otherTest.getTestClass()),
+                      Class.forName(firstTest.getTestClass())))
           .thenReturn(returnedRequest);
       requestMock
-          .when(() -> Request.classes(firstTest.getTestClass(), otherTest.getTestClass()))
+          .when(
+              () ->
+                  Request.classes(
+                      Class.forName(firstTest.getTestClass()),
+                      Class.forName(otherTest.getTestClass())))
           .thenReturn(returnedRequest);
 
       new PairVerifier(firstTest, otherTest);
@@ -121,7 +132,8 @@ public class PairVerifierTest {
 
   @ParameterizedTest
   @MethodSource("testVerifyParams")
-  public void testVerifyPass(final TestCase first, final TestCase second) {
+  public void testVerifyPass(final TestCase first, final TestCase second)
+      throws ClassNotFoundException {
     final Result successResult = mock(Result.class);
     when(successResult.wasSuccessful()).thenReturn(true);
 
@@ -141,7 +153,8 @@ public class PairVerifierTest {
 
   @ParameterizedTest
   @MethodSource("testVerifyParams")
-  public void testVerifyFail(final TestCase first, final TestCase second) {
+  public void testVerifyFail(final TestCase first, final TestCase second)
+      throws ClassNotFoundException {
     final Result failResult = mock(Result.class);
     when(failResult.wasSuccessful()).thenReturn(false);
 

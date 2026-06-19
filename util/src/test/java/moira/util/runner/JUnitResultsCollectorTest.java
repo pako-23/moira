@@ -1,18 +1,19 @@
-package moira.util;
+package moira.util.runner;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import moira.util.model.TestCase;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.Description;
 import org.junit.runner.notification.Failure;
 
-public class ScheduleListenerTest {
+public class JUnitResultsCollectorTest {
   @Test
   public void testAllPassed() {
-    final ScheduleListener listener = new ScheduleListener(2);
+    final JUnitResultsCollector listener = new JUnitResultsCollector();
     final Description first = Description.createTestDescription(getClass(), "first");
     final Description second = Description.createTestDescription(getClass(), "first");
 
@@ -27,13 +28,14 @@ public class ScheduleListenerTest {
     final String expected =
         String.format(
             "Running schedule:\n  %s -> PASS\n  %s -> PASS\n",
-            TestCase.descriptionToTestID(first), TestCase.descriptionToTestID(second));
+            TestCase.identifier(first.getClassName(), first.toString()),
+            TestCase.identifier(second.getClassName(), second.toString()));
     assertThat(buffer.toString(), is(expected));
   }
 
   @Test
   public void testAllFailed() {
-    final ScheduleListener listener = new ScheduleListener(2);
+    final JUnitResultsCollector listener = new JUnitResultsCollector();
     final Description first = Description.createTestDescription(getClass(), "first");
     final Description second = Description.createTestDescription(getClass(), "first");
 
@@ -50,13 +52,14 @@ public class ScheduleListenerTest {
     final String expected =
         String.format(
             "Running schedule:\n  %s -> FAIL\n  %s -> FAIL\n",
-            TestCase.descriptionToTestID(first), TestCase.descriptionToTestID(second));
+            TestCase.identifier(first.getClassName(), first.toString()),
+            TestCase.identifier(second.getClassName(), second.toString()));
     assertThat(buffer.toString(), is(expected));
   }
 
   @Test
   public void testOneFailed() {
-    final ScheduleListener listener = new ScheduleListener(2);
+    final JUnitResultsCollector listener = new JUnitResultsCollector();
     final Description first = Description.createTestDescription(getClass(), "first");
     final Description second = Description.createTestDescription(getClass(), "first");
 
@@ -72,7 +75,8 @@ public class ScheduleListenerTest {
     final String expected =
         String.format(
             "Running schedule:\n  %s -> FAIL\n  %s -> PASS\n",
-            TestCase.descriptionToTestID(first), TestCase.descriptionToTestID(second));
+            TestCase.identifier(first.getClassName(), first.toString()),
+            TestCase.identifier(second.getClassName(), second.toString()));
     assertThat(buffer.toString(), is(expected));
   }
 }
