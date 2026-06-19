@@ -161,7 +161,11 @@ public class DockerExecutor {
     try {
       try (final InputStream uploadStream =
           Files.newInputStream(createApplicationArchive(applicationDirectory))) {
-        client.copyArchiveToContainerCmd(container.getId()).withTarInputStream(uploadStream).exec();
+        client
+            .copyArchiveToContainerCmd(container.getId())
+            .withTarInputStream(uploadStream)
+            .withRemotePath("/app")
+            .exec();
       } catch (final IOException e) {
         throw new RuntimeException("failed to create application image: " + e.getMessage());
       }
