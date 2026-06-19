@@ -2,9 +2,9 @@ package moira.util.tuscan;
 
 import java.util.ArrayList;
 import java.util.List;
-import moira.util.Range;
-import moira.util.TestCase;
-import moira.util.TestSuite;
+import moira.util.model.Range;
+import moira.util.model.TestCase;
+import moira.util.model.TestSuite;
 import moira.util.runner.ScheduleGenerator;
 
 public class TuscanIntraClass implements ScheduleGenerator {

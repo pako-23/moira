@@ -4,7 +4,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import moira.util.runner.ScheduleRunner;
+import moira.util.model.Outcome;
+import moira.util.model.TestCase;
 
 public abstract class FlakyPairsCollector {
   private final Map<TestCase, Set<TestCase>> brittle;
@@ -15,7 +16,7 @@ public abstract class FlakyPairsCollector {
     victims = new HashMap<>();
   }
 
-  public abstract void update(final ScheduleRunner.Outcome[] outcome);
+  public abstract void update(final Outcome[] outcome);
 
   public void print() {
     outputPairs(brittle, "brittle");

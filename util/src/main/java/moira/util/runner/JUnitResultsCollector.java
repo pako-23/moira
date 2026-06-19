@@ -3,13 +3,13 @@ package moira.util.runner;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
-import moira.util.TestCase;
+import moira.util.model.TestCase;
 import org.junit.runner.Description;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 
 public class JUnitResultsCollector extends RunListener {
-  private final List<Description> schedule;
+  private final List<String> schedule;
   private final List<Boolean> outcomes;
 
   public JUnitResultsCollector() {
@@ -19,7 +19,7 @@ public class JUnitResultsCollector extends RunListener {
 
   @Override
   public void testStarted(final Description description) {
-    schedule.add(description);
+    schedule.add(TestCase.identifier(description.getClassName(), description.toString()));
     outcomes.add(true);
   }
 
@@ -37,7 +37,7 @@ public class JUnitResultsCollector extends RunListener {
 
     for (int i = 0; i < schedule.size(); ++i) {
       final String outcome = outcomes.get(i) ? "PASS" : "FAIL";
-      stream.println("  " + TestCase.descriptionToTestID(schedule.get(i)) + " -> " + outcome);
+      stream.println("  " + schedule.get(i) + " -> " + outcome);
     }
   }
 }

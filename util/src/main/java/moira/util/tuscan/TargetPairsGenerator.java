@@ -12,7 +12,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import moira.util.TestCase;
+import moira.util.model.TestCase;
 import moira.util.runner.ScheduleGenerator;
 
 public final class TargetPairsGenerator implements ScheduleGenerator {
@@ -61,7 +61,7 @@ public final class TargetPairsGenerator implements ScheduleGenerator {
 
   private List<TestCase> buildIntraClassSchedule() {
     final List<TestCase> schedule = new ArrayList<>();
-    final Set<Class<?>> scheduledClasses = new HashSet<>();
+    final Set<String> scheduledClasses = new HashSet<>();
 
     for (final TestCase testCase : intraClassPairs.keySet()) {
       if (scheduledClasses.contains(testCase.getTestClass())) continue;
@@ -74,7 +74,7 @@ public final class TargetPairsGenerator implements ScheduleGenerator {
   }
 
   private List<TestCase> buildCrossClassSchedule() {
-    final Set<Class<?>> scheduledClasses = new HashSet<>();
+    final Set<String> scheduledClasses = new HashSet<>();
     final LinkedList<TestCase> schedule = new LinkedList<>();
 
     final TestCase mostFrequentTestCase = findMostFrequentTestCase();
@@ -144,7 +144,7 @@ public final class TargetPairsGenerator implements ScheduleGenerator {
   }
 
   private Optional<TestCase> findMostFrequentWithTestCaseOnLeft(
-      final TestCase testCase, final Set<Class<?>> filter) {
+      final TestCase testCase, final Set<String> filter) {
 
     final Set<TestCase> candidates = crossClassPairs.get(testCase);
     if (candidates == null) return Optional.empty();
@@ -167,7 +167,7 @@ public final class TargetPairsGenerator implements ScheduleGenerator {
   }
 
   private Optional<TestCase> findMostFrequentWithTestCaseOnRight(
-      final TestCase testCase, final Set<Class<?>> filter) {
+      final TestCase testCase, final Set<String> filter) {
     final Set<TestCase> candidates =
         crossClassPairs.entrySet().stream()
             .filter(

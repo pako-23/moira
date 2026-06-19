@@ -1,31 +1,21 @@
-package moira.util;
-
-import org.junit.runner.Description;
+package moira.util.model;
 
 public class TestCase {
-  private final Class<?> testClass;
+  private final String testClass;
   private final String description;
 
   public TestCase(final String identifier) {
     final int beginDescription = identifier.indexOf('[');
     final int endDescription = identifier.lastIndexOf(']');
 
-    if (beginDescription < 0 || endDescription < 0) {
+    if (beginDescription < 0 || endDescription < 0)
       throw new IllegalArgumentException(
           "tests should have the form <class-name>[<test-description>]");
-    }
 
-    final String className = identifier.substring(0, beginDescription);
-    if (className.isEmpty()) {
+    testClass = identifier.substring(0, beginDescription);
+    if (testClass.isEmpty())
       throw new IllegalArgumentException(
           "tests should have the form <class-name>[<test-description>]");
-    }
-
-    try {
-      testClass = Class.forName(className);
-    } catch (final ClassNotFoundException e) {
-      throw new IllegalArgumentException("failed to find testclass for test: " + identifier);
-    }
 
     description = identifier.substring(beginDescription + 1, endDescription);
     if (description.isEmpty())
@@ -34,14 +24,14 @@ public class TestCase {
 
   @Override
   public String toString() {
-    return String.format("%s[%s]", testClass.getName(), description);
+    return String.format("%s[%s]", testClass, description);
   }
 
-  public Class<?> getTestClass() {
+  public String getTestClass() {
     return testClass;
   }
 
-  public static String descriptionToTestID(final Description description) {
-    return String.format("%s[%s]", description.getClassName(), description.toString());
+  public static String identifier(final String testClass, final String description) {
+    return String.format("%s[%s]", testClass, description);
   }
 }

@@ -1,4 +1,4 @@
-package moira.util;
+package moira.util.model;
 
 import java.io.File;
 import java.io.IOException;
@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 import org.junit.runner.Description;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Request;
@@ -64,12 +63,6 @@ public class TestSuite {
     testCases.addAll(cases);
   }
 
-  public void addTestClasses(final Class<?>... classes) {
-    Stream.of(classes)
-        .filter(testClass -> !testClassToCases.containsKey(testClass))
-        .forEach(testClass -> this.registerTestClass(testClass));
-  }
-
   private List<TestCase> findTestCases(final Class<?> testClass) {
     final List<TestCase> testClassCases = new ArrayList<>();
     final Request request =
@@ -85,7 +78,10 @@ public class TestSuite {
                   public boolean shouldRun(final Description description) {
                     if (description.isSuite()) return true;
 
-                    testClassCases.add(new TestCase(TestCase.descriptionToTestID(description)));
+                    testClassCases.add(
+                        new TestCase(
+                            TestCase.identifier(
+                                description.getClassName(), description.toString())));
 
                     return false;
                   }

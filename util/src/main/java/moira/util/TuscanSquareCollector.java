@@ -4,7 +4,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import moira.util.runner.ScheduleRunner;
+import moira.util.model.Outcome;
+import moira.util.model.TestCase;
 
 public class TuscanSquareCollector extends FlakyPairsCollector {
   private final Map<TestCase, Boolean> outcomeInIsolation;
@@ -17,12 +18,12 @@ public class TuscanSquareCollector extends FlakyPairsCollector {
   }
 
   @Override
-  public void update(final ScheduleRunner.Outcome[] outcome) {
+  public void update(final Outcome[] outcome) {
     registerOutcomeInIsolation(outcome[0]);
 
     for (int i = 1; i < outcome.length; ++i) {
-      final ScheduleRunner.Outcome current = outcome[i];
-      final ScheduleRunner.Outcome previous = outcome[i - 1];
+      final Outcome current = outcome[i];
+      final Outcome previous = outcome[i - 1];
 
       if (current.pass() && failsInIsolation(current.testCase()))
         registerBrittleSetter(current.testCase(), previous.testCase());
@@ -34,7 +35,7 @@ public class TuscanSquareCollector extends FlakyPairsCollector {
     }
   }
 
-  private void registerOutcomeInIsolation(final ScheduleRunner.Outcome outcome) {
+  private void registerOutcomeInIsolation(final Outcome outcome) {
     outcomeInIsolation.put(outcome.testCase(), outcome.pass());
 
     if (!outcome.pass() && possibleSetters.containsKey(outcome.testCase())) {
@@ -47,6 +48,6 @@ public class TuscanSquareCollector extends FlakyPairsCollector {
 
   private boolean failsInIsolation(final TestCase testCase) {
     final Boolean outcome = outcomeInIsolation.get(testCase);
-    return outcome != null && outcome;
+    return outcome != null && !outcome;
   }
 }

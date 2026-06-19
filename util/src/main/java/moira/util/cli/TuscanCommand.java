@@ -9,9 +9,10 @@ import java.util.Scanner;
 import java.util.Set;
 import moira.util.FlakyPairsCollector;
 import moira.util.PairsCollector;
-import moira.util.TestCase;
-import moira.util.TestSuite;
 import moira.util.TuscanSquareCollector;
+import moira.util.model.Outcome;
+import moira.util.model.TestCase;
+import moira.util.model.TestSuite;
 import moira.util.runner.ScheduleGenerator;
 import moira.util.runner.ScheduleRunner;
 import moira.util.tuscan.PairCover;
@@ -169,7 +170,7 @@ public class TuscanCommand implements Runnable {
 
     runner.run();
 
-    ScheduleRunner.Outcome[] outcome = runner.getOutcome();
+    Outcome[] outcome = runner.getOutcome();
     while (outcome != null) {
       collector.update(outcome);
       outcome = runner.getOutcome();

@@ -1,5 +1,6 @@
 [versions]
 asm = "9.8"
+docker-java = "3.7.1"
 junit = "4.13.2"
 picocli = "4.7.7"
 
@@ -7,5 +8,7 @@ picocli = "4.7.7"
 asm = { module = "org.ow2.asm:asm", version.ref = "asm" }
 asm-commons = { module = "org.ow2.asm:asm-commons", version.ref = "asm" }
 asm-util = { module = "org.ow2.asm:asm-util", version.ref = "asm" }
+docker-java = { module = "com.github.docker-java:docker-java", version.ref = "docker-java" }
+docker-java-transport-httpclient5 = { module = "com.github.docker-java:docker-java-transport-httpclient5", version.ref = "docker-java" }
 junit = { module = "junit:junit", version.ref = "junit" }
 picocli = { module = "info.picocli:picocli", version.ref = "picocli" }

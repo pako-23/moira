@@ -7,7 +7,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
-import moira.util.TestCase;
+import moira.util.model.TestCase;
 
 public class ChildRunner {
   private static final PrintStream NULL_PRINT_STREAM =

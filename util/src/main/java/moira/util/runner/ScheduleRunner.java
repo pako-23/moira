@@ -8,7 +8,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import moira.util.TestCase;
+import moira.util.model.Outcome;
+import moira.util.model.TestCase;
 
 public class ScheduleRunner extends Thread {
   private final ScheduleGenerator generator;
@@ -80,23 +81,5 @@ public class ScheduleRunner extends Thread {
             System.getProperty("java.class.path"),
             "moira.util.runner.ChildRunner")
         .start();
-  }
-
-  public static class Outcome {
-    private final TestCase testCase;
-    private final boolean pass;
-
-    private Outcome(final TestCase testCase, final boolean pass) {
-      this.testCase = testCase;
-      this.pass = pass;
-    }
-
-    public boolean pass() {
-      return pass;
-    }
-
-    public TestCase testCase() {
-      return testCase;
-    }
   }
 }

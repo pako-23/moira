@@ -7,7 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import moira.util.TestCase;
+import moira.util.model.TestCase;
 import moira.util.runner.ScheduleGenerator;
 
 public final class PairCover implements ScheduleGenerator {

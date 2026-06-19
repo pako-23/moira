@@ -1,4 +1,4 @@
-package moira.util;
+package moira.util.model;
 
 public class Range {
   private final int lowerBound;

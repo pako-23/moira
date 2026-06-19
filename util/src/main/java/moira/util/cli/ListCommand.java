@@ -2,7 +2,9 @@ package moira.util.cli;
 
 import java.io.File;
 import java.io.IOException;
-import moira.util.TestSuite;
+
+import moira.util.docker.DockerExecutor;
+import moira.util.model.TestSuite;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -22,6 +24,11 @@ public class ListCommand implements Runnable {
   private File suite;
 
   @Option(
+      names = {"-app-cp"},
+      description = "The application's classpath.")
+  private String classpath;
+
+  @Option(
       names = {"-h", "-help"},
       usageHelp = true,
       description = "Display this help and exit.")
@@ -29,15 +36,19 @@ public class ListCommand implements Runnable {
 
   @Override
   public void run() {
-    try {
 
-      final TestSuite testSuite = new TestSuite(suite);
+      final DockerExecutor executor = new DockerExecutor(classpath);
+    // try {
+        
+          
 
-      for (int i = 0; i < testSuite.numberOfTestCases(); ++i)
-        System.out.println(testSuite.getTestCase(i));
-    } catch (final IOException e) {
-      System.err.println("could not read file: " + e.getMessage());
-      System.exit(1);
-    }
+    //   final TestSuite testSuite = new TestSuite(suite);
+
+    //   for (int i = 0; i < testSuite.numberOfTestCases(); ++i)
+    //     System.out.println(testSuite.getTestCase(i));
+    // } catch (final IOException e) {
+    //   System.err.println("could not read file: " + e.getMessage());
+    //   System.exit(1);
+    // }
   }
 }

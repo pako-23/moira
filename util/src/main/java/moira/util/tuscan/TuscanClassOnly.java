@@ -1,8 +1,8 @@
 package moira.util.tuscan;
 
-import moira.util.Range;
-import moira.util.TestCase;
-import moira.util.TestSuite;
+import moira.util.model.Range;
+import moira.util.model.TestCase;
+import moira.util.model.TestSuite;
 import moira.util.runner.ScheduleGenerator;
 
 public final class TuscanClassOnly implements ScheduleGenerator {

@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import moira.util.TestCase;
+import moira.util.model.TestCase;
 import org.junit.runner.Description;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Request;
@@ -18,22 +18,22 @@ public class JUnitExecutor {
   private final Request request;
 
   public JUnitExecutor(final List<TestCase> testsuite) {
-    final List<AbstractMap.SimpleEntry<Class<?>, Set<String>>> classes =
+    final List<AbstractMap.SimpleEntry<String, Set<String>>> classes =
         new ArrayList<>(testsuite.size());
 
     classes.add(
-        new AbstractMap.SimpleEntry<Class<?>, Set<String>>(
+        new AbstractMap.SimpleEntry<String, Set<String>>(
             testsuite.get(0).getTestClass(),
             Stream.of(testsuite.get(0).toString()).collect(Collectors.toSet())));
 
     for (int i = 1; i < testsuite.size(); ++i) {
       final TestCase method = testsuite.get(i);
-      final AbstractMap.SimpleEntry<Class<?>, Set<String>> pair = classes.get(classes.size() - 1);
+      final AbstractMap.SimpleEntry<String, Set<String>> pair = classes.get(classes.size() - 1);
 
       if (method.getTestClass().equals(pair.getKey())) pair.getValue().add(method.toString());
       else
         classes.add(
-            new AbstractMap.SimpleEntry<Class<?>, Set<String>>(
+            new AbstractMap.SimpleEntry<String, Set<String>>(
                 method.getTestClass(), Stream.of(method.toString()).collect(Collectors.toSet())));
     }
 
@@ -58,7 +58,8 @@ public class JUnitExecutor {
                     if (lastIndex >= classes.size()) return false;
                     if (description.isSuite()) return true;
 
-                    final String testId = TestCase.descriptionToTestID(description);
+                    final String testId =
+                        TestCase.identifier(description.getClassName(), description.toString());
                     final Set<String> tests = classes.get(lastIndex).getValue();
 
                     if (!tests.contains(testId)) return false;
@@ -73,8 +74,10 @@ public class JUnitExecutor {
                 (a, b) -> {
                   if (a.isSuite() || b.isSuite()) return 0;
 
-                  final int firstIndex = order.get(TestCase.descriptionToTestID(a));
-                  final int secondIndex = order.get(TestCase.descriptionToTestID(b));
+                  final int firstIndex =
+                      order.get(TestCase.identifier(a.getClassName(), a.toString()));
+                  final int secondIndex =
+                      order.get(TestCase.identifier(b.getClassName(), b.toString()));
 
                   return firstIndex - secondIndex;
                 });

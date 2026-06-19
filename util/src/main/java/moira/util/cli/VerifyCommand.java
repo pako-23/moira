@@ -1,7 +1,7 @@
 package moira.util.cli;
 
 import moira.util.PairVerifier;
-import moira.util.TestCase;
+import moira.util.model.TestCase;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.Option;
@@ -49,14 +49,19 @@ public class VerifyCommand implements Runnable {
 
   @Override
   public void run() {
-    final long start = System.currentTimeMillis();
-    final boolean passed = new PairVerifier(firstTest, secondTest).verify();
-    final long end = System.currentTimeMillis();
-    if (passed) {
-      System.out.println("OK");
-    } else {
-      System.out.println("NOT OK");
+    try {
+      final long start = System.currentTimeMillis();
+      final boolean passed = new PairVerifier(firstTest, secondTest).verify();
+      final long end = System.currentTimeMillis();
+      if (passed) {
+        System.out.println("OK");
+      } else {
+        System.out.println("NOT OK");
+      }
+      System.out.println("Time: " + (end - start) / 1000f);
+    } catch (final Exception e) {
+      e.printStackTrace();
+      System.exit(1);
     }
-    System.out.println("Time: " + (end - start) / 1000f);
   }
 }
