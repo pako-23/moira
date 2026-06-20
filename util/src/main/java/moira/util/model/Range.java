@@ -5,6 +5,10 @@ public class Range {
   private final int upperBound;
 
   public Range(final int lowerBound, final int upperBound) {
+    if (upperBound < lowerBound) {
+      throw new IllegalArgumentException(
+          "upperBound (" + upperBound + ") must be >= lowerBound (" + lowerBound + ")");
+    }
     this.lowerBound = lowerBound;
     this.upperBound = upperBound;
   }
