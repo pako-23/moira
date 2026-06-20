@@ -176,23 +176,6 @@ public class TuscanCommand implements Runnable {
     }
   }
 
-  // private void findFlakyTests(final ScheduleGenerator generator)
-  //     throws InterruptedException, IOException {
-  //   final ScheduleRunner runner = new ScheduleRunner(generator);
-  //   final FlakyPairsCollector collector = mode.collector(file);
-
-  //   runner.run();
-
-  //   Outcome[] outcome = runner.getOutcome();
-  //   while (outcome != null) {
-  //     collector.update(outcome);
-  //     outcome = runner.getOutcome();
-  //   }
-
-  //   collector.print();
-  //   runner.join();
-  // }
-
   private static Map<TestCase, Set<TestCase>> parsePairs(final File input) {
     final Map<TestCase, Set<TestCase>> pairs = new HashMap<>();
     try (final Scanner scanner = new Scanner(input)) {

@@ -6,7 +6,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import moira.util.docker.DockerExecutor;
-import moira.util.docker.PipedContainerStream;
+import moira.util.docker.LineContainerStream;
 import moira.util.model.TestCase;
 import moira.util.model.TestSuite;
 
@@ -47,11 +47,10 @@ public class TestSuiteBuilder {
           .withArguments("moira.util.list.TestCasesLister")
           .withStdIn(Files.newInputStream(testClassesFile.toPath()))
           .withStdOut(
-              new PipedContainerStream() {
-
+              new LineContainerStream() {
                 @Override
-                protected void processLine(final String line) {
-                  cases.add(new TestCase(line));
+                protected void processLine(final CharSequence line) {
+                  cases.add(new TestCase(line.toString()));
                 }
               })
           .exec();

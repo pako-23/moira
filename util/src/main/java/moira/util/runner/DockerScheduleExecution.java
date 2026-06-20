@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import moira.util.docker.DockerExecutor;
-import moira.util.docker.PipedContainerStream;
+import moira.util.docker.LineContainerStream;
 import moira.util.model.Outcome;
 import moira.util.model.TestCase;
 
@@ -28,9 +28,9 @@ public class DockerScheduleExecution implements Callable<Outcome[]> {
         .execution()
         .withStdIn(createScheduleStream())
         .withStdOut(
-            new PipedContainerStream() {
+            new LineContainerStream() {
               @Override
-              protected void processLine(final String line) {
+              protected void processLine(final CharSequence line) {
                 if (!line.equals("true") && !line.equals("false")) return;
 
                 final int index = outcomes.size();
@@ -38,7 +38,7 @@ public class DockerScheduleExecution implements Callable<Outcome[]> {
                 if (index == schedule.length)
                   throw new RuntimeException("container produced more outcomes than expected");
 
-                outcomes.add(new Outcome(schedule[index], Boolean.parseBoolean(line)));
+                outcomes.add(new Outcome(schedule[index], line.equals("true")));
               }
             })
         .withArguments("moira.util.runner.ChildRunner")

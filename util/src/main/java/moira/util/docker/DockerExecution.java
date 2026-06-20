@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -75,26 +74,24 @@ public class DockerExecution {
 
   public void exec() {
     final CreateContainerResponse container = createContainer();
-
-    client.startContainerCmd(container.getId()).exec();
-
     final AttachContainerCmd command =
         client
             .attachContainerCmd(container.getId())
             .withStdErr(stderr != null)
-            .withStdOut(stdout != null);
+            .withStdOut(stdout != null)
+            .withFollowStream(true);
 
     if (stdin != null) command.withStdIn(stdin);
 
-    command.exec(getOutputCallback());
+    final ResultCallback.Adapter<Frame> callback = getOutputCallback();
+
+    command.exec(callback);
+
+    client.startContainerCmd(container.getId()).exec();
 
     try {
-      if (stdout != null && stderr != null)
-        CompletableFuture.allOf(stdout.getFuture(), stderr.getFuture()).get();
-      else if (stdout != null) stdout.getFuture().get();
-      else if (stderr != null) stderr.getFuture().get();
-
-      client.waitContainerCmd(container.getId()).start().awaitCompletion();
+      callback.awaitCompletion();
+      callback.close();
     } catch (final Exception e) {
       throw new RuntimeException("failed to run container: " + e.getMessage());
     } finally {
@@ -109,6 +106,7 @@ public class DockerExecution {
         .withAttachStdout(stdout != null)
         .withAttachStdin(stdin != null)
         .withStdinOpen(stdin != null)
+        .withTty(false)
         .withCmd(arguments)
         .withHostConfig(
             HostConfig.newHostConfig().withOomScoreAdj(200).withBinds(executor.getVolumeBinds()))
@@ -120,35 +118,30 @@ public class DockerExecution {
       @Override
       public void onNext(final Frame frame) {
         final ContainerStream stream = getContainerStream(frame);
-        if (stream == null) return;
-
-        try {
-          stream.getOutputStream().write(frame.getPayload());
-        } catch (final IOException e) {
-          throw new RuntimeException("failed to read from container: " + e.getMessage());
-        }
+        if (stream != null) stream.append(frame.getPayload());
+        super.onNext(frame);
       }
 
-      @Override
-      public void onError(final Throwable throwable) {
-        this.onComplete();
-      }
+      // @Override
+      // public void onError(final Throwable throwable) {
+      //   this.onComplete();
+      // }
 
-      @Override
-      public void onComplete() {
-        closeStream(stdout);
-        closeStream(stderr);
-      }
+      // @Override
+      // public void onComplete() {
+      //   closeStream(stdout);
+      //   closeStream(stderr);
+      // }
 
-      private void closeStream(final ContainerStream stream) {
-        if (stream == null) return;
+      // private void closeStream(final ContainerStream stream) {
+      //   if (stream == null) return;
 
-        try {
-          stream.getOutputStream().close();
-        } catch (final IOException e) {
-          throw new RuntimeException("failed to read from container: " + e.getMessage());
-        }
-      }
+      //   try {
+      //     stream.getOutputStream().close();
+      //   } catch (final IOException e) {
+      //     throw new RuntimeException("failed to read from container: " + e.getMessage());
+      //   }
+      // }
 
       private ContainerStream getContainerStream(final Frame frame) {
         switch (frame.getStreamType()) {
