@@ -1,5 +1,6 @@
 package moira.util;
 
+import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -18,27 +19,28 @@ public abstract class FlakyPairsCollector {
 
   public abstract void update(final Outcome[] outcome);
 
-  public void print() {
-    outputPairs(brittle, "brittle");
-    outputPairs(victims, "victim");
+  public void print(final PrintStream stream) {
+    outputPairs(stream, brittle, "brittle");
+    outputPairs(stream, victims, "victim");
   }
 
-  private void outputPairs(final Map<TestCase, Set<TestCase>> pairs, final String type) {
+  private void outputPairs(
+      final PrintStream stream, final Map<TestCase, Set<TestCase>> pairs, final String type) {
     for (final Map.Entry<TestCase, Set<TestCase>> entry : pairs.entrySet())
       for (final TestCase testCase : entry.getValue())
-        System.out.printf("from: %s, to: %s, type: %s\n", entry.getKey(), testCase, type);
+        stream.printf("from: %s, to: %s, type: %s\n", entry.getKey(), testCase, type);
   }
 
   protected void registerBrittleSetter(final TestCase brittle, final TestCase setter) {
-    registerFlakyPair(this.brittle, brittle, setter);
+    registerFlakyPair(this.brittle, setter, brittle);
   }
 
   protected void registerVictimPolluter(final TestCase victim, final TestCase polluter) {
-    registerFlakyPair(victims, victim, polluter);
+    registerFlakyPair(victims, polluter, victim);
   }
 
   private void registerFlakyPair(
-      final Map<TestCase, Set<TestCase>> pairs, final TestCase first, final TestCase second) {
-    pairs.computeIfAbsent(first, key -> new HashSet<>()).add(second);
+      final Map<TestCase, Set<TestCase>> pairs, final TestCase from, final TestCase to) {
+    pairs.computeIfAbsent(from, key -> new HashSet<>()).add(to);
   }
 }
