@@ -25,7 +25,7 @@ public class PossibleBrittleMatcher extends TypeSafeMatcher<ScheduleGenerator> {
 
   @Override
   protected boolean matchesSafely(final ScheduleGenerator generator) {
-    while (!generator.done()) {
+    for (int it = 0; it < generator.count(); ++it) {
       final TestCase[] schedule = generator.generate();
 
       for (int i = 0; i < schedule.length; ++i) {

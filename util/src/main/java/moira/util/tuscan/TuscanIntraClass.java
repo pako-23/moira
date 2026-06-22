@@ -37,11 +37,6 @@ public class TuscanIntraClass implements ScheduleGenerator {
   }
 
   @Override
-  public boolean done() {
-    return iteration >= size;
-  }
-
-  @Override
   public TestCase[] generate() {
     final int[] classRow = classOnlySquare[iteration % classOnlySquare.length];
     final List<TestCase> schedule = new ArrayList<>(suite.numberOfTestCases());

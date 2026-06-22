@@ -24,7 +24,7 @@ public class TuscanAllPairsMatcher extends TypeSafeMatcher<ScheduleGenerator> {
     final Map<TestCase, Integer> indices = new HashMap<>();
     for (int i = 0; i < n; ++i) indices.put(suite.getTestCase(i), i);
 
-    while (!generator.done()) {
+    for (int it = 0; it < generator.count(); ++it) {
       final TestCase[] schedule = generator.generate();
 
       for (int i = 1; i < schedule.length; ++i) {

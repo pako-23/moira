@@ -31,7 +31,7 @@ public class TuscanClassOnlyMatcher extends TypeSafeMatcher<ScheduleGenerator> {
       for (int j = 0; j < n; ++j) pairs[i][j] = pairs[j][i] = true;
     }
 
-    while (!generator.done()) {
+    for (int it = 0; it < generator.count(); ++it) {
       final TestCase[] schedule = generator.generate();
 
       for (int i = 1; i < schedule.length; ++i) {

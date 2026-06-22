@@ -14,20 +14,13 @@ public final class PairCover implements ScheduleGenerator {
 
   private final Map<TestCase, Set<TestCase>> pairs;
   private final Map<TestCase, Set<TestCase>> invertedPairs;
+  private final int count;
 
   public PairCover(final Map<TestCase, Set<TestCase>> pairs) {
-    this.pairs = pairs;
+    this.pairs = new HashMap<>();
     this.invertedPairs = new HashMap<>();
-    for (final Map.Entry<TestCase, Set<TestCase>> entry : pairs.entrySet()) {
-      for (final TestCase testCase : entry.getValue()) {
-        this.invertedPairs.computeIfAbsent(testCase, key -> new HashSet<>()).add(entry.getKey());
-      }
-    }
-  }
-
-  @Override
-  public boolean done() {
-    return pairs.isEmpty() && invertedPairs.isEmpty();
+    this.count = computeCount(pairs);
+    setupPairMaps(pairs);
   }
 
   @Override
@@ -39,7 +32,29 @@ public final class PairCover implements ScheduleGenerator {
 
   @Override
   public int count() {
-    return 0;
+    return count;
+  }
+
+  private void setupPairMaps(final Map<TestCase, Set<TestCase>> pairs) {
+    for (final Map.Entry<TestCase, Set<TestCase>> entry : pairs.entrySet())
+      for (final TestCase testCase : entry.getValue())
+        this.pairs.computeIfAbsent(entry.getKey(), key -> new HashSet<>()).add(testCase);
+
+    for (final Map.Entry<TestCase, Set<TestCase>> entry : pairs.entrySet())
+      for (final TestCase testCase : entry.getValue())
+        this.invertedPairs.computeIfAbsent(testCase, key -> new HashSet<>()).add(entry.getKey());
+  }
+
+  private int computeCount(final Map<TestCase, Set<TestCase>> pairs) {
+    int count = 0;
+
+    setupPairMaps(pairs);
+    while (!this.pairs.isEmpty() || !this.invertedPairs.isEmpty()) {
+      generate();
+      ++count;
+    }
+
+    return count;
   }
 
   private TestCase[] generateToCoverPairs() {

@@ -21,7 +21,7 @@ public class PairCoverMatcher extends TypeSafeMatcher<ScheduleGenerator> {
   protected boolean matchesSafely(final ScheduleGenerator generator) {
     final Map<TestCase, Set<TestCase>> coveredPairs = new HashMap<>();
 
-    while (!generator.done()) {
+    for (int it = 0; it < generator.count(); ++it) {
       final TestCase[] schedule = generator.generate();
 
       if (hasDuplicateTestCasesInSchedule(schedule)) return false;

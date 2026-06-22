@@ -11,6 +11,8 @@ public final class TuscanInterClass implements ScheduleGenerator {
   private final TestSuite suite;
   private final int[][] classOnlySquare;
   private final List<int[][]> intraClassSquares;
+  private final int count;
+
   private int classOnlyRowIndex;
 
   private int classOnlyColumnIndex;
@@ -34,16 +36,8 @@ public final class TuscanInterClass implements ScheduleGenerator {
       intraClassSquares.add(intraClassSquare);
     }
 
-    this.classOnlyRowIndex = -1;
-    advanceClassOnlyEndOfRow();
-
-    this.intraClassRowIndex = 0;
-    this.nextIntraClassRowIndex = 0;
-  }
-
-  @Override
-  public boolean done() {
-    return classOnlyRowIndex >= classOnlySquare.length;
+    this.count = computeCount();
+    resetIteration();
   }
 
   @Override
@@ -60,7 +54,37 @@ public final class TuscanInterClass implements ScheduleGenerator {
 
   @Override
   public int count() {
-    return 0;
+    return count;
+  }
+
+  private void resetIteration() {
+    this.classOnlyRowIndex = -1;
+    advanceClassOnlyEndOfRow();
+
+    this.intraClassRowIndex = 0;
+    this.nextIntraClassRowIndex = 0;
+  }
+
+  private int computeCount() {
+    int count = 0;
+
+    resetIteration();
+    while (classOnlyRowIndex < classOnlySquare.length) {
+      final int leftClassIndex = classOnlySquare[classOnlyRowIndex][classOnlyColumnIndex];
+      final int leftLength = intraClassSquares.get(leftClassIndex).length;
+
+      if (classOnlyNextColumnIndex == -1) {
+        count += leftLength;
+      } else {
+        final int rightClassIndex = classOnlySquare[classOnlyRowIndex][classOnlyNextColumnIndex];
+        final int rightLength = intraClassSquares.get(rightClassIndex).length;
+        count += leftLength * rightLength;
+      }
+
+      advanceClassOnly();
+    }
+
+    return count;
   }
 
   private List<TestCase> produceSchedule(
@@ -111,13 +135,17 @@ public final class TuscanInterClass implements ScheduleGenerator {
 
     classOnlyColumnIndex = classOnlyNextColumnIndex;
     classOnlyNextColumnIndex = findFirstValidTestClassIndex(classOnlyColumnIndex + 1);
+    if (classOnlyNextColumnIndex == -1) {
+      advanceClassOnlyEndOfRow();
+      return;
+    }
   }
 
   private void advanceClassOnlyEndOfRow() {
     if (++classOnlyRowIndex >= classOnlySquare.length) return;
 
     classOnlyColumnIndex = findFirstValidTestClassIndex(0);
-    classOnlyNextColumnIndex = findFirstValidTestClassIndex(1);
+    classOnlyNextColumnIndex = findFirstValidTestClassIndex(classOnlyColumnIndex + 1);
   }
 
   private int findFirstValidTestClassIndex(int index) {

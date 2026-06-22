@@ -18,11 +18,44 @@ import moira.util.runner.ScheduleGenerator;
 public final class TargetPairsGenerator implements ScheduleGenerator {
   private final Map<TestCase, Set<TestCase>> crossClassPairs;
   private final Map<TestCase, Set<TestCase>> intraClassPairs;
+  private final int count;
 
   public TargetPairsGenerator(final Map<TestCase, Set<TestCase>> pairs) {
 
     crossClassPairs = new HashMap<>();
     intraClassPairs = new HashMap<>();
+    count = computeCount(pairs);
+
+    populateMapPairs(pairs);
+  }
+
+  @Override
+  public TestCase[] generate() {
+    final TestCase[] schedule = buildSchedule().stream().toArray(TestCase[]::new);
+
+    removeCoveredPairs(schedule);
+
+    return schedule;
+  }
+
+  @Override
+  public int count() {
+    return count;
+  }
+
+  private int computeCount(final Map<TestCase, Set<TestCase>> pairs) {
+    int count = 0;
+
+    populateMapPairs(pairs);
+    while (!crossClassPairs.isEmpty() || !intraClassPairs.isEmpty()) {
+      generate();
+      ++count;
+    }
+
+    return count;
+  }
+
+  private void populateMapPairs(final Map<TestCase, Set<TestCase>> pairs) {
 
     for (final Map.Entry<TestCase, Set<TestCase>> pair : pairs.entrySet()) {
       final TestCase dependant = pair.getKey();
@@ -39,27 +72,7 @@ public final class TargetPairsGenerator implements ScheduleGenerator {
     }
   }
 
-  @Override
-  public boolean done() {
-    return crossClassPairs.isEmpty() && intraClassPairs.isEmpty();
-  }
-
-  @Override
-  public TestCase[] generate() {
-    final TestCase[] schedule = buildSchedule().stream().toArray(TestCase[]::new);
-
-    removeCoveredPairs(schedule);
-
-    return schedule;
-  }
-
-  @Override
-  public int count() {
-    return 0;
-  }
-
   private List<TestCase> buildSchedule() {
-
     if (crossClassPairs.isEmpty()) return buildIntraClassSchedule();
     return buildCrossClassSchedule();
   }

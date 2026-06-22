@@ -16,11 +16,6 @@ public final class TuscanPacked implements ScheduleGenerator {
   }
 
   @Override
-  public boolean done() {
-    return index >= square.length;
-  }
-
-  @Override
   public TestCase[] generate() {
     final int[] row = square[index++];
     final TestCase[] schedule = new TestCase[suite.numberOfTestCases()];
