@@ -10,17 +10,17 @@ import moira.util.model.TestCase;
 public class PairsCollector extends FlakyPairsCollector {
   final Map<TestCase, Set<TestCase>> pairs;
   final Map<TestCase, Set<TestCase>> invertedPairs;
+  final Map<TestCase, Set<TestCase>> setters;
 
   public PairsCollector(final Map<TestCase, Set<TestCase>> pairs) {
     super();
     this.pairs = pairs;
     this.invertedPairs = new HashMap<>();
+    this.setters = new HashMap<>();
 
-    for (final Map.Entry<TestCase, Set<TestCase>> entry : pairs.entrySet()) {
-      for (final TestCase testCase : entry.getValue()) {
+    for (final Map.Entry<TestCase, Set<TestCase>> entry : pairs.entrySet())
+      for (final TestCase testCase : entry.getValue())
         this.invertedPairs.computeIfAbsent(testCase, key -> new HashSet<>()).add(entry.getKey());
-      }
-    }
   }
 
   @Override
@@ -31,17 +31,24 @@ public class PairsCollector extends FlakyPairsCollector {
       final Outcome previous = outcome[i - 1];
       final Outcome current = outcome[i];
 
-      if (!current.pass() && isPair(previous.testCase(), current.testCase()))
-        registerVictimPolluter(previous.testCase(), current.testCase());
+      if (!isPair(previous.testCase(), current.testCase())) continue;
+
+      if (current.pass())
+        setters
+            .computeIfAbsent(current.testCase(), key -> new HashSet<>())
+            .add(previous.testCase());
+      else registerVictimPolluter(current.testCase(), previous.testCase());
     }
 
     for (int i = 0; i < outcome.length; ++i) {
-      if (!outcome[i].pass() && isPossibleBrittle(outcome[i].testCase(), scheduled)) {
-        for (final TestCase setter : invertedPairs.get(outcome[i].testCase()))
-          registerBrittleSetter(outcome[i].testCase(), setter);
+      final Outcome current = outcome[i];
+
+      if (!current.pass() && isPossibleBrittle(current.testCase(), scheduled)) {
+        for (final TestCase setter : setters.getOrDefault(current.testCase(), new HashSet<>()))
+          registerBrittleSetter(current.testCase(), setter);
       }
 
-      scheduled.add(outcome[i].testCase());
+      scheduled.add(current.testCase());
     }
   }
 
@@ -52,6 +59,11 @@ public class PairsCollector extends FlakyPairsCollector {
   }
 
   private boolean isPossibleBrittle(final TestCase testCase, final Set<TestCase> scheduled) {
+    final Set<TestCase> setters = invertedPairs.get(testCase);
+    if (setters == null) return false;
+
+    for (final TestCase setter : setters) if (scheduled.contains(setter)) return false;
+
     return true;
   }
 }
