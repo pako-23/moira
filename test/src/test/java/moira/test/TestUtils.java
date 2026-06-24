@@ -60,9 +60,9 @@ public class TestUtils {
     return moiraCommand("NaiveProfiler", dumpFileName, args);
   }
 
-  public static Process moiraTargetedPairsProfilerCommand(
+  public static Process moiraTargetPairsProfilerCommand(
       final String dumpFileName, final String... args) throws IOException {
-    return moiraCommand("TargetedPairsProfiler", dumpFileName, args);
+    return moiraCommand("TargetPairsProfiler", dumpFileName, args);
   }
 
   public static Process moiraDefaultsCommand(final String... args) throws IOException {

@@ -57,7 +57,7 @@ public class TuscanCommand implements Runnable {
       names = {"-m", "-mode"},
       paramLabel = "<mode>",
       description =
-          "Algorithm variant. Valid values: packed, class-only, intra-class, inter-class, targeted-pairs, pair-cover"
+          "Algorithm variant. Valid values: packed, class-only, intra-class, inter-class, target-pairs, pair-cover"
               + " (default: packed).",
       defaultValue = "packed",
       converter = TuscanCommandModeConverter.class)
@@ -82,8 +82,8 @@ public class TuscanCommand implements Runnable {
           return TuscanCommandMode.INTRA_CLASS;
         case "inter-class":
           return TuscanCommandMode.INTER_CLASS;
-        case "targeted-pairs":
-          return TuscanCommandMode.TARGETED_PAIRS;
+        case "target-pairs":
+          return TuscanCommandMode.TARGET_PAIRS;
         case "pair-cover":
           return TuscanCommandMode.PAIR_COVER;
         default:
@@ -97,7 +97,7 @@ public class TuscanCommand implements Runnable {
     CLASS_ONLY,
     INTRA_CLASS,
     INTER_CLASS,
-    TARGETED_PAIRS,
+    TARGET_PAIRS,
     PAIR_COVER;
   }
 
@@ -152,7 +152,7 @@ public class TuscanCommand implements Runnable {
                 .withDockerExecutor(executor)
                 .withTestClassesFile(file)
                 .build());
-      case TARGETED_PAIRS:
+      case TARGET_PAIRS:
         return new TargetPairsGenerator(parsePairs(file));
       case PAIR_COVER:
         return new PairCover(parsePairs(file));
@@ -168,7 +168,7 @@ public class TuscanCommand implements Runnable {
       case INTRA_CLASS:
       case INTER_CLASS:
         return new TuscanSquareCollector();
-      case TARGETED_PAIRS:
+      case TARGET_PAIRS:
       case PAIR_COVER:
         return new PairsCollector(parsePairs(file));
       default:

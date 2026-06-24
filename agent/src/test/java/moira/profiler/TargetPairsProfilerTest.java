@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class TargetedPairsProfilerTest {
+public class TargetPairsProfilerTest {
 
   private static final String FIELD_A = "fieldA";
   private static final String FIELD_B = "fieldB";
@@ -22,17 +22,17 @@ public class TargetedPairsProfilerTest {
 
   @BeforeEach
   public void setup() {
-    TargetedPairsProfiler.setup();
+    TargetPairsProfiler.setup();
   }
 
   private List<String> makeDump(String fileName) {
     List<String> lines = null;
-    fileName = "targeted-pairs-" + fileName;
+    fileName = "target-pairs-" + fileName;
 
     try {
       File file = new File(fileName);
       file.deleteOnExit();
-      TargetedPairsProfiler.dump(fileName);
+      TargetPairsProfiler.dump(fileName);
       lines =
           Files.readAllLines(Paths.get(fileName)).stream().sorted().collect(Collectors.toList());
     } catch (IOException e) {
@@ -43,11 +43,11 @@ public class TargetedPairsProfilerTest {
   }
 
   private void runIntoVirtualTest(final String testName, final Runnable operations) {
-    TargetedPairsProfiler.enterTestMethod(testName);
-    TargetedPairsProfiler.enable();
+    TargetPairsProfiler.enterTestMethod(testName);
+    TargetPairsProfiler.enable();
     operations.run();
-    TargetedPairsProfiler.disable();
-    TargetedPairsProfiler.exitTestMethod();
+    TargetPairsProfiler.disable();
+    TargetPairsProfiler.exitTestMethod();
   }
 
   @Test
@@ -64,8 +64,8 @@ public class TargetedPairsProfilerTest {
 
   @Test
   public void testAccessOutsideTest() {
-    TargetedPairsProfiler.writeStaticField(FIELD_A);
-    TargetedPairsProfiler.readStaticField(FIELD_A);
+    TargetPairsProfiler.writeStaticField(FIELD_A);
+    TargetPairsProfiler.readStaticField(FIELD_A);
 
     assertThat(makeDump("outside-test-noop").size(), is(0));
   }
@@ -75,13 +75,13 @@ public class TargetedPairsProfilerTest {
     runIntoVirtualTest(
         TEST_A,
         () -> {
-          TargetedPairsProfiler.writeStaticField(FIELD_A);
+          TargetPairsProfiler.writeStaticField(FIELD_A);
         });
 
     runIntoVirtualTest(
         TEST_B,
         () -> {
-          TargetedPairsProfiler.writeStaticField(FIELD_A);
+          TargetPairsProfiler.writeStaticField(FIELD_A);
         });
 
     final List<String> lines = makeDump("write-write-conflict");
@@ -94,13 +94,13 @@ public class TargetedPairsProfilerTest {
     runIntoVirtualTest(
         TEST_A,
         () -> {
-          TargetedPairsProfiler.readStaticField(FIELD_A);
+          TargetPairsProfiler.readStaticField(FIELD_A);
         });
 
     runIntoVirtualTest(
         TEST_B,
         () -> {
-          TargetedPairsProfiler.readStaticField(FIELD_A);
+          TargetPairsProfiler.readStaticField(FIELD_A);
         });
 
     final List<String> lines = makeDump("read-read-conflict");
@@ -113,13 +113,13 @@ public class TargetedPairsProfilerTest {
     runIntoVirtualTest(
         TEST_A,
         () -> {
-          TargetedPairsProfiler.writeStaticField(FIELD_A);
+          TargetPairsProfiler.writeStaticField(FIELD_A);
         });
 
     runIntoVirtualTest(
         TEST_B,
         () -> {
-          TargetedPairsProfiler.readStaticField(FIELD_A);
+          TargetPairsProfiler.readStaticField(FIELD_A);
         });
 
     final List<String> lines = makeDump("write-read-conflict");
@@ -132,13 +132,13 @@ public class TargetedPairsProfilerTest {
     runIntoVirtualTest(
         TEST_A,
         () -> {
-          TargetedPairsProfiler.readStaticField(FIELD_A);
+          TargetPairsProfiler.readStaticField(FIELD_A);
         });
 
     runIntoVirtualTest(
         TEST_B,
         () -> {
-          TargetedPairsProfiler.writeStaticField(FIELD_A);
+          TargetPairsProfiler.writeStaticField(FIELD_A);
         });
 
     final List<String> lines = makeDump("read-write-conflict");
@@ -151,13 +151,13 @@ public class TargetedPairsProfilerTest {
     runIntoVirtualTest(
         TEST_A,
         () -> {
-          TargetedPairsProfiler.writeStaticField(FIELD_A);
+          TargetPairsProfiler.writeStaticField(FIELD_A);
         });
 
     runIntoVirtualTest(
         TEST_B,
         () -> {
-          TargetedPairsProfiler.writeStaticField(FIELD_B);
+          TargetPairsProfiler.writeStaticField(FIELD_B);
         });
 
     assertThat(makeDump("different-fields").size(), is(0));
@@ -168,19 +168,19 @@ public class TargetedPairsProfilerTest {
     runIntoVirtualTest(
         "TestA",
         () -> {
-          TargetedPairsProfiler.writeStaticField(FIELD_A);
+          TargetPairsProfiler.writeStaticField(FIELD_A);
         });
 
     runIntoVirtualTest(
         "TestB",
         () -> {
-          TargetedPairsProfiler.writeStaticField(FIELD_A);
+          TargetPairsProfiler.writeStaticField(FIELD_A);
         });
 
     runIntoVirtualTest(
         "TestC",
         () -> {
-          TargetedPairsProfiler.writeStaticField(FIELD_A);
+          TargetPairsProfiler.writeStaticField(FIELD_A);
         });
 
     final List<String> lines = makeDump("three-tests");
@@ -201,20 +201,20 @@ public class TargetedPairsProfilerTest {
     runIntoVirtualTest(
         "TestA",
         () -> {
-          TargetedPairsProfiler.writeStaticField(FIELD_A);
+          TargetPairsProfiler.writeStaticField(FIELD_A);
         });
 
     runIntoVirtualTest(
         "TestB",
         () -> {
-          TargetedPairsProfiler.writeStaticField(FIELD_A);
-          TargetedPairsProfiler.writeStaticField(FIELD_B);
+          TargetPairsProfiler.writeStaticField(FIELD_A);
+          TargetPairsProfiler.writeStaticField(FIELD_B);
         });
 
     runIntoVirtualTest(
         "TestC",
         () -> {
-          TargetedPairsProfiler.writeStaticField(FIELD_B);
+          TargetPairsProfiler.writeStaticField(FIELD_B);
         });
 
     final List<String> lines = makeDump("multi-field");
@@ -233,13 +233,13 @@ public class TargetedPairsProfilerTest {
     runIntoVirtualTest(
         TEST_A,
         () -> {
-          TargetedPairsProfiler.writeStaticField(FIELD_A);
+          TargetPairsProfiler.writeStaticField(FIELD_A);
         });
 
     runIntoVirtualTest(
         TEST_B,
         () -> {
-          TargetedPairsProfiler.writeStaticField(FIELD_A);
+          TargetPairsProfiler.writeStaticField(FIELD_A);
         });
 
     final List<String> lines = makeDump("dump-content");
@@ -251,16 +251,16 @@ public class TargetedPairsProfilerTest {
   public void testNoopMethods() {
     final String[] tests = new String[] {TEST_A, TEST_B};
     for (final String test : tests) {
-      TargetedPairsProfiler.enterTestMethod(test);
-      TargetedPairsProfiler.suspend();
-      TargetedPairsProfiler.resume();
-      TargetedPairsProfiler.enable();
-      TargetedPairsProfiler.disable();
-      TargetedPairsProfiler.writeArrayElement(new Object[1], 0);
-      TargetedPairsProfiler.writeObjectField(new Object(), "f");
-      TargetedPairsProfiler.readArrayElement(new Object[1], 0);
-      TargetedPairsProfiler.readObjectField(new Object(), "f");
-      TargetedPairsProfiler.exitTestMethod();
+      TargetPairsProfiler.enterTestMethod(test);
+      TargetPairsProfiler.suspend();
+      TargetPairsProfiler.resume();
+      TargetPairsProfiler.enable();
+      TargetPairsProfiler.disable();
+      TargetPairsProfiler.writeArrayElement(new Object[1], 0);
+      TargetPairsProfiler.writeObjectField(new Object(), "f");
+      TargetPairsProfiler.readArrayElement(new Object[1], 0);
+      TargetPairsProfiler.readObjectField(new Object(), "f");
+      TargetPairsProfiler.exitTestMethod();
     }
 
     final List<String> lines = makeDump("noop-methods");
@@ -272,14 +272,14 @@ public class TargetedPairsProfilerTest {
     runIntoVirtualTest(
         TEST_A,
         () -> {
-          TargetedPairsProfiler.writeStaticField(FIELD_A);
-          TargetedPairsProfiler.writeStaticField(FIELD_A);
+          TargetPairsProfiler.writeStaticField(FIELD_A);
+          TargetPairsProfiler.writeStaticField(FIELD_A);
         });
 
     runIntoVirtualTest(
         TEST_B,
         () -> {
-          TargetedPairsProfiler.writeStaticField(FIELD_A);
+          TargetPairsProfiler.writeStaticField(FIELD_A);
         });
 
     List<String> lines = makeDump("repeated-access");
@@ -292,17 +292,17 @@ public class TargetedPairsProfilerTest {
     runIntoVirtualTest(
         TEST_A,
         () -> {
-          TargetedPairsProfiler.suspend();
-          TargetedPairsProfiler.readStaticField(FIELD_A);
-          TargetedPairsProfiler.resume();
+          TargetPairsProfiler.suspend();
+          TargetPairsProfiler.readStaticField(FIELD_A);
+          TargetPairsProfiler.resume();
         });
 
     runIntoVirtualTest(
         TEST_B,
         () -> {
-          TargetedPairsProfiler.suspend();
-          TargetedPairsProfiler.writeStaticField(FIELD_A);
-          TargetedPairsProfiler.resume();
+          TargetPairsProfiler.suspend();
+          TargetPairsProfiler.writeStaticField(FIELD_A);
+          TargetPairsProfiler.resume();
         });
 
     final List<String> lines = makeDump("suspend-no-conflict");
@@ -314,17 +314,17 @@ public class TargetedPairsProfilerTest {
     runIntoVirtualTest(
         TEST_A,
         () -> {
-          TargetedPairsProfiler.disable();
-          TargetedPairsProfiler.readStaticField(FIELD_A);
-          TargetedPairsProfiler.enable();
+          TargetPairsProfiler.disable();
+          TargetPairsProfiler.readStaticField(FIELD_A);
+          TargetPairsProfiler.enable();
         });
 
     runIntoVirtualTest(
         TEST_B,
         () -> {
-          TargetedPairsProfiler.disable();
-          TargetedPairsProfiler.writeStaticField(FIELD_A);
-          TargetedPairsProfiler.enable();
+          TargetPairsProfiler.disable();
+          TargetPairsProfiler.writeStaticField(FIELD_A);
+          TargetPairsProfiler.enable();
         });
 
     final List<String> lines = makeDump("disabled-no-conflict");

@@ -4,7 +4,7 @@ import java.io.FileNotFoundException;
 import moira.collect.Map;
 import moira.collect.MapBuilder;
 
-public final class TargetedPairsProfiler {
+public final class TargetPairsProfiler {
   private static volatile int runningTest;
   private static volatile int enabled;
   private static ThreadLocal<Integer> suspend;
@@ -15,7 +15,7 @@ public final class TargetedPairsProfiler {
     setup();
   }
 
-  private TargetedPairsProfiler() {}
+  private TargetPairsProfiler() {}
 
   public static void setup() {
     runningTest = -1;
@@ -26,7 +26,7 @@ public final class TargetedPairsProfiler {
   }
 
   private static void staticFieldEvent(final String field) {
-    int runningTest = TargetedPairsProfiler.runningTest;
+    int runningTest = TargetPairsProfiler.runningTest;
     if (runningTest < 0) return;
     if (enabled == 0) return;
     if (suspendedOrSuspend()) return;

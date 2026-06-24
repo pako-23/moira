@@ -7,12 +7,12 @@ import java.io.IOException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-public class TargetedPairsProfilerTest {
+public class TargetPairsProfilerTest {
   @Test
   public void testMultiplePassingTest() throws IOException, InterruptedException {
-    final String fileName = "targeted-pairs-no-dependency";
+    final String fileName = "target-pairs-no-dependency";
     final Process process =
-        TestUtils.moiraTargetedPairsProfilerCommand(
+        TestUtils.moiraTargetPairsProfilerCommand(
             fileName, "com.example.SimplePassingTest", "com.example.OtherPassingTest");
     assertThat(process.waitFor(), is(0));
     assertThat(TestUtils.readFileLines(fileName).size(), is(0));
@@ -20,9 +20,9 @@ public class TargetedPairsProfilerTest {
 
   @Test
   public void testStaticFieldDependency() throws IOException, InterruptedException {
-    final String fileName = "targeted-pairs-static-field-dependency";
+    final String fileName = "target-pairs-static-field-dependency";
     final Process process =
-        TestUtils.moiraTargetedPairsProfilerCommand(fileName, "com.example.AppStaticFieldTest");
+        TestUtils.moiraTargetPairsProfilerCommand(fileName, "com.example.AppStaticFieldTest");
     assertThat(process.waitFor(), is(0));
     final List<String> lines = TestUtils.readFileLines(fileName);
     assertThat(lines.size(), is(4));
@@ -37,9 +37,9 @@ public class TargetedPairsProfilerTest {
 
   @Test
   public void testObjectFieldDependency() throws IOException, InterruptedException {
-    final String fileName = "targeted-pairs-object-field-dependency";
+    final String fileName = "target-pairs-object-field-dependency";
     final Process process =
-        TestUtils.moiraTargetedPairsProfilerCommand(fileName, "com.example.AppObjectFieldTest");
+        TestUtils.moiraTargetPairsProfilerCommand(fileName, "com.example.AppObjectFieldTest");
     assertThat(process.waitFor(), is(0));
     final List<String> lines = TestUtils.readFileLines(fileName);
     assertThat(lines.size(), is(12));
@@ -62,9 +62,9 @@ public class TargetedPairsProfilerTest {
 
   @Test
   public void testArrayDependency() throws IOException, InterruptedException {
-    final String fileName = "targeted-pairs-array-dependency";
+    final String fileName = "target-pairs-array-dependency";
     final Process process =
-        TestUtils.moiraTargetedPairsProfilerCommand(fileName, "com.example.AppArrayTest");
+        TestUtils.moiraTargetPairsProfilerCommand(fileName, "com.example.AppArrayTest");
     assertThat(process.waitFor(), is(0));
     final List<String> lines = TestUtils.readFileLines(fileName);
     assertThat(lines.size(), is(12));
