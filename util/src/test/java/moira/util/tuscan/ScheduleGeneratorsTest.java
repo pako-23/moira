@@ -113,7 +113,7 @@ public class ScheduleGeneratorsTest {
 
   @ParameterizedTest
   @MethodSource("testSuiteOrdersWithSeeds")
-  public void testTargetedPairsCoversAllRandomPairs(final Class<?>[] order, final int seed) {
+  public void testTargetPairsCoversAllRandomPairs(final Class<?>[] order, final int seed) {
     mockTestSuite(order);
     final Map<TestCase, Set<TestCase>> pairs = generateRandomPairs(seed);
 
