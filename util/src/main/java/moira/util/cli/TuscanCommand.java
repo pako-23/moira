@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import moira.util.FlakyPairsCollector;
 import moira.util.PairsCollector;
 import moira.util.TuscanSquareCollector;
@@ -178,6 +179,32 @@ public class TuscanCommand implements Runnable {
 
   private static Map<TestCase, Set<TestCase>> parsePairs(final File input) {
     final Map<TestCase, Set<TestCase>> pairs = new HashMap<>();
+    final Map<String, TestCase> cases = parseTestCases(input);
+
+    iterateTestCases(
+        input,
+        (from, to) -> {
+          pairs.computeIfAbsent(cases.get(from), key -> new HashSet<>()).add(cases.get(to));
+        });
+
+    return pairs;
+  }
+
+  private static Map<String, TestCase> parseTestCases(final File input) {
+    final Map<String, TestCase> cases = new HashMap<>();
+
+    iterateTestCases(
+        input,
+        (from, to) -> {
+          cases.putIfAbsent(from, new TestCase(from));
+          cases.putIfAbsent(to, new TestCase(to));
+        });
+
+    return cases;
+  }
+
+  private static void iterateTestCases(
+      final File input, final BiConsumer<String, String> consumer) {
     try (final Scanner scanner = new Scanner(input)) {
       while (scanner.hasNextLine()) {
         final String line = scanner.nextLine().trim();
@@ -187,13 +214,12 @@ public class TuscanCommand implements Runnable {
         if (parts.length != 2) continue;
 
         final String from = parts[0].substring("from: ".length());
-        final String to = parts[1].substring("to: ".length());
-        pairs.computeIfAbsent(new TestCase(from), key -> new HashSet<>()).add(new TestCase(to));
+        final String to = parts[1].trim();
+
+        consumer.accept(from, to);
       }
     } catch (final IOException e) {
       throw new RuntimeException("failed to read pair files: " + e.getMessage());
     }
-
-    return pairs;
   }
 }

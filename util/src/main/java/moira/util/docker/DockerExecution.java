@@ -122,27 +122,6 @@ public class DockerExecution {
         super.onNext(frame);
       }
 
-      // @Override
-      // public void onError(final Throwable throwable) {
-      //   this.onComplete();
-      // }
-
-      // @Override
-      // public void onComplete() {
-      //   closeStream(stdout);
-      //   closeStream(stderr);
-      // }
-
-      // private void closeStream(final ContainerStream stream) {
-      //   if (stream == null) return;
-
-      //   try {
-      //     stream.getOutputStream().close();
-      //   } catch (final IOException e) {
-      //     throw new RuntimeException("failed to read from container: " + e.getMessage());
-      //   }
-      // }
-
       private ContainerStream getContainerStream(final Frame frame) {
         switch (frame.getStreamType()) {
           case STDERR:

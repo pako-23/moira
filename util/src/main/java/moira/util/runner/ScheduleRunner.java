@@ -69,8 +69,8 @@ public class ScheduleRunner extends Thread {
   }
 
   private void printProgress() {
-    if (isStderrTerminal) System.out.printf("progress %d\r", completed);
-    else System.out.printf("progress %d\n", completed);
+    if (isStderrTerminal) System.err.printf("progress %d/%d\r", completed, count);
+    else System.err.printf("progress %d/%d\n", completed, count);
   }
 
   private interface CLibrary extends Library {

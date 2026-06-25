@@ -101,17 +101,15 @@ public final class PairCover implements ScheduleGenerator {
 
         node = null;
         for (final TestCase target : targets) {
-          if (!visited.contains(target)) {
+          final LinkedList<TestCase> partialPath = schedules.get(target);
+          if (partialPath != null) {
+            segment.addAll(partialPath);
+            schedules.remove(target);
+            break;
+          } else if (!visited.contains(target)) {
             node = target;
             break;
           }
-
-          final LinkedList<TestCase> partialPath = schedules.get(target);
-          if (partialPath == null) continue;
-
-          segment.addAll(partialPath);
-          schedules.remove(target);
-          break;
         }
       }
 

@@ -27,6 +27,18 @@ public class TestCase {
     return String.format("%s[%s]", testClass, description);
   }
 
+  @Override
+  public boolean equals(Object obj) {
+    if (!(obj instanceof TestCase)) return false;
+    final TestCase other = (TestCase) obj;
+    return other.description.equals(description) && other.testClass.equals(testClass);
+  }
+
+  @Override
+  public int hashCode() {
+    return description.hashCode();
+  }
+
   public String getTestClass() {
     return testClass;
   }
