@@ -49,7 +49,8 @@ public class ClassMangler extends ClassVisitor {
       final String signature,
       final String[] exceptions) {
     final MethodVisitor visitor = cv.visitMethod(access, name, description, signature, exceptions);
-    if (visitor == null || !mangle || (access & METHOD_FILTER) != 0) return visitor;
+    if (visitor == null || !mangle || (access & METHOD_FILTER) != 0 || name.equals("finalize"))
+      return visitor;
 
     if (suspend)
       return new SuspendMangler(visitor, config.getProfiler(), access, name, description);
