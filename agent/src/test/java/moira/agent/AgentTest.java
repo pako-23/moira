@@ -33,7 +33,8 @@ public class AgentTest {
   }
 
   @Test
-  public void testNoRetransformationSupported() throws UnmodifiableClassException {
+  public void testNoRetransformationSupported()
+      throws UnmodifiableClassException, ClassNotFoundException {
     when(instrumentationMock.isRetransformClassesSupported()).thenReturn(false);
 
     try (final MockedConstruction<Transformer> transformerMock =
@@ -49,7 +50,8 @@ public class AgentTest {
   }
 
   @Test
-  public void testClassRetransformation() throws UnmodifiableClassException {
+  public void testClassRetransformation()
+      throws UnmodifiableClassException, ClassNotFoundException {
     final Class<?>[] classes = new Class<?>[] {String.class, Integer.class};
     when(instrumentationMock.getAllLoadedClasses()).thenReturn(classes);
     when(instrumentationMock.isRetransformClassesSupported()).thenReturn(true);

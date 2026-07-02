@@ -23,7 +23,7 @@ public class TransformerTest {
 
   @BeforeEach
   public void setup() {
-    transformer = new Transformer();
+    transformer = new Transformer(new ManglerConfig());
   }
 
   private static byte[] classToBytes(final Class<?> clazz) throws IOException {

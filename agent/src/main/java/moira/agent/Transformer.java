@@ -10,8 +10,8 @@ class Transformer implements ClassFileTransformer {
 
   private final ManglerConfig config;
 
-  public Transformer() {
-    this.config = new ManglerConfig();
+  public Transformer(final ManglerConfig config) {
+    this.config = config;
   }
 
   @Override
