@@ -2,18 +2,26 @@ package moira.agent;
 
 public class ManglerConfig {
   private static final String[] DEFAULT_FILTER_PREFIXES = {
+    "com/sun/",
+    "java/awt/",
+    "java/util/sql/",
+    "sun/",
     "java/io/",
     "java/lang/",
     "java/net/",
     "java/nio/",
     "java/text/",
     "java/util/concurrent/locks/",
+    "java/util/jar/",
+    "java/util/logging/",
+    "java/util/regex/",
+    "java/util/spi/",
+    "java/util/zip/",
     "jdk/",
     "junit/",
     "moira/",
     "org/junit/",
     "org/objectweb/asm/",
-    "sun/",
   };
 
   private static String DEFAULT_PROFILER = "moira/profiler/NullProfiler";

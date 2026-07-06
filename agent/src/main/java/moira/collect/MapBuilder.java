@@ -357,22 +357,24 @@ public class MapBuilder<K, V> {
         reclaimThreshold = 1;
         reclaimInvocations = 0;
         do {
-          if (entry.getValue() == null) continue;
-          keyDeletionCallback.apply(entry.getValue());
-          int index = indexFor(entry.getHash(), table.length);
-          Entry<K, V> prev = table[index];
-          Entry<K, V> p = prev;
-          while (true) {
-            Entry<K, V> next = p.getNext();
-            if (p == entry) {
-              if (prev == entry) table[index] = next;
-              else prev.setNext(next);
-              entry.setValue(null);
-              --size;
-              break;
+          synchronized (queue) {
+            if (entry.getValue() == null) continue;
+            keyDeletionCallback.apply(entry.getValue());
+            int index = indexFor(entry.getHash(), table.length);
+            Entry<K, V> prev = table[index];
+            Entry<K, V> p = prev;
+            while (true) {
+              Entry<K, V> next = p.getNext();
+              if (p == entry) {
+                if (prev == entry) table[index] = next;
+                else prev.setNext(next);
+                entry.setValue(null);
+                --size;
+                break;
+              }
+              prev = p;
+              p = next;
             }
-            prev = p;
-            p = next;
           }
         } while ((entry = pollEntry()) != null);
       }
