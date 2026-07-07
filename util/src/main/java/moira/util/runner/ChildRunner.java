@@ -25,9 +25,7 @@ public class ChildRunner {
     final List<Boolean> results = new JUnitExecutor(tests).run();
     System.setOut(originalOut);
 
-    for (final boolean result : results) {
-      System.out.println(result);
-    }
+    for (final boolean result : results) System.out.println(result);
 
     System.exit(0);
   }

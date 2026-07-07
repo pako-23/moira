@@ -2,6 +2,9 @@ package moira.util.runner;
 
 import com.sun.jna.Library;
 import com.sun.jna.Native;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
@@ -17,6 +20,7 @@ public class ScheduleRunner extends Thread {
 
   private final DockerExecutor executor;
   private final ScheduleGenerator generator;
+  private final boolean debug;
   private Semaphore semaphore;
   private CompletionService<Outcome[]> pool;
   private int completed;
@@ -25,6 +29,14 @@ public class ScheduleRunner extends Thread {
   public ScheduleRunner(final ScheduleRunnerBuilder builder) {
     this.executor = builder.getDockerExecutor();
     this.generator = builder.getScheduleGenerator();
+    this.debug = builder.getDebug();
+    if (debug) {
+      try {
+        Files.createDirectories(Paths.get("logs"));
+      } catch (final IOException e) {
+        throw new RuntimeException("Could not create logs/ directory", e);
+      }
+    }
     this.semaphore = new Semaphore(builder.getConcurrencyLevel());
     this.pool =
         new ExecutorCompletionService<>(
@@ -41,7 +53,11 @@ public class ScheduleRunner extends Thread {
         final TestCase[] schedule = generator.generate();
 
         semaphore.acquire();
-        pool.submit(new DockerScheduleExecution(executor, schedule));
+        if (debug)
+          pool.submit(
+              new DockerScheduleExecution(
+                  executor, schedule, Paths.get("logs", String.format("schedule-%d.log", i + 1))));
+        else pool.submit(new DockerScheduleExecution(executor, schedule));
       }
 
     } catch (final Exception e) {

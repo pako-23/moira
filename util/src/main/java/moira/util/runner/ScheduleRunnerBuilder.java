@@ -10,11 +10,13 @@ public class ScheduleRunnerBuilder {
   private DockerExecutor executor;
   private ScheduleGenerator generator;
   private int concurrencyLevel;
+  private boolean debug;
 
   private ScheduleRunnerBuilder() {
     this.executor = null;
     this.generator = null;
     this.concurrencyLevel = DEFAULT_CONCURRENCY_LEVEL;
+    this.debug = false;
   }
 
   public static ScheduleRunnerBuilder builder() {
@@ -23,6 +25,11 @@ public class ScheduleRunnerBuilder {
 
   public ScheduleRunnerBuilder withDockerExecutor(final DockerExecutor executor) {
     this.executor = executor;
+    return this;
+  }
+
+  public ScheduleRunnerBuilder withDebug(final boolean debug) {
+    this.debug = debug;
     return this;
   }
 
@@ -55,5 +62,9 @@ public class ScheduleRunnerBuilder {
 
   public int getConcurrencyLevel() {
     return concurrencyLevel;
+  }
+
+  public boolean getDebug() {
+    return debug;
   }
 }

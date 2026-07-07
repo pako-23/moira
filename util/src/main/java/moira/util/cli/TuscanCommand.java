@@ -65,6 +65,11 @@ public class TuscanCommand implements Runnable {
   private TuscanCommandMode mode;
 
   @Option(
+      names = {"-debug"},
+      description = "Save schedules execution logs to files in the logs/ directory.")
+  private boolean debug;
+
+  @Option(
       names = {"-h", "-help"},
       usageHelp = true,
       description = "Display this help and exit.")
@@ -110,6 +115,7 @@ public class TuscanCommand implements Runnable {
         ScheduleRunnerBuilder.builder()
             .withDockerExecutor(executor)
             .withConcurrencyLevel(parallelism)
+            .withDebug(debug)
             .withScheduleGenerator(constructScheduleGenerator(executor))
             .build();
     final FlakyPairsCollector collector = constructFlakyTestsCollector();
