@@ -2,45 +2,31 @@ package moira.util.runner;
 
 import com.sun.jna.Library;
 import com.sun.jna.Native;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
-import moira.util.docker.DockerExecutor;
+import moira.util.execution.Executor;
 import moira.util.model.Outcome;
 import moira.util.model.TestCase;
 
 public class ScheduleRunner extends Thread {
   private static final boolean isStderrTerminal = CLibrary.INSTANCE.isatty(2) != 0;
 
-  private final DockerExecutor executor;
+  private final Executor executor;
   private final ScheduleGenerator generator;
-  private final boolean debug;
   private Semaphore semaphore;
   private CompletionService<Outcome[]> pool;
   private int completed;
   private final int count;
 
   public ScheduleRunner(final ScheduleRunnerBuilder builder) {
-    this.executor = builder.getDockerExecutor();
+    this.executor = builder.getExecutor();
     this.generator = builder.getScheduleGenerator();
-    this.debug = builder.getDebug();
-    if (debug) {
-      try {
-        Files.createDirectories(Paths.get("logs"));
-      } catch (final IOException e) {
-        throw new RuntimeException("Could not create logs/ directory", e);
-      }
-    }
-    this.semaphore = new Semaphore(builder.getConcurrencyLevel());
-    this.pool =
-        new ExecutorCompletionService<>(
-            Executors.newFixedThreadPool(builder.getConcurrencyLevel()));
+    this.semaphore = new Semaphore(1);
+    this.pool = new ExecutorCompletionService<>(Executors.newFixedThreadPool(1));
     completed = 0;
     count = generator.count();
   }
@@ -53,11 +39,7 @@ public class ScheduleRunner extends Thread {
         final TestCase[] schedule = generator.generate();
 
         semaphore.acquire();
-        if (debug)
-          pool.submit(
-              new DockerScheduleExecution(
-                  executor, schedule, Paths.get("logs", String.format("schedule-%d.log", i + 1))));
-        else pool.submit(new DockerScheduleExecution(executor, schedule));
+        pool.submit(new ScheduleExecution(executor, schedule));
       }
 
     } catch (final Exception e) {

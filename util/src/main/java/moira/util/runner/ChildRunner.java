@@ -11,12 +11,9 @@ import moira.util.model.TestCase;
 public class ChildRunner {
   public static void main(String[] args) throws IOException {
     final List<TestCase> tests = new ArrayList<>();
-    try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
+    try (final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
       String line;
-      while ((line = reader.readLine()) != null) {
-        if (line.equals("__END__")) break;
-        tests.add(new TestCase(line));
-      }
+      while ((line = reader.readLine()) != null) tests.add(new TestCase(line));
     }
 
     final PrintStream originalOut = System.out;

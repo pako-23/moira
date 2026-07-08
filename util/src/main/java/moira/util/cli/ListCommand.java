@@ -1,7 +1,7 @@
 package moira.util.cli;
 
 import java.io.File;
-import moira.util.docker.DockerExecutor;
+import moira.util.execution.ForkExecutor;
 import moira.util.list.TestSuiteBuilder;
 import moira.util.model.TestSuite;
 import picocli.CommandLine.Command;
@@ -35,10 +35,9 @@ public class ListCommand implements Runnable {
 
   @Override
   public void run() {
-
     final TestSuite suite =
         TestSuiteBuilder.builder()
-            .withDockerExecutor(new DockerExecutor(classpath))
+            .withExecutor(new ForkExecutor(classpath))
             .withTestClassesFile(file)
             .build();
 

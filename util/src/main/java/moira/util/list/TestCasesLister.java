@@ -59,10 +59,7 @@ public class TestCasesLister {
 
     try (final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
       String line;
-      while ((line = reader.readLine()) != null) {
-        if (line.equals("__END__")) break;
-        classes.add(line);
-      }
+      while ((line = reader.readLine()) != null) classes.add(line);
     }
 
     return classes;

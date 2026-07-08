@@ -1,47 +1,30 @@
 package moira.util.runner;
 
-import moira.util.docker.DockerExecutor;
+import moira.util.execution.Executor;
+
+// import moira.util.docker.DockerExecutor;
 
 public class ScheduleRunnerBuilder {
 
-  public static final int DEFAULT_CONCURRENCY_LEVEL =
-      Runtime.getRuntime().availableProcessors() / 2;
-
-  private DockerExecutor executor;
+  private Executor executor;
   private ScheduleGenerator generator;
-  private int concurrencyLevel;
-  private boolean debug;
 
   private ScheduleRunnerBuilder() {
     this.executor = null;
     this.generator = null;
-    this.concurrencyLevel = DEFAULT_CONCURRENCY_LEVEL;
-    this.debug = false;
   }
 
   public static ScheduleRunnerBuilder builder() {
     return new ScheduleRunnerBuilder();
   }
 
-  public ScheduleRunnerBuilder withDockerExecutor(final DockerExecutor executor) {
+  public ScheduleRunnerBuilder withExecutor(final Executor executor) {
     this.executor = executor;
-    return this;
-  }
-
-  public ScheduleRunnerBuilder withDebug(final boolean debug) {
-    this.debug = debug;
     return this;
   }
 
   public ScheduleRunnerBuilder withScheduleGenerator(final ScheduleGenerator generator) {
     this.generator = generator;
-    return this;
-  }
-
-  public ScheduleRunnerBuilder withConcurrencyLevel(final int concurrencyLevel) {
-    if (concurrencyLevel <= 0)
-      throw new IllegalArgumentException("concurrency level must be at least 1");
-    this.concurrencyLevel = concurrencyLevel;
     return this;
   }
 
@@ -52,19 +35,11 @@ public class ScheduleRunnerBuilder {
     return new ScheduleRunner(this);
   }
 
-  public DockerExecutor getDockerExecutor() {
+  public Executor getExecutor() {
     return executor;
   }
 
   public ScheduleGenerator getScheduleGenerator() {
     return generator;
-  }
-
-  public int getConcurrencyLevel() {
-    return concurrencyLevel;
-  }
-
-  public boolean getDebug() {
-    return debug;
   }
 }

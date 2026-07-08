@@ -5,14 +5,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-import moira.util.docker.DockerExecutor;
-import moira.util.docker.LineContainerStream;
+import moira.util.execution.Executor;
 import moira.util.model.TestCase;
 import moira.util.model.TestSuite;
 
 public class TestSuiteBuilder {
 
-  private DockerExecutor executor;
+  private Executor executor;
   private File testClassesFile;
 
   private TestSuiteBuilder() {
@@ -23,7 +22,7 @@ public class TestSuiteBuilder {
     return new TestSuiteBuilder();
   }
 
-  public TestSuiteBuilder withDockerExecutor(final DockerExecutor executor) {
+  public TestSuiteBuilder withExecutor(final Executor executor) {
     this.executor = executor;
     return this;
   }
@@ -34,24 +33,20 @@ public class TestSuiteBuilder {
   }
 
   public TestSuite build() {
-    if (executor == null) throw new RuntimeException("missing docker executor");
+    if (executor == null) throw new RuntimeException("no executor provided");
     else if (testClassesFile == null || !testClassesFile.exists())
       throw new RuntimeException("missing test classes file");
 
     final List<TestCase> cases = new ArrayList<>();
 
     try {
-
       executor
           .execution()
           .withArguments("moira.util.list.TestCasesLister")
           .withStdIn(Files.newInputStream(testClassesFile.toPath()))
           .withStdOut(
-              new LineContainerStream() {
-                @Override
-                protected void processLine(final CharSequence line) {
-                  cases.add(new TestCase(line.toString()));
-                }
+              line -> {
+                cases.add(new TestCase(line));
               })
           .exec();
 

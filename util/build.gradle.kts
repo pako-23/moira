@@ -5,8 +5,7 @@ plugins {
 dependencies {
     compileOnly(libs.junit)
     implementation(libs.picocli)
-    implementation(libs.docker.java)
-    implementation(libs.docker.java.transport.httpclient5)
+    implementation(libs.jna)
     testImplementation(libs.junit)
 }
 
@@ -26,6 +25,4 @@ tasks.withType<Jar>().configureEach {
             .filter { !it.name.startsWith("junit") }
             .map { if (it.isDirectory) it else zipTree(it) }
     )
-
-    exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
 }

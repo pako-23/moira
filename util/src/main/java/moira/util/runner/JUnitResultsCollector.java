@@ -24,6 +24,11 @@ public class JUnitResultsCollector extends RunListener {
   }
 
   @Override
+  public void testIgnored(final Description description) {
+    testStarted(description);
+  }
+
+  @Override
   public void testFailure(final Failure failure) {
     outcomes.set(outcomes.size() - 1, false);
   }

@@ -11,7 +11,8 @@ import java.util.function.BiConsumer;
 import moira.util.FlakyPairsCollector;
 import moira.util.PairsCollector;
 import moira.util.TuscanSquareCollector;
-import moira.util.docker.DockerExecutor;
+import moira.util.execution.Executor;
+import moira.util.execution.ForkExecutor;
 import moira.util.list.TestSuiteBuilder;
 import moira.util.model.Outcome;
 import moira.util.model.TestCase;
@@ -50,11 +51,6 @@ public class TuscanCommand implements Runnable {
   private String classpath;
 
   @Option(
-      names = {"-p", "-parallelism"},
-      description = "The maximum number of parallel threads.")
-  private int parallelism = ScheduleRunnerBuilder.DEFAULT_CONCURRENCY_LEVEL;
-
-  @Option(
       names = {"-m", "-mode"},
       paramLabel = "<mode>",
       description =
@@ -63,11 +59,6 @@ public class TuscanCommand implements Runnable {
       defaultValue = "packed",
       converter = TuscanCommandModeConverter.class)
   private TuscanCommandMode mode;
-
-  @Option(
-      names = {"-debug"},
-      description = "Save schedules execution logs to files in the logs/ directory.")
-  private boolean debug;
 
   @Option(
       names = {"-h", "-help"},
@@ -109,13 +100,11 @@ public class TuscanCommand implements Runnable {
 
   @Override
   public void run() {
-    final DockerExecutor executor = new DockerExecutor(classpath);
+    final ForkExecutor executor = new ForkExecutor(classpath);
 
     final ScheduleRunner runner =
         ScheduleRunnerBuilder.builder()
-            .withDockerExecutor(executor)
-            .withConcurrencyLevel(parallelism)
-            .withDebug(debug)
+            .withExecutor(executor)
             .withScheduleGenerator(constructScheduleGenerator(executor))
             .build();
     final FlakyPairsCollector collector = constructFlakyTestsCollector();
@@ -133,32 +122,20 @@ public class TuscanCommand implements Runnable {
     }
   }
 
-  private ScheduleGenerator constructScheduleGenerator(final DockerExecutor executor) {
+  private ScheduleGenerator constructScheduleGenerator(final Executor executor) {
     switch (mode) {
       case PACKED:
         return new TuscanPacked(
-            TestSuiteBuilder.builder()
-                .withDockerExecutor(executor)
-                .withTestClassesFile(file)
-                .build());
+            TestSuiteBuilder.builder().withExecutor(executor).withTestClassesFile(file).build());
       case CLASS_ONLY:
         return new TuscanClassOnly(
-            TestSuiteBuilder.builder()
-                .withDockerExecutor(executor)
-                .withTestClassesFile(file)
-                .build());
+            TestSuiteBuilder.builder().withExecutor(executor).withTestClassesFile(file).build());
       case INTRA_CLASS:
         return new TuscanIntraClass(
-            TestSuiteBuilder.builder()
-                .withDockerExecutor(executor)
-                .withTestClassesFile(file)
-                .build());
+            TestSuiteBuilder.builder().withExecutor(executor).withTestClassesFile(file).build());
       case INTER_CLASS:
         return new TuscanInterClass(
-            TestSuiteBuilder.builder()
-                .withDockerExecutor(executor)
-                .withTestClassesFile(file)
-                .build());
+            TestSuiteBuilder.builder().withExecutor(executor).withTestClassesFile(file).build());
       case TARGET_PAIRS:
         return new TargetPairsGenerator(parsePairs(file));
       case PAIR_COVER:
