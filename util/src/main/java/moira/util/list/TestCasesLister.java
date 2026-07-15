@@ -3,6 +3,7 @@ package moira.util.list;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import moira.util.model.TestCase;
@@ -15,6 +16,9 @@ public class TestCasesLister {
   public static void main(final String[] args) throws IOException {
     final List<String> classes = readTestClasses();
     final List<String> cases = new ArrayList<>();
+
+    final PrintStream originalOut = System.out;
+    System.setOut(System.err);
 
     final Request request =
         Request.classes(
@@ -51,6 +55,7 @@ public class TestCasesLister {
 
     junit.run(request);
 
+    System.setOut(originalOut);
     cases.stream().forEach(System.out::println);
   }
 

@@ -12,7 +12,7 @@ public class TestSuite {
   private final Map<String, Range> testClassToCases;
 
   public TestSuite(final List<TestCase> cases) throws IOException {
-    testClasses = new ArrayList<>(cases.size());
+    testClasses = new ArrayList<>();
     testCases = new ArrayList<>();
     testClassToCases = new HashMap<>();
 

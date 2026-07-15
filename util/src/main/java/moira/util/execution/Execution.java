@@ -10,5 +10,7 @@ public interface Execution {
 
   public Execution withStdOut(final Consumer<String> stdout);
 
+  public Execution withStdErr(final Consumer<String> stderr);
+
   public void exec();
 }

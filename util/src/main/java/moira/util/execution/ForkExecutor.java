@@ -8,12 +8,17 @@ import java.io.InputStreamReader;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ForkExecutor implements Executor {
   private final String classpath;
+  private final ExecutorService threadPool = Executors.newFixedThreadPool(2);
 
   public ForkExecutor(final String classpath) {
     this.classpath = computeClassPath(classpath);
@@ -42,6 +47,7 @@ public class ForkExecutor implements Executor {
     private final List<String> command;
     private InputStream stdin;
     private Consumer<String> stdout;
+    private Consumer<String> stderr;
 
     public ForkExecution(final ForkExecutor executor) {
       this.command = new ArrayList<>();
@@ -49,6 +55,8 @@ public class ForkExecutor implements Executor {
       command.add(Paths.get(System.getProperty("java.home"), "bin", "java").toString());
       command.add("-classpath");
       command.add(executor.getClassPath());
+      this.stdout = line -> {};
+      this.stderr = line -> {};
     }
 
     @Override
@@ -65,16 +73,34 @@ public class ForkExecutor implements Executor {
           stdin.close();
         }
 
-        if (stdout != null) {
-          try (final BufferedReader reader =
-              new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-            String line;
-            while ((line = reader.readLine()) != null) stdout.accept(line);
-          }
-        }
+        final Future<?> stdoutFuture =
+            threadPool.submit(
+                () -> {
+                  try (final BufferedReader reader =
+                      new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) stdout.accept(line);
+                  } catch (final IOException e) {
+                    throw new RuntimeException("failed to read stdout", e);
+                  }
+                });
+
+        final Future<?> stderrFuture =
+            threadPool.submit(
+                () -> {
+                  try (final BufferedReader reader =
+                      new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) stderr.accept(line);
+                  } catch (final IOException e) {
+                    throw new RuntimeException("failed to read stderr", e);
+                  }
+                });
 
         process.waitFor();
-      } catch (final IOException | InterruptedException e) {
+        stdoutFuture.get();
+        stderrFuture.get();
+      } catch (final IOException | InterruptedException | ExecutionException e) {
         throw new RuntimeException("failed to run process", e);
       }
     }
@@ -95,6 +121,12 @@ public class ForkExecutor implements Executor {
     @Override
     public Execution withStdOut(final Consumer<String> stdout) {
       this.stdout = stdout;
+      return this;
+    }
+
+    @Override
+    public Execution withStdErr(final Consumer<String> stderr) {
+      this.stderr = stderr;
       return this;
     }
   }
