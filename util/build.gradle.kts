@@ -1,5 +1,6 @@
 plugins {
     id("moira.java-conventions")
+    application
 }
 
 dependencies {
@@ -9,20 +10,7 @@ dependencies {
     testImplementation(libs.junit)
 }
 
-
-tasks.withType<Jar>().configureEach {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-
-    manifest {
-        attributes(
-            "Manifest-Version" to "1.0",
-            "Main-Class" to "moira.util.cli.MoiraUtil"
-        )
-    }
-
-    from(
-        configurations.runtimeClasspath.get()
-            .filter { !it.name.startsWith("junit") }
-            .map { if (it.isDirectory) it else zipTree(it) }
-    )
+application {
+    applicationName = "moira"
+    mainClass = "moira.util.cli.MoiraUtil"
 }

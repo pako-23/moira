@@ -12,6 +12,7 @@ dependencies {
     implementation(project(":util"))
     testImplementation(sourceSets.named("app").get().output)
     testImplementation(libs.junit)
+    testImplementation(libs.picocli)
 }
 
 tasks.test {
