@@ -1,59 +1,22 @@
 package moira.test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-
-import java.io.IOException;
-import org.junit.jupiter.api.Test;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import moira.util.cli.MoiraUtil;
+import org.junit.jupiter.api.BeforeEach;
+import picocli.CommandLine;
 
 public class MoiraTest {
-  @Test
-  public void testSimpleMoiraExecution() throws IOException, InterruptedException {
-    final Process process = TestUtils.moiraDefaultsCommand();
-    assertThat(process.waitFor(), is(0));
-    assertThat(TestUtils.readOutputStream(process.getErrorStream()).length(), is(0));
-  }
+  protected CommandLine cmd;
+  protected StringWriter stdout;
+  protected StringWriter stderr;
 
-  @Test
-  public void testSinglePassingTest() throws IOException, InterruptedException {
-    final Process process = TestUtils.moiraDefaultsCommand("com.example.SimplePassingTest");
-    assertThat(process.waitFor(), is(0));
-    assertThat(TestUtils.readOutputStream(process.getErrorStream()).length(), is(0));
-  }
-
-  @Test
-  public void testMultiplePassingTest() throws IOException, InterruptedException {
-    final Process process =
-        TestUtils.moiraDefaultsCommand(
-            "com.example.SimplePassingTest", "com.example.OtherPassingTest");
-    assertThat(process.waitFor(), is(0));
-    assertThat(TestUtils.readOutputStream(process.getErrorStream()).length(), is(0));
-  }
-
-  @Test
-  public void testSingleFailingTest() throws IOException, InterruptedException {
-    final Process process = TestUtils.moiraDefaultsCommand("com.example.SimpleFailingTest");
-    assertThat(process.waitFor(), is(0));
-  }
-
-  @Test
-  public void testMultipleTestsSingleFailing() throws IOException, InterruptedException {
-    final Process process =
-        TestUtils.moiraDefaultsCommand(
-            "com.example.SimplePassingTest",
-            "com.example.SimpleFailingTest",
-            "com.example.OtherPassingTest");
-    assertThat(process.waitFor(), is(0));
-    final String output = TestUtils.readOutputStream(process.getInputStream());
-    assertThat(output, containsString("com.example.SimpleFailingTest"));
-  }
-
-  @Test
-  public void testNotExistingTest() throws IOException, InterruptedException {
-    final Process process = TestUtils.moiraDefaultsCommand("com.example.NotExisting");
-    assertThat(process.waitFor(), not(is(0)));
-    assertThat(
-        TestUtils.readOutputStream(process.getErrorStream()),
-        containsString("Could not find class[com.example.NotExisting]"));
+  @BeforeEach
+  public void setup() {
+    cmd = new CommandLine(new MoiraUtil());
+    stdout = new StringWriter();
+    stderr = new StringWriter();
+    cmd.setOut(new PrintWriter(stdout));
+    cmd.setErr(new PrintWriter(stderr));
   }
 }

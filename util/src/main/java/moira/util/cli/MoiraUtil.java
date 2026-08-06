@@ -1,7 +1,9 @@
 package moira.util.cli;
 
+import java.util.concurrent.Callable;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.HelpCommand;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
@@ -9,9 +11,9 @@ import picocli.CommandLine.Spec;
 @Command(
     name = "moira",
     subcommands = {ListCommand.class, VerifyCommand.class, TuscanCommand.class, HelpCommand.class},
-    version = "moira 0.0.2",
+    version = "moira 0.0.1",
     usageHelpAutoWidth = true)
-public class MoiraUtil implements Runnable {
+public class MoiraUtil implements Callable<Integer> {
   @Option(
       names = {"-h", "-help"},
       usageHelp = true,
@@ -27,12 +29,13 @@ public class MoiraUtil implements Runnable {
   @Spec private CommandSpec spec;
 
   public static void main(final String[] args) {
-    final int exitCode = new CommandLine(new MoiraUtil()).execute(args);
+    int exitCode = new CommandLine(new MoiraUtil()).execute(args);
     System.exit(exitCode);
   }
 
   @Override
-  public void run() {
-    spec.commandLine().usage(System.out);
+  public Integer call() {
+    spec.commandLine().usage(spec.commandLine().getOut());
+    return 1;
   }
 }

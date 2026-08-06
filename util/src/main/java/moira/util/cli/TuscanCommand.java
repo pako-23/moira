@@ -61,7 +61,7 @@ public class TuscanCommand implements Runnable {
   private TuscanCommandMode mode;
 
   @Option(
-      names = {"-h", "-help"},
+      names = {"-h", "--help"},
       usageHelp = true,
       description = "Display this help and exit.")
   private boolean help;

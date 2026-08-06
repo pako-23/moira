@@ -28,7 +28,7 @@ public class ListCommand implements Runnable {
   private String classpath;
 
   @Option(
-      names = {"-h", "-help"},
+      names = {"-h", "--help"},
       usageHelp = true,
       description = "Display this help and exit.")
   private boolean help;
