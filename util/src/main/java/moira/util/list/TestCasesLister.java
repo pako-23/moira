@@ -41,11 +41,15 @@ public class TestCasesLister {
                   }
 
                   @Override
-                  public boolean shouldRun(Description description) {
-                    if (description.isSuite()) return true;
+                  public boolean shouldRun(final Description description) {
+                    if (description.isTest()) {
+                      cases.add(
+                          TestCase.identifier(description.getClassName(), description.toString()));
 
-                    cases.add(
-                        TestCase.identifier(description.getClassName(), description.toString()));
+                      return false;
+                    }
+
+                    for (final Description each : description.getChildren()) shouldRun(each);
 
                     return false;
                   }
