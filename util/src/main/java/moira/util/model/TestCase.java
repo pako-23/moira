@@ -4,6 +4,11 @@ public class TestCase {
   private final String testClass;
   private final String description;
 
+  public TestCase(final String testClass, final String description) {
+    this.testClass = testClass;
+    this.description = description;
+  }
+
   public TestCase(final String identifier) {
     final int beginDescription = identifier.indexOf('[');
     final int endDescription = identifier.lastIndexOf(']');

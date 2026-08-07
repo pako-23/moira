@@ -11,12 +11,31 @@ dependencies {
     implementation(project(":moira"))
     implementation(project(":util"))
     testImplementation(sourceSets.named("app").get().output)
-    testImplementation(libs.junit)
     testImplementation(libs.picocli)
 }
 
 tasks.test {
     dependsOn(project(":agent").tasks.jar)
-    var agent = project(":agent").tasks.jar.flatMap { it.archiveFile }.get().asFile.absolutePath
-    systemProperty("moira.agent.path", agent)
+
+    systemProperty(
+        "moira.agent.path",
+        project(":agent")
+            .tasks
+            .jar
+            .flatMap { it.archiveFile }
+            .get()
+            .asFile
+            .absolutePath
+    )
+
+    val junit = configurations
+            .getByName("appRuntimeClasspath")
+            .files
+            .filter { it.name.startsWith("junit-") }
+
+    systemProperty(
+        "app.classpath",
+        (junit + sourceSets.named("app").get().output)
+            .joinToString(File.pathSeparator) { it.absolutePath }
+    )
 }
