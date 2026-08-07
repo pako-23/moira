@@ -44,6 +44,11 @@ public class MoiraListTest extends MoiraTest {
     registerJunit4Test(com.example.OtherPassingTest.class, "testPass1", "testPass2");
     registerJunit4Test(com.example.SimplePassingTest.class, "testPass1", "testPass2");
     registerJunit4Test(com.example.SimpleFailingTest.class, "testFail");
+    registerJunit4Test(
+        com.example.ConcreteClassTest.class,
+        "testSomethingAbstract",
+        "testOnlyInConcrete",
+        "testSomething");
   }
 
   @Test
