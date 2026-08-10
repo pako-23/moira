@@ -1,6 +1,5 @@
 package moira.util.model;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,7 +10,7 @@ public class TestSuite {
   private final List<TestCase> testCases;
   private final Map<String, Range> testClassToCases;
 
-  public TestSuite(final List<TestCase> cases) throws IOException {
+  public TestSuite(final List<TestCase> cases) {
     testClasses = new ArrayList<>();
     testCases = new ArrayList<>();
     testClassToCases = new HashMap<>();
