@@ -48,10 +48,12 @@ tasks.named<Test>("test") {
             events(TestLogEvent.FAILED, TestLogEvent.SKIPPED)
         }
     }
+
+    finalizedBy(tasks.jacocoTestReport)
 }
 
 tasks.jacocoTestReport {
-    enabled = false
+    dependsOn(tasks.test)
 }
 
 spotless {
