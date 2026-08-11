@@ -10,12 +10,13 @@ import java.util.Arrays;
 import java.util.List;
 import moira.util.model.TestCase;
 import moira.util.model.TestSuite;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-public class ListCommandTest extends AbstractMoiraCommandTest {
+public class ListCommandTest extends AbstractMoiraSubcommandTest {
 
   private static final TestCase[] tests =
       new TestCase[] {
@@ -28,16 +29,11 @@ public class ListCommandTest extends AbstractMoiraCommandTest {
         new TestCase("com.example.AppTest", "testApp"),
       };
 
-  @ParameterizedTest
-  @ValueSource(strings = {"--help", "-h"})
-  public void testListSubcommandIsListed(final String flag) {
-    final int code = cmd.execute(flag);
-
-    assertSuccessfulExecution(code);
-    assertThat(
-        stdout.toString(),
-        matchesPattern(
-            optionDescriptionPattern("list", "List all the test cases within a testsuite")));
+  @BeforeEach
+  public void setup() {
+    super.setup();
+    this.subcommand = "list";
+    this.description = "List all the test cases within a testsuite";
   }
 
   @ParameterizedTest
@@ -86,17 +82,6 @@ public class ListCommandTest extends AbstractMoiraCommandTest {
     final int code = cmd.execute("list", "testsuite1", "testsuite2", "testsuite3");
 
     assertFailedExecution(code);
-  }
-
-  @ParameterizedTest
-  @ValueSource(strings = {"-h", "--help"})
-  public void testHelpPageContainsHelpOption(final String help) {
-    final int code = cmd.execute("list", help);
-
-    assertSuccessfulExecution(code);
-    assertThat(
-        stdout.toString(),
-        matchesPattern(optionDescriptionPattern("-h, --help", "Display help and exit")));
   }
 
   @ParameterizedTest

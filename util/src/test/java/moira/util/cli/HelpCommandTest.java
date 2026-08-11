@@ -58,14 +58,15 @@ public class HelpCommandTest extends AbstractMoiraCommandTest {
     assertThat(stdout.toString(), is(expectedStdout.toString()));
   }
 
-  @Test
-  public void testCommandHelpPage() {
-    final int code = cmd.execute("help", "list");
+  @ParameterizedTest
+  @ValueSource(strings = {"list", "verify"})
+  public void testCommandHelpPage(final String command) {
+    final int code = cmd.execute("help", command);
 
     assertSuccessfulExecution(code);
     assertThat(stdout.toString(), not(is(emptyString())));
 
-    expectedCmd.execute("list", "-h");
+    expectedCmd.execute(command, "-h");
     assertThat(stdout.toString(), is(expectedStdout.toString()));
   }
 }
