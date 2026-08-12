@@ -8,28 +8,36 @@ import java.io.InputStreamReader;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ForkExecutor implements Executor {
   private final String classpath;
-  private final ExecutorService threadPool = Executors.newFixedThreadPool(2);
+  private final ProcessFactory processFactory;
 
-  public ForkExecutor(final String classpath) {
+  public ForkExecutor(final String classpath, final ProcessFactory factory) {
     this.classpath = computeClassPath(classpath);
+    this.processFactory = factory;
   }
 
+  public ForkExecutor(final String classpath) {
+    this(classpath, new DefaultProcessFactory());
+  }
+
+  @Override
   public Execution execution() {
     return new ForkExecution(this);
   }
 
   private String getClassPath() {
     return classpath;
+  }
+
+  private ProcessFactory getProcessFactory() {
+    return processFactory;
   }
 
   private String computeClassPath(final String classpath) {
@@ -43,11 +51,11 @@ public class ForkExecutor implements Executor {
   }
 
   private class ForkExecution implements Execution {
-
     private final List<String> command;
     private InputStream stdin;
     private Consumer<String> stdout;
     private Consumer<String> stderr;
+    private final ForkExecutor executor;
 
     public ForkExecution(final ForkExecutor executor) {
       this.command = new ArrayList<>();
@@ -57,51 +65,78 @@ public class ForkExecutor implements Executor {
       command.add(executor.getClassPath());
       this.stdout = line -> {};
       this.stderr = line -> {};
+      this.executor = executor;
     }
 
     @Override
     public void exec() {
       try {
-        final Process process = new ProcessBuilder(command).start();
+        final Process process = executor.getProcessFactory().create(command);
 
-        if (stdin != null) {
-          final byte[] buffer = new byte[8192];
-          int len;
-          while ((len = stdin.read(buffer)) != -1) process.getOutputStream().write(buffer, 0, len);
+        final CompletableFuture<Void> stdinFuture =
+            CompletableFuture.supplyAsync(
+                () -> {
+                  if (stdin == null) return null;
 
-          process.getOutputStream().close();
-          stdin.close();
-        }
+                  try {
+                    final byte[] buffer = new byte[8192];
+                    int len;
+                    while ((len = stdin.read(buffer)) != -1)
+                      process.getOutputStream().write(buffer, 0, len);
 
-        final Future<?> stdoutFuture =
-            threadPool.submit(
+                    process.getOutputStream().close();
+                    stdin.close();
+                    return null;
+                  } catch (final IOException e) {
+                    throw new RuntimeException("failed to send input to the forked process", e);
+                  }
+                });
+
+        final CompletableFuture<Void> stdoutFuture =
+            CompletableFuture.supplyAsync(
                 () -> {
                   try (final BufferedReader reader =
                       new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                     String line;
                     while ((line = reader.readLine()) != null) stdout.accept(line);
+
+                    return null;
                   } catch (final IOException e) {
-                    throw new RuntimeException("failed to read stdout", e);
+                    throw new RuntimeException("failed to read from stdout", e);
                   }
                 });
 
-        final Future<?> stderrFuture =
-            threadPool.submit(
+        final CompletableFuture<Void> stderrFuture =
+            CompletableFuture.supplyAsync(
                 () -> {
                   try (final BufferedReader reader =
                       new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
                     String line;
                     while ((line = reader.readLine()) != null) stderr.accept(line);
+
+                    return null;
                   } catch (final IOException e) {
-                    throw new RuntimeException("failed to read stderr", e);
+                    throw new RuntimeException("failed to read from stderr", e);
                   }
                 });
 
-        process.waitFor();
+        stdinFuture.get();
         stdoutFuture.get();
         stderrFuture.get();
-      } catch (final IOException | InterruptedException | ExecutionException e) {
-        throw new RuntimeException("failed to run process", e);
+
+        final int code = process.waitFor();
+        if (code != 0) throw new RuntimeException("fork execution failed with code " + code);
+
+      } catch (final ExecutionException exec) {
+        try {
+          throw exec.getCause();
+        } catch (final RuntimeException e) {
+          throw e;
+        } catch (final Throwable e) {
+          throw new RuntimeException(e);
+        }
+      } catch (final IOException | InterruptedException e) {
+        throw new RuntimeException("process execution failed", e);
       }
     }
 
@@ -109,6 +144,12 @@ public class ForkExecutor implements Executor {
     public Execution withArguments(final String... args) {
       while (command.size() > 3) command.remove(command.size() - 1);
       for (final String arg : args) command.add(arg);
+      return this;
+    }
+
+    @Override
+    public Execution withStdErr(final Consumer<String> stderr) {
+      this.stderr = stderr;
       return this;
     }
 
@@ -121,12 +162,6 @@ public class ForkExecutor implements Executor {
     @Override
     public Execution withStdOut(final Consumer<String> stdout) {
       this.stdout = stdout;
-      return this;
-    }
-
-    @Override
-    public Execution withStdErr(final Consumer<String> stderr) {
-      this.stderr = stderr;
       return this;
     }
   }
