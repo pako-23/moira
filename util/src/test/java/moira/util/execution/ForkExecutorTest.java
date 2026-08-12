@@ -221,14 +221,7 @@ public class ForkExecutorTest {
   @Test
   public void testStdOutIOException() throws IOException, InterruptedException {
     when(processFactory.create(command.capture())).thenReturn(process);
-    when(process.getInputStream())
-        .thenReturn(
-            new InputStream() {
-              @Override
-              public int read() throws IOException {
-                throw new IOException();
-              }
-            });
+    when(process.getInputStream()).thenReturn(ioexceptionInputStream());
     when(process.getErrorStream()).thenReturn(new ByteArrayInputStream(new byte[0]));
 
     final Execution execution =
@@ -242,14 +235,7 @@ public class ForkExecutorTest {
   public void testStdErrIOException() throws IOException, InterruptedException {
     when(processFactory.create(command.capture())).thenReturn(process);
     when(process.getInputStream()).thenReturn(new ByteArrayInputStream(new byte[0]));
-    when(process.getErrorStream())
-        .thenReturn(
-            new InputStream() {
-              @Override
-              public int read() throws IOException {
-                throw new IOException();
-              }
-            });
+    when(process.getErrorStream()).thenReturn(ioexceptionInputStream());
 
     final Execution execution =
         new ForkExecutor("", processFactory).execution().withArguments("com.example.Example");
@@ -265,13 +251,7 @@ public class ForkExecutorTest {
         new ForkExecutor("", processFactory)
             .execution()
             .withArguments("com.example.Example")
-            .withStdIn(
-                new InputStream() {
-                  @Override
-                  public int read() throws IOException {
-                    throw new IOException();
-                  }
-                });
+            .withStdIn(ioexceptionInputStream());
 
     final RuntimeException exception = assertThrows(RuntimeException.class, execution::exec);
     assertThat(
@@ -281,14 +261,7 @@ public class ForkExecutorTest {
   @Test
   public void testStdOutFailure() throws IOException, InterruptedException {
     when(processFactory.create(command.capture())).thenReturn(process);
-    when(process.getInputStream())
-        .thenReturn(
-            new InputStream() {
-              @Override
-              public int read() throws IOException {
-                throw new AssertionError();
-              }
-            });
+    when(process.getInputStream()).thenReturn(exceptionInputStream());
     when(process.getErrorStream()).thenReturn(new ByteArrayInputStream(new byte[0]));
 
     final Execution execution =
@@ -301,14 +274,7 @@ public class ForkExecutorTest {
   public void testStdErrFailure() throws IOException, InterruptedException {
     when(processFactory.create(command.capture())).thenReturn(process);
     when(process.getInputStream()).thenReturn(new ByteArrayInputStream(new byte[0]));
-    when(process.getErrorStream())
-        .thenReturn(
-            new InputStream() {
-              @Override
-              public int read() throws IOException {
-                throw new AssertionError();
-              }
-            });
+    when(process.getErrorStream()).thenReturn(exceptionInputStream());
 
     final Execution execution =
         new ForkExecutor("", processFactory).execution().withArguments("com.example.Example");
@@ -323,15 +289,27 @@ public class ForkExecutorTest {
         new ForkExecutor("", processFactory)
             .execution()
             .withArguments("com.example.Example")
-            .withStdIn(
-                new InputStream() {
-                  @Override
-                  public int read() throws IOException {
-                    throw new AssertionError();
-                  }
-                });
+            .withStdIn(exceptionInputStream());
 
     assertThrows(RuntimeException.class, execution::exec);
+  }
+
+  private static InputStream ioexceptionInputStream() {
+    return new InputStream() {
+      @Override
+      public int read() throws IOException {
+        throw new IOException();
+      }
+    };
+  }
+
+  private static InputStream exceptionInputStream() {
+    return new InputStream() {
+      @Override
+      public int read() throws IOException {
+        throw new AssertionError();
+      }
+    };
   }
 
   private String mixLines(final String first, final String second) {
