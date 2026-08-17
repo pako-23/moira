@@ -37,7 +37,8 @@ public class ListCommand implements Callable<Integer> {
 
   @Override
   public Integer call() {
-    final TestSuite testsuite = parent.service().discoverTestSuite(file, classpath);
+    if (!classpath.isEmpty()) parent.service().setAppClassPath(classpath);
+    final TestSuite testsuite = parent.service().discoverTestSuite(file);
     for (int i = 0; i < testsuite.numberOfTestCases(); ++i)
       spec.commandLine().getOut().println(testsuite.getTestCase(i).toString());
 

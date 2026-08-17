@@ -3,7 +3,7 @@ package moira.util.runner;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
-import moira.util.model.TestCase;
+import moira.util.model.SimpleTestCase;
 import org.junit.runner.Description;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
@@ -19,7 +19,7 @@ public class JUnitResultsCollector extends RunListener {
 
   @Override
   public void testStarted(final Description description) {
-    schedule.add(TestCase.identifier(description.getClassName(), description.toString()));
+    schedule.add(new SimpleTestCase(description.getClassName(), description.toString()).toString());
     outcomes.add(true);
   }
 

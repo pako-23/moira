@@ -24,13 +24,13 @@ import org.mockito.MockedStatic;
 
 public class PairVerifierTest {
   private static final TestCase firstTest =
-      new TestCase(
+      TestCase.fromId(
           PairVerifierTest.class.getName() + "[first(" + PairVerifierTest.class.getName() + ")]");
   private static final TestCase secondTest =
-      new TestCase(
+      TestCase.fromId(
           PairVerifierTest.class.getName() + "[second(" + PairVerifierTest.class.getName() + ")]");
   private static final TestCase otherTest =
-      new TestCase(
+      TestCase.fromId(
           PairVerifier.class.getName() + "[sometest(" + PairVerifier.class.getName() + ")]");
 
   @Test

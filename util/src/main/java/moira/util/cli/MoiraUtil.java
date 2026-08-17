@@ -1,7 +1,10 @@
 package moira.util.cli;
 
 import java.util.concurrent.Callable;
+import moira.util.execution.ForkExecutor;
+import moira.util.service.DefaultService;
 import moira.util.service.Service;
+import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.HelpCommand;
 import picocli.CommandLine.Model.CommandSpec;
@@ -44,5 +47,12 @@ public class MoiraUtil implements Callable<Integer> {
   public Integer call() {
     spec.commandLine().usage(spec.commandLine().getErr());
     return 1;
+  }
+
+  public static void main(final String... args) {
+    final Service service = new DefaultService(new ForkExecutor());
+    final int exitCode = new CommandLine(new MoiraUtil(service)).execute(args);
+
+    System.exit(exitCode);
   }
 }

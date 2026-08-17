@@ -46,7 +46,7 @@ public class TestSuiteBuilder {
           .withStdIn(Files.newInputStream(testClassesFile.toPath()))
           .withStdOut(
               line -> {
-                cases.add(new TestCase(line));
+                cases.add(TestCase.fromId(line));
               })
           .exec();
 

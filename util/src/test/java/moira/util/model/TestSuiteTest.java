@@ -18,7 +18,7 @@ public class TestSuiteTest {
 
   @Test
   public void testSingleTestCase() throws IOException {
-    final TestCase tc = new TestCase("com.Foo[test1]");
+    final TestCase tc = TestCase.fromId("com.Foo[test1]");
     final TestSuite suite = new TestSuite(Arrays.asList(tc));
 
     assertThat(suite.numberOfTestCases(), is(1));
@@ -33,9 +33,9 @@ public class TestSuiteTest {
 
   @Test
   public void testSingleClassMultipleCases() throws IOException {
-    final TestCase tc1 = new TestCase("com.Foo[test1]");
-    final TestCase tc2 = new TestCase("com.Foo[test2]");
-    final TestCase tc3 = new TestCase("com.Foo[test3]");
+    final TestCase tc1 = TestCase.fromId("com.Foo[test1]");
+    final TestCase tc2 = TestCase.fromId("com.Foo[test2]");
+    final TestCase tc3 = TestCase.fromId("com.Foo[test3]");
     final TestSuite suite = new TestSuite(Arrays.asList(tc1, tc2, tc3));
 
     assertThat(suite.numberOfTestCases(), is(3));
@@ -52,10 +52,10 @@ public class TestSuiteTest {
 
   @Test
   public void testMultipleClasses() throws IOException {
-    final TestCase tc1 = new TestCase("com.Foo[test1]");
-    final TestCase tc2 = new TestCase("com.Foo[test2]");
-    final TestCase tc3 = new TestCase("com.Bar[test1]");
-    final TestCase tc4 = new TestCase("com.Baz[test1]");
+    final TestCase tc1 = TestCase.fromId("com.Foo[test1]");
+    final TestCase tc2 = TestCase.fromId("com.Foo[test2]");
+    final TestCase tc3 = TestCase.fromId("com.Bar[test1]");
+    final TestCase tc4 = TestCase.fromId("com.Baz[test1]");
     final TestSuite suite = new TestSuite(Arrays.asList(tc1, tc2, tc3, tc4));
 
     assertThat(suite.numberOfTestCases(), is(4));
@@ -78,9 +78,9 @@ public class TestSuiteTest {
 
   @Test
   public void testInterleavedSameClassNotGrouped() throws IOException {
-    final TestCase tc1 = new TestCase("com.Foo[test1]");
-    final TestCase tc2 = new TestCase("com.Bar[test1]");
-    final TestCase tc3 = new TestCase("com.Foo[test2]");
+    final TestCase tc1 = TestCase.fromId("com.Foo[test1]");
+    final TestCase tc2 = TestCase.fromId("com.Bar[test1]");
+    final TestCase tc3 = TestCase.fromId("com.Foo[test2]");
     final TestSuite suite = new TestSuite(Arrays.asList(tc1, tc2, tc3));
 
     assertThat(suite.numberOfTestClasses(), is(3));
@@ -97,7 +97,7 @@ public class TestSuiteTest {
 
   @Test
   public void testGetTestClassCasesReturnsNullForUnknownClass() throws IOException {
-    final TestCase tc = new TestCase("com.Foo[test1]");
+    final TestCase tc = TestCase.fromId("com.Foo[test1]");
     final TestSuite suite = new TestSuite(Arrays.asList(tc));
     assertThat(suite.getTestClassCases("com.Unknown"), is((Range) null));
   }

@@ -4,6 +4,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayOutputStream;
@@ -25,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
@@ -43,14 +46,14 @@ public class ServiceTest {
 
   private static final TestCase[] tests =
       new TestCase[] {
-        new TestCase("com.example.ExampleTest[somedescription]"),
-        new TestCase("com.example.ExampleTest[secondtest]"),
-        new TestCase("com.example.ExampleTest2[sometest]"),
-        new TestCase("com.example.ExampleTest3[sometest]"),
-        new TestCase("com.example.ExampleTest3[testsomething]"),
-        new TestCase("com.example.ExampleTest4[testagain]"),
-        new TestCase("com.example.ExampleTest4[againsometest]"),
-        new TestCase("com.example.ExampleTest5[test]"),
+        TestCase.fromId("com.example.ExampleTest[somedescription]"),
+        TestCase.fromId("com.example.ExampleTest[secondtest]"),
+        TestCase.fromId("com.example.ExampleTest2[sometest]"),
+        TestCase.fromId("com.example.ExampleTest3[sometest]"),
+        TestCase.fromId("com.example.ExampleTest3[testsomething]"),
+        TestCase.fromId("com.example.ExampleTest4[testagain]"),
+        TestCase.fromId("com.example.ExampleTest4[againsometest]"),
+        TestCase.fromId("com.example.ExampleTest5[test]"),
       };
 
   @BeforeEach
@@ -72,15 +75,22 @@ public class ServiceTest {
   public void testListsTestCasesWithinTestSuite(final int n) {
     doAnswer(writeTestCasesToStdout(n)).when(execution).exec();
 
-    final TestSuite suite = service.discoverTestSuite(testsuite, "");
+    final TestSuite suite = service.discoverTestSuite(testsuite);
     assertTestsListed(suite, n);
   }
 
   @Test
   public void testTestsListingClassInArguments() {
-    service.discoverTestSuite(testsuite, "");
+    service.discoverTestSuite(testsuite);
 
     assertThat(arguments.getAllValues(), contains("moira.util.list.TestCasesLister"));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"/app", "/app/classes:/app/test-classes"})
+  public void testServiceSetAppClassPath(final String classpath) {
+    service.setAppClassPath(classpath);
+    verify(executor, times(1)).setClassPath(classpath);
   }
 
   @ParameterizedTest
@@ -94,7 +104,7 @@ public class ServiceTest {
             .collect(Collectors.toList());
 
     Files.write(testsuite.toPath(), lines);
-    service.discoverTestSuite(testsuite, "");
+    service.discoverTestSuite(testsuite);
 
     if (lines.isEmpty()) assertThat(getStdInContent(), emptyString());
     else assertThat(getStdInContent(), is(String.join("\n", lines) + "\n"));
@@ -104,7 +114,7 @@ public class ServiceTest {
   public void testNotExistingTestSuiteFile() {
     final RuntimeException exception =
         assertThrows(
-            RuntimeException.class, () -> service.discoverTestSuite(new File("not-existing"), ""));
+            RuntimeException.class, () -> service.discoverTestSuite(new File("not-existing")));
 
     assertThat(exception.getMessage(), containsString("failed to open testsuite file"));
   }
@@ -122,7 +132,7 @@ public class ServiceTest {
   }
 
   private static Stream<Arguments> provideTestSuiteLengths() {
-    return Stream.of(Arguments.of(0), Arguments.of(1), Arguments.of(2), Arguments.of(tests.length));
+    return Stream.of(0, 1, 2, tests.length).map(length -> Arguments.of(length));
   }
 
   private String getStdInContent() throws IOException {

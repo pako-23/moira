@@ -7,7 +7,7 @@ import static org.hamcrest.Matchers.sameInstance;
 import org.junit.jupiter.api.Test;
 
 public class OutcomeTest {
-  private static final TestCase SAMPLE_CASE = new TestCase("com.example.Foo[bar]");
+  private static final TestCase SAMPLE_CASE = TestCase.fromId("com.example.Foo[bar]");
 
   @Test
   public void testPassingOutcome() {

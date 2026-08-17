@@ -18,13 +18,13 @@ public class VerifyCommandTest extends AbstractMoiraSubcommandTest {
 
   private static final TestCase[] tests =
       new TestCase[] {
-        new TestCase("com.example.TestCase", "somedescription"),
-        new TestCase("com.example.TestCase", "testSomethingElse"),
-        new TestCase("com.example.SomeOther", "testOther"),
-        new TestCase("com.example.ExampleTest", "test1"),
-        new TestCase("com.example.ExampleTest", "test2"),
-        new TestCase("com.example.ExampleTest", "test3"),
-        new TestCase("com.example.AppTest", "testApp"),
+        TestCase.fromId("com.example.TestCase[somedescription]"),
+        TestCase.fromId("com.example.TestCase[testSomethingElse]"),
+        TestCase.fromId("com.example.SomeOther[testOther]"),
+        TestCase.fromId("com.example.ExampleTest[test1]"),
+        TestCase.fromId("com.example.ExampleTest[test2]"),
+        TestCase.fromId("com.example.ExampleTest[test3]"),
+        TestCase.fromId("com.example.AppTest[testApp]"),
       };
 
   @BeforeEach

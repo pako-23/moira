@@ -19,7 +19,12 @@ public class DefaultService implements Service {
   }
 
   @Override
-  public TestSuite discoverTestSuite(final File filename, final String classpath) {
+  public void setAppClassPath(final String classpath) {
+    executor.setClassPath(classpath);
+  }
+
+  @Override
+  public TestSuite discoverTestSuite(final File filename) {
     final List<TestCase> tests = new ArrayList<>();
     final InputStream input;
 
@@ -33,7 +38,7 @@ public class DefaultService implements Service {
         .execution()
         .withStdIn(input)
         .withArguments("moira.util.list.TestCasesLister")
-        .withStdOut(line -> tests.add(new TestCase(line)))
+        .withStdOut(line -> tests.add(TestCase.fromId(line)))
         .exec();
 
     return new TestSuite(tests);

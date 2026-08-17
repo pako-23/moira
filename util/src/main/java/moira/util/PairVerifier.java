@@ -1,5 +1,6 @@
 package moira.util;
 
+import moira.util.model.SimpleTestCase;
 import moira.util.model.TestCase;
 import moira.util.runner.JUnitResultsCollector;
 import org.junit.runner.Description;
@@ -39,7 +40,8 @@ public class PairVerifier {
                 if (description.isSuite()) return true;
 
                 final String testIdentifier =
-                    TestCase.identifier(description.getClassName(), description.toString());
+                    new SimpleTestCase(description.getClassName(), description.toString())
+                        .toString();
 
                 return testIdentifier.equals(first.toString())
                     || testIdentifier.equals(second.toString());
@@ -60,7 +62,8 @@ public class PairVerifier {
               @Override
               public boolean shouldRun(final Description description) {
                 final String testIdentifier =
-                    TestCase.identifier(description.getClassName(), description.toString());
+                    new SimpleTestCase(description.getClassName(), description.toString())
+                        .toString();
 
                 return testIdentifier.equals(first.toString())
                     || testIdentifier.equals(second.toString());
@@ -68,7 +71,9 @@ public class PairVerifier {
             })
         .sortWith(
             (a, b) ->
-                first.toString().equals(TestCase.identifier(a.getClassName(), a.toString()))
+                first
+                        .toString()
+                        .equals(new SimpleTestCase(a.getClassName(), a.toString()).toString())
                     ? 1
                     : -1);
   }

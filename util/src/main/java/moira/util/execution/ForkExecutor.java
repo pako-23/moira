@@ -15,21 +15,26 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ForkExecutor implements Executor {
-  private final String classpath;
+  private String classpath;
   private final ProcessFactory processFactory;
 
-  public ForkExecutor(final String classpath, final ProcessFactory factory) {
-    this.classpath = computeClassPath(classpath);
+  public ForkExecutor(final ProcessFactory factory) {
+    this.classpath = computeClassPath("");
     this.processFactory = factory;
   }
 
-  public ForkExecutor(final String classpath) {
-    this(classpath, new DefaultProcessFactory());
+  public ForkExecutor() {
+    this(new DefaultProcessFactory());
   }
 
   @Override
   public Execution execution() {
     return new ForkExecution(this);
+  }
+
+  @Override
+  public void setClassPath(final String classpath) {
+    this.classpath = computeClassPath(classpath);
   }
 
   private String getClassPath() {

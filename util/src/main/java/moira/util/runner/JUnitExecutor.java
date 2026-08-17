@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import moira.util.model.SimpleTestCase;
 import moira.util.model.TestCase;
 import org.junit.internal.runners.ErrorReportingRunner;
 import org.junit.runner.Computer;
@@ -76,7 +77,8 @@ public class JUnitExecutor {
                     if (description.isSuite()) return true;
 
                     final String testId =
-                        TestCase.identifier(description.getClassName(), description.toString());
+                        new SimpleTestCase(description.getClassName(), description.toString())
+                            .toString();
                     final Set<String> tests = testClasses.get(lastIndex).getValue();
 
                     if (!order.containsKey(testId)) {
@@ -97,9 +99,9 @@ public class JUnitExecutor {
                   if (a.isSuite() || b.isSuite()) return 0;
 
                   final int firstIndex =
-                      order.get(TestCase.identifier(a.getClassName(), a.toString()));
+                      order.get(new SimpleTestCase(a.getClassName(), a.toString()).toString());
                   final int secondIndex =
-                      order.get(TestCase.identifier(b.getClassName(), b.toString()));
+                      order.get(new SimpleTestCase(b.getClassName(), b.toString()).toString());
 
                   return firstIndex - secondIndex;
                 });

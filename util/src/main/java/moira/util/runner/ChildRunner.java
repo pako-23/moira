@@ -13,7 +13,7 @@ public class ChildRunner {
     final List<TestCase> tests = new ArrayList<>();
     try (final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
       String line;
-      while ((line = reader.readLine()) != null) tests.add(new TestCase(line));
+      while ((line = reader.readLine()) != null) tests.add(TestCase.fromId(line));
     }
 
     final PrintStream originalOut = System.out;

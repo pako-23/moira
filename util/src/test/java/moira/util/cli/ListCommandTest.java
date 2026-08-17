@@ -2,6 +2,8 @@ package moira.util.cli;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
@@ -13,20 +15,19 @@ import moira.util.model.TestSuite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 public class ListCommandTest extends AbstractMoiraSubcommandTest {
 
   private static final TestCase[] tests =
       new TestCase[] {
-        new TestCase("com.example.TestCase", "somedescription"),
-        new TestCase("com.example.TestCase", "testSomethingElse"),
-        new TestCase("com.example.SomeOther", "testOther"),
-        new TestCase("com.example.ExampleTest", "test1"),
-        new TestCase("com.example.ExampleTest", "test2"),
-        new TestCase("com.example.ExampleTest", "test3"),
-        new TestCase("com.example.AppTest", "testApp"),
+        TestCase.fromId("com.example.TestCase[somedescription]"),
+        TestCase.fromId("com.example.TestCase[testSomethingElse]"),
+        TestCase.fromId("com.example.SomeOther[testOther]"),
+        TestCase.fromId("com.example.ExampleTest[test1]"),
+        TestCase.fromId("com.example.ExampleTest[test2]"),
+        TestCase.fromId("com.example.ExampleTest[test3]"),
+        TestCase.fromId("com.example.AppTest[testApp]"),
       };
 
   @BeforeEach
@@ -36,38 +37,45 @@ public class ListCommandTest extends AbstractMoiraSubcommandTest {
     this.description = "List all the test cases within a testsuite";
   }
 
-  @ParameterizedTest
-  @ValueSource(strings = {"", "/app", "/app:/app/tests"})
-  @NullSource
-  public void testEmptyTestSuite(final String classpath) {
-
-    when(service.discoverTestSuite(new File("testsuite"), classpathOrDefault(classpath)))
+  @Test
+  public void testEmptyTestSuite() {
+    when(service.discoverTestSuite(new File("testsuite")))
         .thenReturn(new TestSuite(new ArrayList<>()));
 
-    final int code = listTestSuite(classpath);
+    final int code = cmd.execute("list", "testsuite");
     assertSuccessfulExecution(code);
     assertThat(stdout.toString(), is(emptyString()));
   }
 
-  @ParameterizedTest
-  @ValueSource(strings = {"", "/app", "/app:/app/tests"})
-  @NullSource
-  public void testTestSuiteWithSingleTestCase(final String classpath) {
-    assertListOutput(classpath, tests[0]);
+  @Test
+  public void testTestSuiteWithSingleTestCase() {
+    assertListOutput(tests[0]);
+  }
+
+  @Test
+  public void testTestSuiteWithTwoTestCases() {
+    assertListOutput(tests[0], tests[1]);
+  }
+
+  @Test
+  public void testTestSuiteMultipleTestCases() {
+    assertListOutput(tests);
+  }
+
+  @Test
+  public void testEmptyAppClassPath() {
+    setupReturnedTests(tests);
+    assertSuccessfulExecution(cmd.execute("list", "--app-cp", "", "testsuite"));
+    assertTestSuiteOutput(tests);
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"", "/app", "/app:/app/tests"})
-  @NullSource
-  public void testTestSuiteWithTwoTestCases(final String classpath) {
-    assertListOutput(classpath, tests[0], tests[1]);
-  }
-
-  @ParameterizedTest
-  @ValueSource(strings = {"", "/app", "/app:/app/tests"})
-  @NullSource
-  public void testTestSuiteMultipleTestCases(final String classpath) {
-    assertListOutput(classpath, tests);
+  @ValueSource(strings = {"/app", "/app:/app/tests"})
+  public void testSetAppClassPath(final String classpath) {
+    setupReturnedTests(tests);
+    assertSuccessfulExecution(cmd.execute("list", "--app-cp", classpath, "testsuite"));
+    verify(service, times(1)).setAppClassPath(classpath);
+    assertTestSuiteOutput(tests);
   }
 
   @Test
@@ -109,25 +117,21 @@ public class ListCommandTest extends AbstractMoiraSubcommandTest {
             optionDescriptionPattern("--app-cp=<classpath>", "The application's classpath")));
   }
 
-  private void assertListOutput(final String classpath, final TestCase... testsuite) {
-    when(service.discoverTestSuite(new File("testsuite"), classpathOrDefault(classpath)))
+  private void setupReturnedTests(final TestCase... testsuite) {
+    when(service.discoverTestSuite(new File("testsuite")))
         .thenReturn(new TestSuite(Arrays.asList(testsuite)));
+  }
 
-    final int code = listTestSuite(classpath);
-    assertSuccessfulExecution(code);
-
+  private void assertTestSuiteOutput(final TestCase... testsuite) {
     final List<String> lines = Arrays.asList(stdout.toString().trim().split("\\s+"));
     final String[] expectedLines =
         Arrays.asList(testsuite).stream().map(TestCase::toString).toArray(String[]::new);
     assertThat(lines, contains(expectedLines));
   }
 
-  private String classpathOrDefault(final String classpath) {
-    return classpath == null ? "" : classpath;
-  }
-
-  private int listTestSuite(final String classpath) {
-    if (classpath == null) return cmd.execute("list", "testsuite");
-    else return cmd.execute("list", "--app-cp", classpath, "testsuite");
+  private void assertListOutput(final TestCase... testsuite) {
+    setupReturnedTests(testsuite);
+    assertSuccessfulExecution(cmd.execute("list", "testsuite"));
+    assertTestSuiteOutput(testsuite);
   }
 }

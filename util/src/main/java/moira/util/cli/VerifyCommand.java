@@ -48,7 +48,7 @@ public class VerifyCommand implements Callable<Integer> {
     @Override
     public TestCase convert(final String value) throws TypeConversionException {
       try {
-        return new TestCase(value);
+        return TestCase.fromId(value);
       } catch (final IllegalArgumentException e) {
         throw new TypeConversionException(e.getMessage());
       }

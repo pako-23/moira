@@ -15,10 +15,10 @@ import org.junit.jupiter.api.Test;
 
 public class PairsCollectorTest {
 
-  private static final TestCase TEST_A = new TestCase("A[a]");
-  private static final TestCase TEST_B = new TestCase("B[b]");
-  private static final TestCase TEST_C = new TestCase("C[c]");
-  private static final TestCase TEST_D = new TestCase("D[d]");
+  private static final TestCase TEST_A = TestCase.fromId("A[a]");
+  private static final TestCase TEST_B = TestCase.fromId("B[b]");
+  private static final TestCase TEST_C = TestCase.fromId("C[c]");
+  private static final TestCase TEST_D = TestCase.fromId("D[d]");
 
   private static Map<TestCase, Set<TestCase>> pairsMap(final TestCase... pairs) {
     final Map<TestCase, Set<TestCase>> result = new HashMap<>();

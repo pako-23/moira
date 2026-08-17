@@ -100,7 +100,8 @@ public class TuscanCommand implements Runnable {
 
   @Override
   public void run() {
-    final ForkExecutor executor = new ForkExecutor(classpath);
+    final Executor executor = new ForkExecutor();
+    executor.setClassPath(classpath);
 
     final ScheduleRunner runner =
         ScheduleRunnerBuilder.builder()
@@ -179,8 +180,8 @@ public class TuscanCommand implements Runnable {
     iterateTestCases(
         input,
         (from, to) -> {
-          cases.putIfAbsent(from, new TestCase(from));
-          cases.putIfAbsent(to, new TestCase(to));
+          cases.putIfAbsent(from, TestCase.fromId(from));
+          cases.putIfAbsent(to, TestCase.fromId(to));
         });
 
     return cases;

@@ -9,21 +9,18 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.FieldSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 public class ForkExecutorTest {
-
-  static final List<String> classpaths = Arrays.asList("", "/app", "/app:/app/tests");
 
   @Mock private ProcessFactory processFactory;
   @Mock private Process process;
@@ -34,139 +31,143 @@ public class ForkExecutorTest {
     MockitoAnnotations.openMocks(this);
   }
 
-  @ParameterizedTest
-  @FieldSource("classpaths")
-  public void testExecutorReturnsExecution(final String classpath) {
-    final Executor executor = new ForkExecutor(classpath, processFactory);
+  @Test
+  public void testExecutorReturnsExecution() {
+    final Executor executor = new ForkExecutor(processFactory);
 
     assertThat(executor.execution(), notNullValue());
   }
 
-  @ParameterizedTest
-  @FieldSource("classpaths")
-  public void testSimpleExecution(final String classpath) throws IOException, InterruptedException {
+  @Test
+  public void testSimpleExecution() throws IOException, InterruptedException {
     setupProcessMock(0, "", "");
 
-    new ForkExecutor(classpath, processFactory)
+    new ForkExecutor(processFactory)
         .execution()
         .withArguments("moira.util.execution.Example")
         .exec();
-    assertCommand(classpath, "moira.util.execution.Example");
+    assertCommand("moira.util.execution.Example");
   }
 
   @ParameterizedTest
-  @FieldSource("classpaths")
-  public void testSetArgumentsMultipleTimes(final String classpath)
+  @ValueSource(strings = {"/app", "/app:/app/tests"})
+  public void testSetClassPathUpdatesTheClassPath(final String classpath)
       throws IOException, InterruptedException {
     setupProcessMock(0, "", "");
 
-    new ForkExecutor(classpath, processFactory)
+    final Executor executor = new ForkExecutor(processFactory);
+    executor.setClassPath(classpath);
+
+    executor.execution().withArguments("moira.util.execution.Example").exec();
+
+    assertCommand("moira.util.execution.Example");
+    assertThat(command.getValue().get(2), startsWith(classpath));
+  }
+
+  @Test
+  public void testSetArgumentsMultipleTimes() throws IOException, InterruptedException {
+    setupProcessMock(0, "", "");
+
+    new ForkExecutor(processFactory)
         .execution()
         .withArguments("moira.util.execution.Example")
         .withArguments("moira.util.execution.SomeOtherClass")
         .exec();
-    assertCommand(classpath, "moira.util.execution.SomeOtherClass");
+    assertCommand("moira.util.execution.SomeOtherClass");
   }
 
-  @ParameterizedTest
-  @FieldSource("classpaths")
-  public void testMultipleArguemnts(final String classpath)
-      throws IOException, InterruptedException {
+  @Test
+  public void testMultipleArguemnts() throws IOException, InterruptedException {
     setupProcessMock(0, "", "");
-
-    new ForkExecutor(classpath, processFactory)
+    new ForkExecutor(processFactory)
         .execution()
         .withArguments("moira.util.execution.Example", "--output", "somefile")
         .exec();
-    assertCommand(classpath, "moira.util.execution.Example", "--output", "somefile");
+
+    assertCommand("moira.util.execution.Example", "--output", "somefile");
   }
 
-  @ParameterizedTest
-  @FieldSource("classpaths")
-  public void testFailedProcessExecution(final String classpath)
-      throws IOException, InterruptedException {
-    setupProcessMock(1, "", "");
-
+  @Test
+  public void testFailedProcessExecution() throws IOException, InterruptedException {
     final Execution execution =
-        new ForkExecutor(classpath, processFactory)
-            .execution()
-            .withArguments("moira.util.execution.Example");
+        new ForkExecutor(processFactory).execution().withArguments("moira.util.execution.Example");
+
+    setupProcessMock(1, "", "");
 
     final RuntimeException exception = assertThrows(RuntimeException.class, execution::exec);
     assertThat(exception.getMessage(), containsString("fork execution failed with code 1"));
-    assertCommand(classpath, "moira.util.execution.Example");
+    assertCommand("moira.util.execution.Example");
   }
 
-  @ParameterizedTest
-  @FieldSource("classpaths")
-  public void testStdoutProcessing(final String classpath)
-      throws IOException, InterruptedException {
+  @Test
+  public void testStdoutProcessing() throws IOException, InterruptedException {
+    final StringBuffer buffer = new StringBuffer();
+
     setupProcessMock(0, "hello world", "");
+    new ForkExecutor(processFactory)
+        .execution()
+        .withArguments("moira.util.execution.HelloWorld")
+        .withStdOut(buffer::append)
+        .exec();
 
-    final StringBuffer buffer = new StringBuffer();
-    final Execution execution = new ForkExecutor(classpath, processFactory).execution();
-    execution.withArguments("moira.util.execution.HelloWorld").withStdOut(buffer::append).exec();
-
-    assertCommand(classpath, "moira.util.execution.HelloWorld");
+    assertCommand("moira.util.execution.HelloWorld");
     assertThat(buffer.toString(), is("hello world"));
   }
 
-  @ParameterizedTest
-  @FieldSource("classpaths")
-  public void testStderrProcessing(final String classpath)
-      throws IOException, InterruptedException {
+  @Test
+  public void testStderrProcessing() throws IOException, InterruptedException {
+    final StringBuffer buffer = new StringBuffer();
+
     setupProcessMock(0, "", "hello world");
+    new ForkExecutor(processFactory)
+        .execution()
+        .withArguments("moira.util.execution.HelloWorld")
+        .withStdErr(buffer::append)
+        .exec();
 
-    final StringBuffer buffer = new StringBuffer();
-    final Execution execution = new ForkExecutor(classpath, processFactory).execution();
-    execution.withArguments("moira.util.execution.HelloWorld").withStdErr(buffer::append).exec();
-
-    assertCommand(classpath, "moira.util.execution.HelloWorld");
+    assertCommand("moira.util.execution.HelloWorld");
     assertThat(buffer.toString(), is("hello world"));
   }
 
-  @ParameterizedTest
-  @FieldSource("classpaths")
-  public void testStdoutAndStderrOutput(final String classpath)
-      throws IOException, InterruptedException {
+  @Test
+  public void testStdoutAndStderrOutput() throws IOException, InterruptedException {
     final Random random = new Random(42);
     final String stdoutLines = generateRandomText(random);
     final String stderrLines = generateRandomText(random);
+    final StringBuffer stdout = new StringBuffer();
+    final StringBuffer stderr = new StringBuffer();
 
     setupProcessMock(0, stdoutLines, stderrLines);
 
-    final StringBuffer stdout = new StringBuffer();
-    final StringBuffer stderr = new StringBuffer();
-    final Execution execution = new ForkExecutor(classpath, processFactory).execution();
-    execution
+    new ForkExecutor(processFactory)
+        .execution()
         .withArguments("moira.util.execution.RandomStrings")
         .withStdErr(line -> stderr.append(line + '\n'))
         .withStdOut(line -> stdout.append(line + '\n'))
         .exec();
 
-    assertCommand(classpath, "moira.util.execution.RandomStrings");
+    assertCommand("moira.util.execution.RandomStrings");
     assertThat(stdout.toString().trim(), is(stdoutLines.trim()));
     assertThat(stderr.toString().trim(), is(stderrLines.trim()));
   }
 
-  @ParameterizedTest
-  @FieldSource("classpaths")
-  public void testStdoutAndStderrOutputNoProcessing(final String classpath)
-      throws IOException, InterruptedException {
+  @Test
+  public void testStdoutAndStderrOutputNoProcessing() throws IOException, InterruptedException {
     final Random random = new Random(42);
     final String stdoutLines = generateRandomText(random);
     final String stderrLines = generateRandomText(random);
 
     setupProcessMock(0, stdoutLines, stderrLines);
-    final Execution execution = new ForkExecutor(classpath, processFactory).execution();
-    execution.withArguments("moira.util.execution.RandomStrings").exec();
+    new ForkExecutor(processFactory)
+        .execution()
+        .withArguments("moira.util.execution.RandomStrings")
+        .exec();
 
-    assertCommand(classpath, "moira.util.execution.RandomStrings");
+    assertCommand("moira.util.execution.RandomStrings");
   }
 
-  @ParameterizedTest
-  @FieldSource("classpaths")
-  public void testEchoMixedStdoutStderrOutput(final String classpath) {
+  @Test
+  public void testEchoMixedStdoutStderrOutput() {
     final Random random = new Random(42);
     final String stdoutLines = generateRandomText(random);
     final String stderrLines = generateRandomText(random);
@@ -174,7 +175,7 @@ public class ForkExecutorTest {
     final StringBuffer stderr = new StringBuffer();
     final StringBuffer stdout = new StringBuffer();
 
-    new ForkExecutor(classpath)
+    new ForkExecutor()
         .execution()
         .withArguments("moira.util.execution.MixedOutput")
         .withStdErr(line -> stderr.append(line + '\n'))
@@ -186,24 +187,20 @@ public class ForkExecutorTest {
     assertThat(stderr.toString(), is(stderrLines));
   }
 
-  @ParameterizedTest
-  @FieldSource("classpaths")
-  public void testNotExistingClass(final String classpath) {
+  @Test
+  public void testNotExistingClass() {
     final Execution execution =
-        new ForkExecutor(classpath)
-            .execution()
-            .withArguments("moira.util.execution.NotExistingClass");
-
+        new ForkExecutor().execution().withArguments("moira.util.execution.NotExistingClass");
     final RuntimeException exception = assertThrows(RuntimeException.class, execution::exec);
+
     assertThat(exception.getMessage(), containsString("fork execution failed with code"));
   }
 
-  @ParameterizedTest
-  @FieldSource("classpaths")
-  public void testExecutionNoClassGiven(final String classpath) {
-    final Execution execution = new ForkExecutor(classpath).execution();
-
+  @Test
+  public void testExecutionNoClassGiven() {
+    final Execution execution = new ForkExecutor().execution();
     final RuntimeException exception = assertThrows(RuntimeException.class, execution::exec);
+
     assertThat(exception.getMessage(), containsString("fork execution failed with code"));
   }
 
@@ -212,7 +209,7 @@ public class ForkExecutorTest {
     when(processFactory.create(command.capture())).thenThrow(IOException.class);
 
     final Execution execution =
-        new ForkExecutor("", processFactory).execution().withArguments("com.example.Example");
+        new ForkExecutor(processFactory).execution().withArguments("com.example.Example");
 
     final RuntimeException exception = assertThrows(RuntimeException.class, execution::exec);
     assertThat(exception.getMessage(), containsString("process execution failed"));
@@ -225,7 +222,7 @@ public class ForkExecutorTest {
     when(process.getErrorStream()).thenReturn(new ByteArrayInputStream(new byte[0]));
 
     final Execution execution =
-        new ForkExecutor("", processFactory).execution().withArguments("com.example.Example");
+        new ForkExecutor(processFactory).execution().withArguments("com.example.Example");
 
     final RuntimeException exception = assertThrows(RuntimeException.class, execution::exec);
     assertThat(exception.getMessage(), containsString("failed to read from stdout"));
@@ -238,7 +235,7 @@ public class ForkExecutorTest {
     when(process.getErrorStream()).thenReturn(ioexceptionInputStream());
 
     final Execution execution =
-        new ForkExecutor("", processFactory).execution().withArguments("com.example.Example");
+        new ForkExecutor(processFactory).execution().withArguments("com.example.Example");
 
     final RuntimeException exception = assertThrows(RuntimeException.class, execution::exec);
     assertThat(exception.getMessage(), containsString("failed to read from stderr"));
@@ -248,7 +245,7 @@ public class ForkExecutorTest {
   public void testStdInIOException() throws IOException, InterruptedException {
     setupProcessMock(0, "", "");
     final Execution execution =
-        new ForkExecutor("", processFactory)
+        new ForkExecutor(processFactory)
             .execution()
             .withArguments("com.example.Example")
             .withStdIn(ioexceptionInputStream());
@@ -265,7 +262,7 @@ public class ForkExecutorTest {
     when(process.getErrorStream()).thenReturn(new ByteArrayInputStream(new byte[0]));
 
     final Execution execution =
-        new ForkExecutor("", processFactory).execution().withArguments("com.example.Example");
+        new ForkExecutor(processFactory).execution().withArguments("com.example.Example");
 
     assertThrows(RuntimeException.class, execution::exec);
   }
@@ -277,7 +274,7 @@ public class ForkExecutorTest {
     when(process.getErrorStream()).thenReturn(exceptionInputStream());
 
     final Execution execution =
-        new ForkExecutor("", processFactory).execution().withArguments("com.example.Example");
+        new ForkExecutor(processFactory).execution().withArguments("com.example.Example");
 
     assertThrows(RuntimeException.class, execution::exec);
   }
@@ -286,7 +283,7 @@ public class ForkExecutorTest {
   public void testStdInFailure() throws IOException, InterruptedException {
     setupProcessMock(0, "", "");
     final Execution execution =
-        new ForkExecutor("", processFactory)
+        new ForkExecutor(processFactory)
             .execution()
             .withArguments("com.example.Example")
             .withStdIn(exceptionInputStream());
@@ -347,13 +344,12 @@ public class ForkExecutorTest {
     return buffer.toString();
   }
 
-  private void assertCommand(final String classpath, final String... args) {
+  private void assertCommand(final String... args) {
     assertThat(command.getValue().size(), is(3 + args.length));
     assertThat(
         command.getValue().get(0),
         is(Paths.get(System.getProperty("java.home"), "bin", "java").toString()));
     assertThat(command.getValue().get(1), is("-classpath"));
-    assertThat(command.getValue().get(2), startsWith(classpath));
     assertThat(command.getValue().get(2), containsString(System.getProperty("java.class.path")));
     for (int i = 0; i < args.length; ++i) assertThat(command.getValue().get(3 + i), is(args[i]));
   }

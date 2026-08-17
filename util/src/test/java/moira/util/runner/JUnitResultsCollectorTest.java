@@ -5,7 +5,7 @@ import static org.hamcrest.Matchers.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import moira.util.model.TestCase;
+import moira.util.model.SimpleTestCase;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.Description;
 import org.junit.runner.notification.Failure;
@@ -28,8 +28,8 @@ public class JUnitResultsCollectorTest {
     final String expected =
         String.format(
             "Running schedule:\n  %s -> PASS\n  %s -> PASS\n",
-            TestCase.identifier(first.getClassName(), first.toString()),
-            TestCase.identifier(second.getClassName(), second.toString()));
+            new SimpleTestCase(first.getClassName(), first.toString()).toString(),
+            new SimpleTestCase(second.getClassName(), second.toString()).toString());
     assertThat(buffer.toString(), is(expected));
   }
 
@@ -52,8 +52,8 @@ public class JUnitResultsCollectorTest {
     final String expected =
         String.format(
             "Running schedule:\n  %s -> FAIL\n  %s -> FAIL\n",
-            TestCase.identifier(first.getClassName(), first.toString()),
-            TestCase.identifier(second.getClassName(), second.toString()));
+            new SimpleTestCase(first.getClassName(), first.toString()).toString(),
+            new SimpleTestCase(second.getClassName(), second.toString()).toString());
     assertThat(buffer.toString(), is(expected));
   }
 
@@ -75,8 +75,8 @@ public class JUnitResultsCollectorTest {
     final String expected =
         String.format(
             "Running schedule:\n  %s -> FAIL\n  %s -> PASS\n",
-            TestCase.identifier(first.getClassName(), first.toString()),
-            TestCase.identifier(second.getClassName(), second.toString()));
+            new SimpleTestCase(first.getClassName(), first.toString()).toString(),
+            new SimpleTestCase(second.getClassName(), second.toString()).toString());
     assertThat(buffer.toString(), is(expected));
   }
 }
