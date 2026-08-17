@@ -6,9 +6,5 @@ public class JUnit3TestMethodTest extends TestCase {
 
   public void testSomething() {}
 
-  private void testInvalidMethod() {}
-
-  public void someOtherMethod() {
-    testInvalidMethod();
-  }
+  public void someOtherMethod() {}
 }
