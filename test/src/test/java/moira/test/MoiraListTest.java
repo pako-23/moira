@@ -73,15 +73,15 @@ public class MoiraListTest {
               "testSomethingElse(com.example.JUnit3FirstChildSimpleTest)"),
           new IndexedTestCase(
               "com.example.JUnit3SuiteTestAll",
-              "testSomething(com.example.JUnit3SuiteSecondChildTest)",
+              "testSomething(com.example.JUnit3ParametrizedTest)",
               0),
           new IndexedTestCase(
               "com.example.JUnit3SuiteTestAll",
-              "testSomething(com.example.JUnit3SuiteSecondChildTest)",
+              "testSomething(com.example.JUnit3ParametrizedTest)",
               1),
           new IndexedTestCase(
               "com.example.JUnit3SuiteTestAll",
-              "testSomething(com.example.JUnit3SuiteSecondChildTest)",
+              "testSomething(com.example.JUnit3ParametrizedTest)",
               2),
         });
   }
@@ -117,6 +117,7 @@ public class MoiraListTest {
             .flatMap(cases -> Arrays.asList(cases).stream())
             .toArray(TestCase[]::new);
 
+    System.out.println(stdout.toString());
     assertThat(listed.size(), is(expected.length));
     assertThat(listed, hasItems(expected));
   }

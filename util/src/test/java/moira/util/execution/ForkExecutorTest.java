@@ -8,9 +8,12 @@ import static org.mockito.Mockito.when;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -50,7 +53,7 @@ public class ForkExecutorTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"/app", "/app:/app/tests"})
+  @ValueSource(strings = {"/app", "/app:/app/tests", "~", "~/", "/app/~", "../../:../"})
   public void testSetClassPathUpdatesTheClassPath(final String classpath)
       throws IOException, InterruptedException {
     setupProcessMock(0, "", "");
@@ -60,8 +63,30 @@ public class ForkExecutorTest {
 
     executor.execution().withArguments("moira.util.execution.Example").exec();
 
+    final String expectedClassPath =
+        Arrays.asList(classpath.split(":")).stream()
+            .map(path -> path.replaceAll("^~", System.getProperty("user.home")))
+            .map(Paths::get)
+            .map(Path::toAbsolutePath)
+            .map(Path::normalize)
+            .map(Path::toString)
+            .collect(Collectors.joining(":"));
+
     assertCommand("moira.util.execution.Example");
-    assertThat(command.getValue().get(2), startsWith(classpath));
+    assertThat(command.getValue().get(2), startsWith(expectedClassPath));
+  }
+
+  @Test
+  public void testSetEmptyClassPath() throws IOException, InterruptedException {
+    setupProcessMock(0, "", "");
+
+    final Executor executor = new ForkExecutor(processFactory);
+    executor.setClassPath("");
+
+    executor.execution().withArguments("moira.util.execution.Example").exec();
+
+    assertCommand("moira.util.execution.Example");
+    assertThat(command.getValue().get(2), is(System.getProperty("java.class.path")));
   }
 
   @Test

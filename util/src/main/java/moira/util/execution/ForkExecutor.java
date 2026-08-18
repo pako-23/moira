@@ -1,10 +1,10 @@
 package moira.util.execution;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,13 +46,16 @@ public class ForkExecutor implements Executor {
   }
 
   private String computeClassPath(final String classpath) {
-    return String.join(
-        ":",
-        classpath,
-        Stream.of(System.getProperty("java.class.path").split(":"))
-            .map(File::new)
-            .map(File::getAbsolutePath)
-            .collect(Collectors.joining(":")));
+    return Stream.concat(
+            Stream.of(classpath.split(":")),
+            Stream.of(System.getProperty("java.class.path").split(":")))
+        .filter(path -> !path.isEmpty())
+        .map(path -> path.replaceAll("^~", System.getProperty("user.home")))
+        .map(Paths::get)
+        .map(Path::toAbsolutePath)
+        .map(Path::normalize)
+        .map(Path::toString)
+        .collect(Collectors.joining(":"));
   }
 
   private class ForkExecution implements Execution {

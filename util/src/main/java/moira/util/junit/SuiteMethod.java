@@ -12,7 +12,7 @@ public class SuiteMethod extends JUnit38ClassRunner {
     super(testFromSuiteMethod(klass));
   }
 
-  public static Test testFromSuiteMethod(Class<?> klass) throws Throwable {
+  public static Test testFromSuiteMethod(final Class<?> klass) throws Throwable {
     try {
       final Method suiteMethod = klass.getMethod("suite");
       if (!Modifier.isStatic(suiteMethod.getModifiers())) {
@@ -21,28 +21,26 @@ public class SuiteMethod extends JUnit38ClassRunner {
 
       final Object suite = suiteMethod.invoke(null);
 
-      if (suite instanceof TestSuite) return flattenTestSuite((TestSuite) suite);
-      else return (Test) suite;
+      if (suite instanceof TestSuite) {
+        final TestSuite flattenedSuite = new TestSuite(klass.getName());
+
+        flattenTestSuite(flattenedSuite, (TestSuite) suite);
+
+        return flattenedSuite;
+      }
+
+      return (Test) suite;
 
     } catch (InvocationTargetException e) {
       throw e.getCause();
     }
   }
 
-  private static TestSuite flattenTestSuite(final TestSuite suite) {
-    final TestSuite flattenedTestSuite = new TestSuite();
-
-    flattenTestSuiteHelper(suite, flattenedTestSuite);
-
-    return flattenedTestSuite;
-  }
-
-  private static void flattenTestSuiteHelper(
-      final TestSuite suite, final TestSuite flattenedSuite) {
+  private static void flattenTestSuite(final TestSuite flattenedSuite, final TestSuite suite) {
     for (int i = 0; i < suite.testCount(); ++i) {
       final Test test = suite.testAt(i);
 
-      if (test instanceof TestSuite) flattenTestSuiteHelper((TestSuite) test, flattenedSuite);
+      if (test instanceof TestSuite) flattenTestSuite(flattenedSuite, (TestSuite) test);
       else flattenedSuite.addTest(test);
     }
   }

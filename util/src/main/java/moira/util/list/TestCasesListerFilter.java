@@ -27,28 +27,20 @@ public class TestCasesListerFilter extends Filter {
     final ArrayList<Description> children = description.getChildren();
 
     final Map<String, Integer> frequencies = new HashMap<>(children.size());
-    for (final Description child : children) {
-      if (child.getChildren().size() != 0) continue;
+    for (final Description child : children)
       frequencies.compute(child.toString(), (key, value) -> value == null ? 1 : value + 1);
-    }
 
     final Map<String, Integer> indexes = new HashMap<>();
     for (final Description child : children) {
-      if (child.getChildren().size() != 0) continue;
-
       final String textDescription = child.toString();
       final Integer frequency = frequencies.get(textDescription);
       if (frequency == 1) {
-        tests.add(new SimpleTestCase(child.getClassName(), textDescription));
+        tests.add(new SimpleTestCase(description.getClassName(), textDescription));
       } else {
-        final Integer x =
+        final Integer index =
             indexes.compute(textDescription, (key, value) -> value == null ? 0 : value + 1);
-        tests.add(new IndexedTestCase(child.getClassName(), textDescription, x));
+        tests.add(new IndexedTestCase(description.getClassName(), textDescription, index));
       }
-    }
-
-    for (final Description child : children) {
-      if (child.getChildren().size() > 0) shouldRun(child);
     }
 
     return false;
