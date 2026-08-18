@@ -66,21 +66,21 @@ public class MoiraListTest {
         "com.example.JUnit3SuiteTestAll",
         new TestCase[] {
           new SimpleTestCase(
-              "com.example.JUnit3FirstChildSimpleTest",
+              "com.example.JUnit3SuiteTestAll",
               "testSomething(com.example.JUnit3FirstChildSimpleTest)"),
           new SimpleTestCase(
-              "com.example.JUnit3FirstChildSimpleTest",
+              "com.example.JUnit3SuiteTestAll",
               "testSomethingElse(com.example.JUnit3FirstChildSimpleTest)"),
           new IndexedTestCase(
-              "com.example.JUnit3SuiteSecondChildTest",
+              "com.example.JUnit3SuiteTestAll",
               "testSomething(com.example.JUnit3SuiteSecondChildTest)",
               0),
           new IndexedTestCase(
-              "com.example.JUnit3SuiteSecondChildTest",
+              "com.example.JUnit3SuiteTestAll",
               "testSomething(com.example.JUnit3SuiteSecondChildTest)",
               1),
           new IndexedTestCase(
-              "com.example.JUnit3SuiteSecondChildTest",
+              "com.example.JUnit3SuiteTestAll",
               "testSomething(com.example.JUnit3SuiteSecondChildTest)",
               2),
         });

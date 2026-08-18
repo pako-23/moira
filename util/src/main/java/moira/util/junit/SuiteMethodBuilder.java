@@ -1,4 +1,4 @@
-package moira.util.runner;
+package moira.util.junit;
 
 import org.junit.runner.Runner;
 import org.junit.runners.model.RunnerBuilder;

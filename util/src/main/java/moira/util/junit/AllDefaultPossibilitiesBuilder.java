@@ -1,4 +1,4 @@
-package moira.util.runner;
+package moira.util.junit;
 
 import java.util.Arrays;
 import java.util.List;

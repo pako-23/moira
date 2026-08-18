@@ -8,9 +8,8 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
+import moira.util.junit.ScheduleRun;
 import moira.util.model.TestCase;
-import org.junit.runner.JUnitCore;
-import org.junit.runner.Request;
 
 public class TestCasesLister {
 
@@ -24,13 +23,12 @@ public class TestCasesLister {
   }
 
   public static void run(final InputStream input, final OutputStream output) throws IOException {
-    final Request request = readTestClasses(input);
-    final List<TestCase> testCases = detectTestCases(request);
+    final List<TestCase> testCases = detectTestCases(readTestClasses(input));
 
     outputTestCases(output, testCases);
   }
 
-  private static Request readTestClasses(final InputStream input) throws IOException {
+  private static Class<?>[] readTestClasses(final InputStream input) throws IOException {
     final List<String> classes = new ArrayList<>();
 
     try (final BufferedReader reader = new BufferedReader(new InputStreamReader(input))) {
@@ -39,13 +37,24 @@ public class TestCasesLister {
       while ((line = reader.readLine()) != null) classes.add(line);
     }
 
-    return requestFromClassesList(classes);
+    return classes.stream()
+        .map(
+            className -> {
+              try {
+                return Class.forName(className);
+              } catch (final ClassNotFoundException e) {
+                return null;
+              }
+            })
+        .filter(clazz -> clazz != null)
+        .toArray(Class<?>[]::new);
   }
 
-  private static List<TestCase> detectTestCases(final Request request) {
+  private static List<TestCase> detectTestCases(final Class<?>... classes) {
     final TestCasesListerFilter filter = new TestCasesListerFilter();
-    final JUnitCore junit = new JUnitCore();
-    junit.run(request.filterWith(filter));
+
+    new ScheduleRun(classes).withFilter(filter).run();
+
     return filter.getTestCases();
   }
 
@@ -53,20 +62,5 @@ public class TestCasesLister {
     final PrintStream stream = new PrintStream(output);
 
     for (final TestCase testCase : testCases) stream.println(testCase);
-  }
-
-  private static Request requestFromClassesList(final List<String> classes) {
-    return Request.classes(
-        classes.stream()
-            .map(
-                className -> {
-                  try {
-                    return Class.forName(className);
-                  } catch (final ClassNotFoundException e) {
-                    return null;
-                  }
-                })
-            .filter(clazz -> clazz != null)
-            .toArray(Class<?>[]::new));
   }
 }

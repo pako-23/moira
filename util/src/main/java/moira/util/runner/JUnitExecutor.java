@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import moira.util.junit.AllDefaultPossibilitiesBuilder;
 import moira.util.model.SimpleTestCase;
 import moira.util.model.TestCase;
 import org.junit.internal.runners.ErrorReportingRunner;
