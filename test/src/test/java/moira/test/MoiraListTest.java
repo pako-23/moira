@@ -14,12 +14,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import moira.util.cli.MoiraUtil;
-import moira.util.execution.ForkExecutor;
+import moira.util.factory.DefaultFactory;
 import moira.util.model.IndexedTestCase;
 import moira.util.model.SimpleTestCase;
 import moira.util.model.TestCase;
-import moira.util.service.DefaultService;
-import moira.util.service.Service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
@@ -88,10 +86,8 @@ public class MoiraListTest {
 
   @BeforeEach
   public void setup() throws IOException {
-    final Service service = new DefaultService(new ForkExecutor());
-
     stdout = new StringWriter();
-    cmd = new CommandLine(new MoiraUtil(service));
+    cmd = new CommandLine(new MoiraUtil(new DefaultFactory()));
     cmd.setOut(new PrintWriter(stdout));
 
     testsuite = File.createTempFile("list-acceptance-", ".txt");

@@ -1,9 +1,8 @@
 package moira.util.cli;
 
 import java.util.concurrent.Callable;
-import moira.util.execution.ForkExecutor;
-import moira.util.service.DefaultService;
-import moira.util.service.Service;
+import moira.util.factory.DefaultFactory;
+import moira.util.factory.MoiraFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.HelpCommand;
@@ -33,14 +32,14 @@ public class MoiraUtil implements Callable<Integer> {
       versionHelp = true)
   private boolean version;
 
-  private final Service service;
+  private final MoiraFactory factory;
 
-  public MoiraUtil(final Service service) {
-    this.service = service;
+  public MoiraUtil(final MoiraFactory factory) {
+    this.factory = factory;
   }
 
-  public Service service() {
-    return service;
+  public MoiraFactory factory() {
+    return factory;
   }
 
   @Override
@@ -50,8 +49,8 @@ public class MoiraUtil implements Callable<Integer> {
   }
 
   public static void main(final String... args) {
-    final Service service = new DefaultService(new ForkExecutor());
-    final int exitCode = new CommandLine(new MoiraUtil(service)).execute(args);
+    final MoiraUtil moira = new MoiraUtil(new DefaultFactory());
+    final int exitCode = new CommandLine(moira).execute(args);
 
     System.exit(exitCode);
   }

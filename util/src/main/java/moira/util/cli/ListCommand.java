@@ -2,7 +2,9 @@ package moira.util.cli;
 
 import java.io.File;
 import java.util.concurrent.Callable;
+import moira.util.factory.MoiraFactory;
 import moira.util.model.TestSuite;
+import moira.util.service.Service;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
@@ -37,8 +39,11 @@ public class ListCommand implements Callable<Integer> {
 
   @Override
   public Integer call() {
-    if (!classpath.isEmpty()) parent.service().setAppClassPath(classpath);
-    final TestSuite testsuite = parent.service().discoverTestSuite(file);
+    final MoiraFactory factory = parent.factory();
+    final Service service = factory.createService();
+
+    if (!classpath.isEmpty()) service.setAppClassPath(classpath);
+    final TestSuite testsuite = service.discoverTestSuite(file);
     for (int i = 0; i < testsuite.numberOfTestCases(); ++i)
       spec.commandLine().getOut().println(testsuite.getTestCase(i).toString());
 

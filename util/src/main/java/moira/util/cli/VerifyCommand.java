@@ -1,7 +1,9 @@
 package moira.util.cli;
 
 import java.util.concurrent.Callable;
+import moira.util.factory.MoiraFactory;
 import moira.util.model.TestCase;
+import moira.util.service.Service;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.Model.CommandSpec;
@@ -57,8 +59,10 @@ public class VerifyCommand implements Callable<Integer> {
 
   @Override
   public Integer call() {
-    final boolean isIndependent =
-        parent.service().isIndependentPair(firstTest, secondTest, classpath);
+    final MoiraFactory factory = parent.factory();
+    final Service service = factory.createService();
+
+    final boolean isIndependent = service.isIndependentPair(firstTest, secondTest, classpath);
 
     if (isIndependent) spec.commandLine().getOut().println("pair is independent");
     else spec.commandLine().getOut().println("pair is not independent");

@@ -14,7 +14,7 @@ public class MoiraUtilTest extends AbstractMoiraCommandTest {
 
   @Test
   public void testCreation() {
-    assertThat(moira.service(), is(service));
+    assertThat(moira.factory(), is(factory));
   }
 
   @Test
@@ -24,7 +24,7 @@ public class MoiraUtilTest extends AbstractMoiraCommandTest {
     assertFailedExecution(code);
 
     final StringWriter expectedStdout = new StringWriter();
-    final CommandLine expectedCmd = new CommandLine(new MoiraUtil(service));
+    final CommandLine expectedCmd = new CommandLine(new MoiraUtil(factory));
     expectedCmd.setOut(new PrintWriter(expectedStdout));
     expectedCmd.execute("-h");
 

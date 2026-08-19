@@ -20,7 +20,7 @@ public class HelpCommandTest extends AbstractMoiraCommandTest {
   public void setup() {
     super.setup();
 
-    expectedCmd = new CommandLine(new MoiraUtil(service));
+    expectedCmd = new CommandLine(new MoiraUtil(factory));
     expectedStdout = new StringWriter();
 
     expectedCmd.setOut(new PrintWriter(expectedStdout));

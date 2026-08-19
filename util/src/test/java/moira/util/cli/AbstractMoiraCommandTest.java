@@ -2,10 +2,12 @@ package moira.util.cli;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.mockito.Mockito.when;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.regex.Pattern;
+import moira.util.factory.MoiraFactory;
 import moira.util.service.Service;
 import org.junit.jupiter.api.BeforeEach;
 import org.mockito.Mock;
@@ -13,6 +15,7 @@ import org.mockito.MockitoAnnotations;
 import picocli.CommandLine;
 
 public class AbstractMoiraCommandTest {
+  @Mock protected MoiraFactory factory;
   @Mock protected Service service;
   protected MoiraUtil moira;
   protected CommandLine cmd;
@@ -22,13 +25,15 @@ public class AbstractMoiraCommandTest {
   @BeforeEach
   public void setup() {
     MockitoAnnotations.openMocks(this);
-    moira = new MoiraUtil(service);
+    moira = new MoiraUtil(factory);
     cmd = new CommandLine(moira);
     stderr = new StringWriter();
     stdout = new StringWriter();
 
     cmd.setErr(new PrintWriter(stderr));
     cmd.setOut(new PrintWriter(stdout));
+
+    when(factory.createService()).thenReturn(service);
   }
 
   protected Pattern optionDescriptionPattern(final String option, final String description) {
