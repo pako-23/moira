@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Arrays;
 import java.util.regex.Pattern;
 import moira.util.factory.MoiraFactory;
 import moira.util.service.Service;
@@ -54,5 +55,14 @@ public class AbstractMoiraCommandTest {
   protected void assertFailedExecution(final int code) {
     assertThat(code, not(is(0)));
     assertThat(stderr.toString(), not(is(emptyString())));
+  }
+
+  protected void assertFailedWithMessage(final int code, final String message) {
+    assertFailedExecution(code);
+    assertThat(stderr.toString(), containsString(message));
+  }
+
+  protected void assertStdoutContainsLines(final String... expected) {
+    assertThat(Arrays.asList(stdout.toString().trim().split("\\n")), hasItems(expected));
   }
 }

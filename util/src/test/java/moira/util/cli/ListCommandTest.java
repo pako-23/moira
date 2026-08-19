@@ -67,32 +67,26 @@ public class ListCommandTest extends AbstractMoiraSubcommandTest {
 
   @Test
   public void testEmptyAppClassPath() {
-    setupReturnedTests(new File("testsuite"), tests);
-    assertSuccessfulExecution(cmd.execute("list", "--app-cp", "", "testsuite"));
-    assertTestSuiteOutput(tests);
+    assertListCommand(new File("testsuite"), new String[] {"--app-cp", ""}, tests);
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"/app", "/app:/app/tests"})
   public void testSetAppClassPath(final String classpath) {
-    setupReturnedTests(new File("testsuite"), tests);
-    assertSuccessfulExecution(cmd.execute("list", "--app-cp", classpath, "testsuite"));
+    assertListCommand(new File("testsuite"), new String[] {"--app-cp", classpath}, tests);
     verify(service, times(1)).setAppClassPath(classpath);
-    assertTestSuiteOutput(tests);
   }
 
   @Test
   public void testNoTestSuite() {
-    final int code = cmd.execute("list");
-
-    assertFailedExecution(code);
+    assertFailedWithMessage(cmd.execute("list"), "Missing required parameter: '<testsuite>'");
   }
 
   @Test
   public void testManyArguments() {
-    final int code = cmd.execute("list", "testsuite1", "testsuite2", "testsuite3");
-
-    assertFailedExecution(code);
+    assertFailedWithMessage(
+        cmd.execute("list", "testsuite1", "testsuite2", "testsuite3"),
+        "Unmatched arguments from index 2: 'testsuite2'");
   }
 
   @Test
@@ -124,8 +118,19 @@ public class ListCommandTest extends AbstractMoiraSubcommandTest {
   }
 
   private void assertListOutput(final File file, final TestCase... testsuite) {
+    assertListCommand(file, new String[0], testsuite);
+  }
+
+  private void assertListCommand(
+      final File file, final String[] options, final TestCase... testsuite) {
     setupReturnedTests(file, testsuite);
-    assertSuccessfulExecution(cmd.execute("list", file.toString()));
+
+    final String[] args = new String[options.length + 2];
+    args[0] = "list";
+    System.arraycopy(options, 0, args, 1, options.length);
+    args[args.length - 1] = file.toString();
+
+    assertSuccessfulExecution(cmd.execute(args));
     assertTestSuiteOutput(testsuite);
   }
 }

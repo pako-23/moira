@@ -5,27 +5,28 @@ import static org.hamcrest.Matchers.*;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import moira.util.cli.MoiraUtil;
-import moira.util.factory.DefaultFactory;
+import java.util.stream.Stream;
+import moira.util.execution.Execution;
+import moira.util.execution.ForkExecutor;
 import moira.util.model.IndexedTestCase;
 import moira.util.model.SimpleTestCase;
 import moira.util.model.TestCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import picocli.CommandLine;
 
 public class MoiraListTest {
 
   private static Map<String, TestCase[]> tests;
-  private CommandLine cmd;
+  private Execution execution;
   private File testsuite;
   private StringWriter stdout;
 
@@ -87,21 +88,16 @@ public class MoiraListTest {
   @BeforeEach
   public void setup() throws IOException {
     stdout = new StringWriter();
-    cmd = new CommandLine(new MoiraUtil(new DefaultFactory()));
-    cmd.setOut(new PrintWriter(stdout));
-
+    execution = new ForkExecutor().execution().withStdOut(line -> stdout.append(line + "\n"));
     testsuite = File.createTempFile("list-acceptance-", ".txt");
     testsuite.deleteOnExit();
   }
 
   @Test
-  public void testEmptyTestSuite() throws IOException {
+  public void testMultipleTestClasses() throws IOException {
     Files.write(testsuite.toPath(), tests.keySet());
 
-    final int exitCode =
-        cmd.execute("list", "--app-cp", System.getProperty("app.classpath"), testsuite.toString());
-
-    assertThat(exitCode, is(0));
+    execute("list", "--app-cp", System.getProperty("app.classpath"), testsuite.toString());
 
     final List<TestCase> listed =
         Arrays.asList(stdout.toString().trim().split("\\n")).stream()
@@ -113,17 +109,15 @@ public class MoiraListTest {
             .flatMap(cases -> Arrays.asList(cases).stream())
             .toArray(TestCase[]::new);
 
-    System.out.println(stdout.toString());
     assertThat(listed.size(), is(expected.length));
     assertThat(listed, hasItems(expected));
   }
 
   @Test
-  public void testMultipleTestClasses() {
-    final int exitCode =
-        cmd.execute("list", "--app-cp", System.getProperty("app.classpath"), testsuite.toString());
+  public void testEmptyTestSuite() {
+    execute("list", "--app-cp", System.getProperty("app.classpath"), testsuite.toString());
 
-    assertThat(exitCode, is(0));
+    assertThat(stdout.toString(), emptyString());
   }
 
   private static void registerTestCase(final String testClass, final String... descriptions) {
@@ -133,5 +127,18 @@ public class MoiraListTest {
             .map(description -> String.format("%s[%s(%s)]", testClass, description, testClass))
             .map(TestCase::fromId)
             .toArray(TestCase[]::new));
+  }
+
+  private void execute(final String... args) {
+    final RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
+    final List<String> arguments = runtime.getInputArguments();
+
+    execution
+        .withArguments(
+            Stream.concat(
+                    arguments.stream().filter(name -> name.startsWith("-javaagent")),
+                    Stream.concat(Stream.of("moira.util.cli.MoiraUtil"), Stream.of(args)))
+                .toArray(String[]::new))
+        .exec();
   }
 }

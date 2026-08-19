@@ -6,7 +6,6 @@ import static org.mockito.Mockito.*;
 
 import java.io.File;
 import java.io.PrintWriter;
-import java.util.Arrays;
 import java.util.stream.Stream;
 import moira.util.FlakyPairsCollector;
 import moira.util.factory.DetectionMode;
@@ -49,86 +48,53 @@ public class DetectCommandTest extends AbstractMoiraSubcommandTest {
   @ParameterizedTest
   @MethodSource("provideModeAndCommandOuputs")
   public void testCommandOutput(final DetectionMode mode, final String[] output) {
-    final File source = new File("testsuite");
-
-    setupDetectMocks(mode, source, output);
-    assertSuccessfulExecution(cmd.execute("detect", "-m", mode.toString(), source.toString()));
-    assertThat(Arrays.asList(stdout.toString().trim().split("\\n")), hasItems(output));
+    assertDetectOutput(mode, new File("testsuite"), output, "-m", mode.toString());
   }
 
   @Test
   public void testDefaultMode() {
-    final File source = new File("testsuite");
-    final DetectionMode mode = DetectionMode.TUSCAN_PACKED;
-    final String[] output = multiLineOutput;
-
-    setupDetectMocks(mode, source, output);
-    assertSuccessfulExecution(cmd.execute("detect", source.toString()));
-    assertThat(Arrays.asList(stdout.toString().trim().split("\\n")), hasItems(output));
+    assertDetectOutput(DetectionMode.TUSCAN_PACKED, new File("testsuite"), multiLineOutput);
   }
 
   @Test
   public void testDifferentTestSuiteFile() {
-    final File source = new File("someothertestsuite");
-    final DetectionMode mode = DetectionMode.TUSCAN_PACKED;
-    final String[] output = multiLineOutput;
-
-    setupDetectMocks(mode, source, output);
-    assertSuccessfulExecution(cmd.execute("detect", source.toString()));
-    assertThat(Arrays.asList(stdout.toString().trim().split("\\n")), hasItems(output));
+    assertDetectOutput(
+        DetectionMode.TUSCAN_PACKED, new File("someothertestsuite"), multiLineOutput);
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"/app", "/app:/app/tests"})
   public void testSetAppClassPath(final String classpath) {
     final File source = new File("testsuite");
-    final DetectionMode mode = DetectionMode.TUSCAN_PACKED;
-    final String[] output = multiLineOutput;
 
-    setupDetectMocks(mode, source, output);
+    setupDetectMocks(DetectionMode.TUSCAN_PACKED, source, multiLineOutput);
     assertSuccessfulExecution(cmd.execute("detect", "--app-cp", classpath, source.toString()));
     verify(service, times(1)).setAppClassPath(classpath);
-    assertThat(Arrays.asList(stdout.toString().trim().split("\\n")), hasItems(output));
+    assertStdoutContainsLines(multiLineOutput);
   }
 
   @Test
   public void testSetEmptyAppClassPath() {
-    final File source = new File("testsuite");
-    final DetectionMode mode = DetectionMode.TUSCAN_PACKED;
-    final String[] output = multiLineOutput;
-
-    setupDetectMocks(mode, source, output);
-
-    final int exitCode = cmd.execute("detect", "--app-cp", "", source.toString());
-
-    assertSuccessfulExecution(exitCode);
-    assertThat(Arrays.asList(stdout.toString().trim().split("\\n")), hasItems(output));
+    assertDetectOutput(
+        DetectionMode.TUSCAN_PACKED, new File("testsuite"), multiLineOutput, "--app-cp", "");
   }
 
   @Test
   public void testInvalidDetectionMode() {
-    final int exitCode = cmd.execute("detect", "-m", "invalid", "testsuite");
-
-    assertFailedExecution(exitCode);
-    assertThat(
-        stderr.toString(),
-        containsString("Invalid value for option '--mode': invalid mode provided: invalid"));
+    assertFailedWithMessage(
+        cmd.execute("detect", "-m", "invalid", "testsuite"),
+        "Invalid value for option '--mode': invalid mode provided: invalid");
   }
 
   @Test
   public void testMissingSource() {
-    final int exitCode = cmd.execute("detect");
-
-    assertFailedExecution(exitCode);
-    assertThat(stderr.toString(), containsString("Missing required parameter: '<source>'"));
+    assertFailedWithMessage(cmd.execute("detect"), "Missing required parameter: '<source>'");
   }
 
   @Test
   public void testManyArguments() {
-    final int exitCode = cmd.execute("detect", "source1", "source2");
-
-    assertFailedExecution(exitCode);
-    assertThat(stderr.toString(), containsString("Unmatched argument at index 2: 'source2'"));
+    assertFailedWithMessage(
+        cmd.execute("detect", "source1", "source2"), "Unmatched argument at index 2: 'source2'");
   }
 
   @Test
@@ -154,6 +120,19 @@ public class DetectCommandTest extends AbstractMoiraSubcommandTest {
         matchesPattern(
             optionDescriptionPattern(
                 "<source>", "The file containing the testsuite or the list of test pairs")));
+  }
+
+  private void assertDetectOutput(
+      final DetectionMode mode, final File source, final String[] output, final String... options) {
+    setupDetectMocks(mode, source, output);
+
+    final String[] args = new String[options.length + 2];
+    args[0] = "detect";
+    System.arraycopy(options, 0, args, 1, options.length);
+    args[args.length - 1] = source.toString();
+
+    assertSuccessfulExecution(cmd.execute(args));
+    assertStdoutContainsLines(output);
   }
 
   private void setupDetectMocks(

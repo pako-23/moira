@@ -27,6 +27,9 @@ public class VerifyCommandTest extends AbstractMoiraSubcommandTest {
         TestCase.fromId("com.example.AppTest[testApp]"),
       };
 
+  private static final String INVALID_TEST_MESSAGE =
+      "tests should have the form <class-name>[<test-description>]";
+
   @BeforeEach
   public void setup() {
     super.setup();
@@ -75,40 +78,30 @@ public class VerifyCommandTest extends AbstractMoiraSubcommandTest {
 
   @Test
   public void testInvalidTestCaseIdentifierFirstTest() {
-    final int code = cmd.execute("verify", "somethingnotvalid", tests[0].toString());
-    assertFailedExecution(code);
-
-    assertThat(
-        stderr.toString(),
-        containsString(
-            "Invalid value for positional parameter at index 0 (<first-test>): tests should have the form <class-name>[<test-description>]"));
+    assertFailedWithMessage(
+        cmd.execute("verify", "somethingnotvalid", tests[0].toString()),
+        "Invalid value for positional parameter at index 0 (<first-test>): "
+            + INVALID_TEST_MESSAGE);
   }
 
   @Test
   public void testInvalidTestCaseIdentifierSecondTest() {
-    final int code = cmd.execute("verify", tests[0].toString(), "somethingnotvalid");
-    assertFailedExecution(code);
-
-    assertThat(
-        stderr.toString(),
-        containsString(
-            "Invalid value for positional parameter at index 1 (<second-test>): tests should have the form <class-name>[<test-description>]"));
+    assertFailedWithMessage(
+        cmd.execute("verify", tests[0].toString(), "somethingnotvalid"),
+        "Invalid value for positional parameter at index 1 (<second-test>): "
+            + INVALID_TEST_MESSAGE);
   }
 
   @Test
   public void testNoArguments() {
-    final int code = cmd.execute("verify");
-    assertFailedExecution(code);
-    assertThat(
-        stderr.toString(),
-        containsString("Missing required parameters: '<first-test>', '<second-test>'"));
+    assertFailedWithMessage(
+        cmd.execute("verify"), "Missing required parameters: '<first-test>', '<second-test>'");
   }
 
   @Test
   public void testSingleTest() {
-    final int code = cmd.execute("verify", tests[0].toString());
-    assertFailedExecution(code);
-    assertThat(stderr.toString(), containsString("Missing required parameter: '<second-test>'"));
+    assertFailedWithMessage(
+        cmd.execute("verify", tests[0].toString()), "Missing required parameter: '<second-test>'");
   }
 
   @Test
@@ -124,14 +117,6 @@ public class VerifyCommandTest extends AbstractMoiraSubcommandTest {
     assertFailedExecution(code);
   }
 
-  @ParameterizedTest
-  @ValueSource(strings = {"-h", "--help"})
-  public void testHelpPageDescribesTestsParmeters(final String help) {
-    final int code = cmd.execute("verify", help);
-
-    assertSuccessfulExecution(code);
-  }
-
   @Test
   public void testHelpPageContainsParametersDescription() {
     final int code = cmd.execute("verify", "-h");
@@ -140,16 +125,15 @@ public class VerifyCommandTest extends AbstractMoiraSubcommandTest {
     assertThat(
         stdout.toString(),
         matchesPattern(
-            optionDescriptionPattern("--app-cp=<classpath>", "The application's classpath")));
-
-    assertThat(
-        stdout.toString(),
-        matchesPattern(
             optionDescriptionPattern("<first-test>", "The first test in the pair to verify")));
     assertThat(
         stdout.toString(),
         matchesPattern(
             optionDescriptionPattern("<second-test>", "The second test in the pair to verify")));
+    assertThat(
+        stdout.toString(),
+        matchesPattern(
+            optionDescriptionPattern("--app-cp=<classpath>", "The application's classpath")));
   }
 
   private static Stream<Arguments> providePairsForVerify() {

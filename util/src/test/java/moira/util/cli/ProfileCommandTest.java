@@ -42,75 +42,31 @@ public class ProfileCommandTest extends AbstractMoiraSubcommandTest {
 
   @ParameterizedTest
   @MethodSource("provideProfilerAndResults")
-  public void testCommandOutptut(
+  public void testCommandOutput(
       final Profiler profiler, final Map<TestCase, Set<TestCase>> result) {
-    final File testsuite = new File("testsuite");
-
-    when(service.profile(profiler, testsuite)).thenReturn(result);
-
-    final int exitCode = cmd.execute("profile", "-p", profiler.toString(), testsuite.toString());
-
-    assertSuccessfulExecution(exitCode);
-    assertDetectedPairs(result);
+    assertProfileOutput(profiler, new File("testsuite"), result, "-p", profiler.toString());
   }
 
   @Test
   public void testDefaultProfiler() {
-    final File testsuite = new File("testsuite");
-    final Map<TestCase, Set<TestCase>> result = new HashMap<>();
-
-    result.compute(tests[1], addDependency(tests[2]));
-    result.compute(tests[3], addDependency(tests[1]));
-
-    when(service.profile(Profiler.NULL, testsuite)).thenReturn(result);
-
-    final int exitCode = cmd.execute("profile", testsuite.toString());
-
-    assertSuccessfulExecution(exitCode);
-    assertDetectedPairs(result);
+    assertProfileOutput(Profiler.NULL, new File("testsuite"), sampleResult());
   }
 
   @Test
   public void testEmptyClassPath() {
-    final File testsuite = new File("testsuite");
-    final Map<TestCase, Set<TestCase>> result = new HashMap<>();
-
-    result.compute(tests[1], addDependency(tests[2]));
-    result.compute(tests[3], addDependency(tests[1]));
-
-    when(service.profile(Profiler.NULL, testsuite)).thenReturn(result);
-
-    final int exitCode = cmd.execute("profile", "--app-cp", "", testsuite.toString());
-
-    assertSuccessfulExecution(exitCode);
-    assertDetectedPairs(result);
+    assertProfileOutput(Profiler.NULL, new File("testsuite"), sampleResult(), "--app-cp", "");
   }
 
   @Test
   public void testDifferentTestSuite() {
-    final File testsuite = new File("someothertestsuite");
-    final Map<TestCase, Set<TestCase>> result = new HashMap<>();
-
-    result.compute(tests[1], addDependency(tests[2]));
-    result.compute(tests[3], addDependency(tests[1]));
-
-    when(service.profile(Profiler.NULL, testsuite)).thenReturn(result);
-
-    final int exitCode = cmd.execute("profile", testsuite.toString());
-
-    assertSuccessfulExecution(exitCode);
-    assertDetectedPairs(result);
+    assertProfileOutput(Profiler.NULL, new File("someothertestsuite"), sampleResult());
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"/app", "/app:/app/tests"})
   public void testSetAppClassPath(final String classpath) {
-
     final File testsuite = new File("testsuite");
-    final Map<TestCase, Set<TestCase>> result = new HashMap<>();
-
-    result.compute(tests[1], addDependency(tests[2]));
-    result.compute(tests[3], addDependency(tests[1]));
+    final Map<TestCase, Set<TestCase>> result = sampleResult();
 
     when(service.profile(Profiler.NULL, testsuite)).thenReturn(result);
 
@@ -123,29 +79,21 @@ public class ProfileCommandTest extends AbstractMoiraSubcommandTest {
 
   @Test
   public void testInvalidProfiler() {
-    final int exitCode = cmd.execute("profile", "-p", "invalid", "testsuite");
-
-    assertFailedExecution(exitCode);
-    assertThat(
-        stderr.toString(),
-        containsString(
-            "Invalid value for option '--profiler': invalid profiler provided: invalid"));
+    assertFailedWithMessage(
+        cmd.execute("profile", "-p", "invalid", "testsuite"),
+        "Invalid value for option '--profiler': invalid profiler provided: invalid");
   }
 
   @Test
   public void testMissingSource() {
-    final int exitCode = cmd.execute("profile");
-
-    assertFailedExecution(exitCode);
-    assertThat(stderr.toString(), containsString("Missing required parameter: '<testsuite>'"));
+    assertFailedWithMessage(cmd.execute("profile"), "Missing required parameter: '<testsuite>'");
   }
 
   @Test
   public void testManyArguments() {
-    final int exitCode = cmd.execute("profile", "testsuite1", "testsuite2");
-
-    assertFailedExecution(exitCode);
-    assertThat(stderr.toString(), containsString("Unmatched argument at index 2: 'testsuite2'"));
+    assertFailedWithMessage(
+        cmd.execute("profile", "testsuite1", "testsuite2"),
+        "Unmatched argument at index 2: 'testsuite2'");
   }
 
   @Test
@@ -153,7 +101,6 @@ public class ProfileCommandTest extends AbstractMoiraSubcommandTest {
     final int code = cmd.execute("profile", "-h");
 
     assertSuccessfulExecution(code);
-
     assertThat(
         stdout.toString(),
         matchesPattern(
@@ -165,10 +112,44 @@ public class ProfileCommandTest extends AbstractMoiraSubcommandTest {
             optionDescriptionPattern(
                 "-p, --profiler=<profiler>",
                 "The profiler implementation. Valid values are: online, naive, object, target-pairs, null (default: null)")));
+
     assertThat(
         stdout.toString(),
         matchesPattern(
             optionDescriptionPattern("--app-cp=<classpath>", "The application's classpath")));
+  }
+
+  private void assertProfileOutput(
+      final Profiler profiler,
+      final File testsuite,
+      final Map<TestCase, Set<TestCase>> result,
+      final String... options) {
+    when(service.profile(profiler, testsuite)).thenReturn(result);
+
+    final String[] args = new String[options.length + 2];
+    args[0] = "profile";
+    System.arraycopy(options, 0, args, 1, options.length);
+    args[args.length - 1] = testsuite.toString();
+
+    assertSuccessfulExecution(cmd.execute(args));
+    assertDetectedPairs(result);
+  }
+
+  private void assertDetectedPairs(final Map<TestCase, Set<TestCase>> result) {
+    assertStdoutContainsLines(
+        result.entrySet().stream()
+            .flatMap(
+                entry ->
+                    entry.getValue().stream()
+                        .map(to -> String.format("from: %s, to: %s", entry.getKey(), to)))
+            .toArray(String[]::new));
+  }
+
+  private static Map<TestCase, Set<TestCase>> sampleResult() {
+    final Map<TestCase, Set<TestCase>> result = new HashMap<>();
+    result.compute(tests[1], addDependency(tests[2]));
+    result.compute(tests[3], addDependency(tests[1]));
+    return result;
   }
 
   private static Stream<Arguments> provideProfilerAndResults() {
@@ -191,18 +172,6 @@ public class ProfileCommandTest extends AbstractMoiraSubcommandTest {
                     Arguments.of(profiler, empty),
                     Arguments.of(profiler, single),
                     Arguments.of(profiler, multiple)));
-  }
-
-  private void assertDetectedPairs(final Map<TestCase, Set<TestCase>> result) {
-    assertThat(
-        Arrays.asList(stdout.toString().trim().split("\\n")),
-        hasItems(
-            result.entrySet().stream()
-                .flatMap(
-                    entry ->
-                        entry.getValue().stream()
-                            .map(to -> String.format("from: %s, to: %s", entry.getKey(), to)))
-                .toArray(String[]::new)));
   }
 
   private static BiFunction<TestCase, Set<TestCase>, Set<TestCase>> addDependency(
