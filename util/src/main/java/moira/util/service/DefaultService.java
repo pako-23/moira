@@ -6,9 +6,11 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import moira.util.FlakyPairsCollector;
 import moira.util.execution.Executor;
 import moira.util.model.TestCase;
 import moira.util.model.TestSuite;
+import moira.util.runner.ScheduleGenerator;
 
 public class DefaultService implements Service {
 
@@ -48,4 +50,8 @@ public class DefaultService implements Service {
   public boolean isIndependentPair(final TestCase first, final TestCase second) {
     return false;
   }
+
+  @Override
+  public void findFlakyPairs(
+      final ScheduleGenerator generator, final FlakyPairsCollector collector) {}
 }

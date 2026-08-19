@@ -4,7 +4,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
+import java.io.PrintWriter;
 import moira.util.model.Outcome;
 import moira.util.model.TestCase;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +25,7 @@ public class TuscanSquareCollectorTest {
 
   private String capturePrint() {
     final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-    try (final PrintStream stream = new PrintStream(buffer)) {
+    try (final PrintWriter stream = new PrintWriter(buffer)) {
       collector.print(stream);
     }
     return buffer.toString();

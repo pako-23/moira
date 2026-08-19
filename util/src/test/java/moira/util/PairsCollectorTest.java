@@ -4,7 +4,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -36,7 +36,7 @@ public class PairsCollectorTest {
 
   private static String capturePrint(final PairsCollector collector) {
     final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-    try (final PrintStream stream = new PrintStream(buffer)) {
+    try (final PrintWriter stream = new PrintWriter(buffer)) {
       collector.print(stream);
     }
     return buffer.toString();

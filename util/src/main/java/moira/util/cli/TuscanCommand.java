@@ -117,7 +117,7 @@ public class TuscanCommand implements Runnable {
       while ((outcome = runner.getOutcome()) != null) collector.update(outcome);
 
       runner.join();
-      collector.print(System.out);
+      // collector.print(System.out);
     } catch (final Exception e) {
       e.printStackTrace();
     }

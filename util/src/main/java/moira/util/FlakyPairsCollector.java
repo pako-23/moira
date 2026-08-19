@@ -1,6 +1,6 @@
 package moira.util;
 
-import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -19,13 +19,13 @@ public abstract class FlakyPairsCollector {
 
   public abstract void update(final Outcome[] outcome);
 
-  public void print(final PrintStream stream) {
+  public void print(final PrintWriter stream) {
     outputPairs(stream, brittle, "brittle");
     outputPairs(stream, victims, "victim");
   }
 
   private void outputPairs(
-      final PrintStream stream, final Map<TestCase, Set<TestCase>> pairs, final String type) {
+      final PrintWriter stream, final Map<TestCase, Set<TestCase>> pairs, final String type) {
     for (final Map.Entry<TestCase, Set<TestCase>> entry : pairs.entrySet())
       for (final TestCase testCase : entry.getValue())
         stream.printf("from: %s, to: %s, type: %s\n", entry.getKey(), testCase, type);
