@@ -45,8 +45,7 @@ public class DefaultService implements Service {
   }
 
   @Override
-  public boolean isIndependentPair(
-      final TestCase first, final TestCase second, final String classpath) {
+  public boolean isIndependentPair(final TestCase first, final TestCase second) {
     return false;
   }
 }

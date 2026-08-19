@@ -10,6 +10,5 @@ public interface Service {
 
   public TestSuite discoverTestSuite(final File filename);
 
-  public boolean isIndependentPair(
-      final TestCase first, final TestCase second, final String classpath);
+  public boolean isIndependentPair(final TestCase first, final TestCase second);
 }

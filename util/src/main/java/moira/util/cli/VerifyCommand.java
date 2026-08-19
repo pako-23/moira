@@ -62,7 +62,9 @@ public class VerifyCommand implements Callable<Integer> {
     final MoiraFactory factory = parent.factory();
     final Service service = factory.createService();
 
-    final boolean isIndependent = service.isIndependentPair(firstTest, secondTest, classpath);
+    if (!classpath.isEmpty()) service.setAppClassPath(classpath);
+
+    final boolean isIndependent = service.isIndependentPair(firstTest, secondTest);
 
     if (isIndependent) spec.commandLine().getOut().println("pair is independent");
     else spec.commandLine().getOut().println("pair is not independent");

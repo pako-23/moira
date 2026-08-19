@@ -2,7 +2,7 @@ package moira.util.cli;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import java.util.Arrays;
 import java.util.stream.Stream;
@@ -37,15 +37,40 @@ public class VerifyCommandTest extends AbstractMoiraSubcommandTest {
   @ParameterizedTest
   @MethodSource("providePairsForVerify")
   public void testValidPairVerification(
-      final TestCase first, final TestCase second, final String classpath, final boolean outcome) {
-    when(service.isIndependentPair(first, second, classpathOrDefault(classpath)))
-        .thenReturn(outcome);
+      final TestCase first, final TestCase second, final boolean outcome) {
+    when(service.isIndependentPair(first, second)).thenReturn(outcome);
 
-    final int code = verifyPair(classpath, first, second);
+    final int code = cmd.execute("verify", first.toString(), second.toString());
     assertSuccessfulExecution(code);
 
     if (outcome) assertThat(stdout.toString(), containsString("pair is independent"));
     else assertThat(stdout.toString(), containsString("pair is not independent"));
+  }
+
+  @Test
+  public void testEmptyAppClassPath() {
+    final TestCase first = tests[0];
+    final TestCase second = tests[1];
+
+    when(service.isIndependentPair(first, second)).thenReturn(true);
+
+    assertSuccessfulExecution(
+        cmd.execute("verify", "--app-cp", "", first.toString(), second.toString()));
+    assertThat(stdout.toString(), containsString("pair is independent"));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"/app", "/app:/app/tests"})
+  public void testSetAppClassPath(final String classpath) {
+    final TestCase first = tests[0];
+    final TestCase second = tests[1];
+
+    when(service.isIndependentPair(first, second)).thenReturn(true);
+
+    assertSuccessfulExecution(
+        cmd.execute("verify", "--app-cp", classpath, first.toString(), second.toString()));
+    verify(service, times(1)).setAppClassPath(classpath);
+    assertThat(stdout.toString(), containsString("pair is independent"));
   }
 
   @Test
@@ -127,18 +152,7 @@ public class VerifyCommandTest extends AbstractMoiraSubcommandTest {
             optionDescriptionPattern("--app-cp=<classpath>", "The application's classpath")));
   }
 
-  private int verifyPair(final String classpath, final TestCase first, final TestCase second) {
-    if (classpath == null) return cmd.execute("verify", first.toString(), second.toString());
-    else return cmd.execute("verify", "--app-cp", classpath, first.toString(), second.toString());
-  }
-
-  private String classpathOrDefault(final String classpath) {
-    return classpath == null ? "" : classpath;
-  }
-
   private static Stream<Arguments> providePairsForVerify() {
-    final String[] classpaths = new String[] {"", null, "/app", "/app:/app/tests"};
-
     return Arrays.asList(tests).stream()
         .flatMap(
             first ->
@@ -146,11 +160,8 @@ public class VerifyCommandTest extends AbstractMoiraSubcommandTest {
                     .filter(second -> !second.equals(first))
                     .flatMap(
                         second ->
-                            Arrays.asList(classpaths).stream()
-                                .flatMap(
-                                    classpath ->
-                                        Stream.of(
-                                            Arguments.of(first, second, classpath, true),
-                                            Arguments.of(first, second, classpath, false)))));
+                            Stream.of(
+                                Arguments.of(first, second, true),
+                                Arguments.of(first, second, false))));
   }
 }
