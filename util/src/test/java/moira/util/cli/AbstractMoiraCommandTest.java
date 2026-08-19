@@ -32,7 +32,13 @@ public class AbstractMoiraCommandTest {
   }
 
   protected Pattern optionDescriptionPattern(final String option, final String description) {
-    return Pattern.compile(".*\\s+" + option + "\\s+" + description + "\\..*", Pattern.DOTALL);
+    return Pattern.compile(
+        ".*\\s+"
+            + option
+            + "\\s+"
+            + description.replaceAll("\\s+", "\\\\s+").replace("(", "\\(").replace(")", "\\)")
+            + "\\..*",
+        Pattern.DOTALL);
   }
 
   protected void assertSuccessfulExecution(final int code) {
