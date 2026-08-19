@@ -12,7 +12,13 @@ import picocli.CommandLine.Spec;
 
 @Command(
     name = "moira",
-    subcommands = {DetectCommand.class, ListCommand.class, VerifyCommand.class, HelpCommand.class},
+    subcommands = {
+      DetectCommand.class,
+      ProfileCommand.class,
+      ListCommand.class,
+      VerifyCommand.class,
+      HelpCommand.class
+    },
     description = "A tool to detect dependencies between tests of a testsuite.",
     version = "moira 0.0.1",
     usageHelpAutoWidth = true)

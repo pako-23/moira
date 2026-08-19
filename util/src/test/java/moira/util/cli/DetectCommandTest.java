@@ -67,6 +67,17 @@ public class DetectCommandTest extends AbstractMoiraSubcommandTest {
     assertThat(Arrays.asList(stdout.toString().trim().split("\\n")), hasItems(output));
   }
 
+  @Test
+  public void testDifferentTestSuiteFile() {
+    final File source = new File("someothertestsuite");
+    final DetectionMode mode = DetectionMode.TUSCAN_PACKED;
+    final String[] output = multiLineOutput;
+
+    setupDetectMocks(mode, source, output);
+    assertSuccessfulExecution(cmd.execute("detect", source.toString()));
+    assertThat(Arrays.asList(stdout.toString().trim().split("\\n")), hasItems(output));
+  }
+
   @ParameterizedTest
   @ValueSource(strings = {"/app", "/app:/app/tests"})
   public void testSetAppClassPath(final String classpath) {
@@ -120,35 +131,9 @@ public class DetectCommandTest extends AbstractMoiraSubcommandTest {
     assertThat(stderr.toString(), containsString("Unmatched argument at index 2: 'source2'"));
   }
 
-  @ParameterizedTest
-  @ValueSource(strings = {"-h", "--help"})
-  public void testHelpPageContainsTestsuiteParameter(final String help) {
-    final int code = cmd.execute("detect", help);
-
-    assertSuccessfulExecution(code);
-    assertThat(
-        stdout.toString(),
-        matchesPattern(
-            optionDescriptionPattern(
-                "<source>", "The file containing the testsuite or the list of test pairs")));
-  }
-
-  @ParameterizedTest
-  @ValueSource(strings = {"-h", "--help"})
-  public void testHelpPageContainsAppClasspathParameter(final String help) {
-    final int code = cmd.execute("detect", help);
-
-    assertSuccessfulExecution(code);
-    assertThat(
-        stdout.toString(),
-        matchesPattern(
-            optionDescriptionPattern("--app-cp=<classpath>", "The application's classpath")));
-  }
-
-  @ParameterizedTest
-  @ValueSource(strings = {"-h", "--help"})
-  public void testHelpPageContainsModeParameter(final String help) {
-    final int code = cmd.execute("detect", help);
+  @Test
+  public void testHelpPageContainsParameterDescriptions() {
+    final int code = cmd.execute("detect", "-h");
 
     assertSuccessfulExecution(code);
     assertThat(
@@ -157,6 +142,18 @@ public class DetectCommandTest extends AbstractMoiraSubcommandTest {
             optionDescriptionPattern(
                 "-m, --mode=<mode>",
                 "Dependency detection algorithm. Valid values are: tuscan-packed, tuscan-class-only, tuscan-intra-class, tuscan-inter-class, target-pairs, moira (default: tuscan-packed)")));
+
+    assertSuccessfulExecution(code);
+    assertThat(
+        stdout.toString(),
+        matchesPattern(
+            optionDescriptionPattern("--app-cp=<classpath>", "The application's classpath")));
+
+    assertThat(
+        stdout.toString(),
+        matchesPattern(
+            optionDescriptionPattern(
+                "<source>", "The file containing the testsuite or the list of test pairs")));
   }
 
   private void setupDetectMocks(

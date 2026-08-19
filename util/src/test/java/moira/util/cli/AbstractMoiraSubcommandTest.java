@@ -14,7 +14,7 @@ public abstract class AbstractMoiraSubcommandTest extends AbstractMoiraCommandTe
   @ParameterizedTest
   @ValueSource(strings = {"-h", "--help"})
   public void testHelpPageContainsHelpOption(final String help) {
-    final int code = cmd.execute("verify", help);
+    final int code = cmd.execute(subcommand, help);
 
     assertSuccessfulExecution(code);
     assertThat(

@@ -59,7 +59,7 @@ public class HelpCommandTest extends AbstractMoiraCommandTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"list", "verify"})
+  @ValueSource(strings = {"list", "verify", "profile", "detect"})
   public void testCommandHelpPage(final String command) {
     final int code = cmd.execute("help", command);
 

@@ -42,18 +42,7 @@ public class MoiraUtilTest extends AbstractMoiraCommandTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"--help", "-h"})
-  public void testHelpFlagIsPresent(final String flag) {
-    final int code = cmd.execute(flag);
-
-    assertSuccessfulExecution(code);
-    assertThat(
-        stdout.toString(),
-        matchesPattern(optionDescriptionPattern("-h, --help", "Display help and exit")));
-  }
-
-  @ParameterizedTest
-  @ValueSource(strings = {"--help", "-h"})
-  public void testHelpContainsDescription(final String flag) {
+  public void testHelpPageContainsProgramDescriptionAndOptions(final String flag) {
     final int code = cmd.execute(flag);
 
     assertSuccessfulExecution(code);
@@ -61,16 +50,12 @@ public class MoiraUtilTest extends AbstractMoiraCommandTest {
     assertThat(
         stdout.toString(),
         containsString("A tool to detect dependencies between tests of a testsuite."));
-  }
 
-  @ParameterizedTest
-  @ValueSource(strings = {"--help", "-h"})
-  public void testHelpDescribesVersionFlag(final String flag) {
-    final int code = cmd.execute(flag);
-
-    assertSuccessfulExecution(code);
     assertThat(
         stdout.toString(),
         matchesPattern(optionDescriptionPattern("-V, --version", "Display version and exit")));
+    assertThat(
+        stdout.toString(),
+        matchesPattern(optionDescriptionPattern("-h, --help", "Display help and exit")));
   }
 }

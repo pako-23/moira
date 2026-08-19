@@ -45,7 +45,7 @@ public class DetectCommand implements Callable<Integer> {
   private DetectionMode mode;
 
   @Option(
-      description = "Display this help and exit.",
+      description = "Display help and exit.",
       names = {"-h", "--help"},
       usageHelp = true)
   private boolean help;

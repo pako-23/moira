@@ -130,6 +130,18 @@ public class VerifyCommandTest extends AbstractMoiraSubcommandTest {
     final int code = cmd.execute("verify", help);
 
     assertSuccessfulExecution(code);
+  }
+
+  @Test
+  public void testHelpPageContainsParametersDescription() {
+    final int code = cmd.execute("verify", "-h");
+
+    assertSuccessfulExecution(code);
+    assertThat(
+        stdout.toString(),
+        matchesPattern(
+            optionDescriptionPattern("--app-cp=<classpath>", "The application's classpath")));
+
     assertThat(
         stdout.toString(),
         matchesPattern(
@@ -138,18 +150,6 @@ public class VerifyCommandTest extends AbstractMoiraSubcommandTest {
         stdout.toString(),
         matchesPattern(
             optionDescriptionPattern("<second-test>", "The second test in the pair to verify")));
-  }
-
-  @ParameterizedTest
-  @ValueSource(strings = {"-h", "--help"})
-  public void testHelpPageContainsAppClasspathParameter(final String help) {
-    final int code = cmd.execute("verify", help);
-
-    assertSuccessfulExecution(code);
-    assertThat(
-        stdout.toString(),
-        matchesPattern(
-            optionDescriptionPattern("--app-cp=<classpath>", "The application's classpath")));
   }
 
   private static Stream<Arguments> providePairsForVerify() {

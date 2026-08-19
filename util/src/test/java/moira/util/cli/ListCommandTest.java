@@ -47,22 +47,27 @@ public class ListCommandTest extends AbstractMoiraSubcommandTest {
 
   @Test
   public void testTestSuiteWithSingleTestCase() {
-    assertListOutput(tests[0]);
+    assertListOutput(new File("testsuite"), tests[0]);
   }
 
   @Test
   public void testTestSuiteWithTwoTestCases() {
-    assertListOutput(tests[0], tests[1]);
+    assertListOutput(new File("testsuite"), tests[0], tests[1]);
   }
 
   @Test
   public void testTestSuiteMultipleTestCases() {
-    assertListOutput(tests);
+    assertListOutput(new File("testsuite"), tests);
+  }
+
+  @Test
+  public void testDifferentTestsuiteFile() {
+    assertListOutput(new File("someothertestsuite"), tests);
   }
 
   @Test
   public void testEmptyAppClassPath() {
-    setupReturnedTests(tests);
+    setupReturnedTests(new File("testsuite"), tests);
     assertSuccessfulExecution(cmd.execute("list", "--app-cp", "", "testsuite"));
     assertTestSuiteOutput(tests);
   }
@@ -70,7 +75,7 @@ public class ListCommandTest extends AbstractMoiraSubcommandTest {
   @ParameterizedTest
   @ValueSource(strings = {"/app", "/app:/app/tests"})
   public void testSetAppClassPath(final String classpath) {
-    setupReturnedTests(tests);
+    setupReturnedTests(new File("testsuite"), tests);
     assertSuccessfulExecution(cmd.execute("list", "--app-cp", classpath, "testsuite"));
     verify(service, times(1)).setAppClassPath(classpath);
     assertTestSuiteOutput(tests);
@@ -90,12 +95,16 @@ public class ListCommandTest extends AbstractMoiraSubcommandTest {
     assertFailedExecution(code);
   }
 
-  @ParameterizedTest
-  @ValueSource(strings = {"-h", "--help"})
-  public void testHelpPageContainsTestsuiteParameter(final String help) {
-    final int code = cmd.execute("list", help);
+  @Test
+  public void testHelpPageContainsParameterDescriptions() {
+    final int code = cmd.execute("list", "-h");
 
     assertSuccessfulExecution(code);
+
+    assertThat(
+        stdout.toString(),
+        matchesPattern(
+            optionDescriptionPattern("--app-cp=<classpath>", "The application's classpath")));
     assertThat(
         stdout.toString(),
         matchesPattern(
@@ -103,21 +112,8 @@ public class ListCommandTest extends AbstractMoiraSubcommandTest {
                 "<testsuite>", "The path to a file containing the testsuite")));
   }
 
-  @ParameterizedTest
-  @ValueSource(strings = {"-h", "--help"})
-  public void testHelpPageContainsAppClasspathParameter(final String help) {
-    final int code = cmd.execute("list", help);
-
-    assertSuccessfulExecution(code);
-    assertThat(
-        stdout.toString(),
-        matchesPattern(
-            optionDescriptionPattern("--app-cp=<classpath>", "The application's classpath")));
-  }
-
-  private void setupReturnedTests(final TestCase... testsuite) {
-    when(service.discoverTestSuite(new File("testsuite")))
-        .thenReturn(new TestSuite(Arrays.asList(testsuite)));
+  private void setupReturnedTests(final File file, final TestCase... testsuite) {
+    when(service.discoverTestSuite(file)).thenReturn(new TestSuite(Arrays.asList(testsuite)));
   }
 
   private void assertTestSuiteOutput(final TestCase... testsuite) {
@@ -127,9 +123,9 @@ public class ListCommandTest extends AbstractMoiraSubcommandTest {
     assertThat(lines, contains(expectedLines));
   }
 
-  private void assertListOutput(final TestCase... testsuite) {
-    setupReturnedTests(testsuite);
-    assertSuccessfulExecution(cmd.execute("list", "testsuite"));
+  private void assertListOutput(final File file, final TestCase... testsuite) {
+    setupReturnedTests(file, testsuite);
+    assertSuccessfulExecution(cmd.execute("list", file.toString()));
     assertTestSuiteOutput(testsuite);
   }
 }

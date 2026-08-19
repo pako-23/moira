@@ -13,14 +13,14 @@ public class DetectionModeTest {
 
   @ParameterizedTest
   @MethodSource("provideDetectionModeTextPairs")
-  public void testToString(final DetectionMode mode, final String label) {
-    assertThat(mode.toString(), is(label));
+  public void testToString(final DetectionMode mode, final String value) {
+    assertThat(mode.toString(), is(value));
   }
 
   @ParameterizedTest
   @MethodSource("provideDetectionModeTextPairs")
-  public void testFromString(final DetectionMode mode, final String label) {
-    assertThat(DetectionMode.fromString(label), is(mode));
+  public void testFromString(final DetectionMode mode, final String value) {
+    assertThat(DetectionMode.fromString(value), is(mode));
   }
 
   @Test

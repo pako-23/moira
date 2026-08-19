@@ -19,8 +19,8 @@ public enum DetectionMode {
     return name;
   }
 
-  public static DetectionMode fromString(final String label) {
-    for (final DetectionMode mode : values()) if (mode.name.equals(label)) return mode;
+  public static DetectionMode fromString(final String value) {
+    for (final DetectionMode mode : values()) if (mode.name.equals(value)) return mode;
 
     return null;
   }
