@@ -137,7 +137,7 @@ public class DetectCommandTest extends AbstractMoiraSubcommandTest {
 
   private void setupDetectMocks(
       final DetectionMode mode, final File source, final String[] output) {
-    when(factory.createScheduleGenerator(mode, source)).thenReturn(generator);
+    when(factory.createScheduleGenerator(mode, service, source)).thenReturn(generator);
     when(factory.createFlakyPairsCollector(mode, source)).thenReturn(collector);
     doAnswer(
             serviceInvocation -> {

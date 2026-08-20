@@ -65,10 +65,10 @@ public class DetectCommand implements Callable<Integer> {
     final MoiraFactory factory = parent.factory();
     final Service service = factory.createService();
 
-    final ScheduleGenerator generator = factory.createScheduleGenerator(mode, source);
-    final FlakyPairsCollector collector = factory.createFlakyPairsCollector(mode, source);
-
     if (!classpath.isEmpty()) service.setAppClassPath(classpath);
+
+    final ScheduleGenerator generator = factory.createScheduleGenerator(mode, service, source);
+    final FlakyPairsCollector collector = factory.createFlakyPairsCollector(mode, source);
 
     service.findFlakyPairs(generator, collector);
     collector.print(spec.commandLine().getOut());
