@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import moira.util.FlakyPairsCollector;
+import moira.util.collector.FlakyPairsCollector;
 import moira.util.execution.Executor;
 import moira.util.model.TestCase;
 import moira.util.model.TestSuite;

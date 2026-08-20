@@ -3,7 +3,7 @@ package moira.util.service;
 import java.io.File;
 import java.util.Map;
 import java.util.Set;
-import moira.util.FlakyPairsCollector;
+import moira.util.collector.FlakyPairsCollector;
 import moira.util.model.TestCase;
 import moira.util.model.TestSuite;
 import moira.util.runner.ScheduleGenerator;

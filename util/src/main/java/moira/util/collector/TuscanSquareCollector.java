@@ -1,4 +1,4 @@
-package moira.util;
+package moira.util.collector;
 
 import java.util.HashMap;
 import java.util.HashSet;

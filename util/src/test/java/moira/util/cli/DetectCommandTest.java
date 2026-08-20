@@ -7,7 +7,7 @@ import static org.mockito.Mockito.*;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.stream.Stream;
-import moira.util.FlakyPairsCollector;
+import moira.util.collector.FlakyPairsCollector;
 import moira.util.factory.DetectionMode;
 import moira.util.runner.ScheduleGenerator;
 import org.junit.jupiter.api.BeforeEach;

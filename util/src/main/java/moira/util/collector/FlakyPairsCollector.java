@@ -1,4 +1,4 @@
-package moira.util;
+package moira.util.collector;
 
 import java.io.PrintWriter;
 import java.util.HashMap;

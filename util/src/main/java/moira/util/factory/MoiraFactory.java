@@ -1,7 +1,7 @@
 package moira.util.factory;
 
 import java.io.File;
-import moira.util.FlakyPairsCollector;
+import moira.util.collector.FlakyPairsCollector;
 import moira.util.runner.ScheduleGenerator;
 import moira.util.service.Service;
 

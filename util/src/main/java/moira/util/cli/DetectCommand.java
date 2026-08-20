@@ -2,7 +2,7 @@ package moira.util.cli;
 
 import java.io.File;
 import java.util.concurrent.Callable;
-import moira.util.FlakyPairsCollector;
+import moira.util.collector.FlakyPairsCollector;
 import moira.util.factory.DetectionMode;
 import moira.util.factory.MoiraFactory;
 import moira.util.runner.ScheduleGenerator;

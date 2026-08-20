@@ -1,4 +1,4 @@
-package moira.util;
+package moira.util.collector;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
