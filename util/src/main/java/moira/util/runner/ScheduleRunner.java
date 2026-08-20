@@ -11,6 +11,7 @@ import java.util.concurrent.Semaphore;
 import moira.util.execution.Executor;
 import moira.util.model.Outcome;
 import moira.util.model.TestCase;
+import moira.util.schedules.ScheduleGenerator;
 
 public class ScheduleRunner extends Thread {
   private static final boolean isStderrTerminal = CLibrary.INSTANCE.isatty(2) != 0;

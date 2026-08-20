@@ -1,6 +1,6 @@
-package moira.util.tuscan;
+package moira.util.schedules;
 
-import static moira.util.tuscan.TuscanSquareMatcher.*;
+import static moira.util.schedules.TuscanSquareMatcher.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import org.junit.jupiter.params.ParameterizedTest;

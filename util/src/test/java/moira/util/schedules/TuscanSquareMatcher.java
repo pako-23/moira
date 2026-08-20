@@ -1,4 +1,4 @@
-package moira.util.tuscan;
+package moira.util.schedules;
 
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;

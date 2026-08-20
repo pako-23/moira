@@ -12,7 +12,7 @@ import moira.util.collector.FlakyPairsCollector;
 import moira.util.execution.Executor;
 import moira.util.model.TestCase;
 import moira.util.model.TestSuite;
-import moira.util.runner.ScheduleGenerator;
+import moira.util.schedules.ScheduleGenerator;
 
 public class DefaultService implements Service {
 

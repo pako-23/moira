@@ -1,11 +1,10 @@
-package moira.util.tuscan;
+package moira.util.schedules;
 
 import java.util.ArrayList;
 import java.util.List;
 import moira.util.model.Range;
 import moira.util.model.TestCase;
 import moira.util.model.TestSuite;
-import moira.util.runner.ScheduleGenerator;
 
 public final class TuscanInterClass implements ScheduleGenerator {
   private final TestSuite suite;

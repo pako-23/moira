@@ -1,4 +1,4 @@
-package moira.util.tuscan;
+package moira.util.schedules;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,7 +13,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import moira.util.model.TestCase;
-import moira.util.runner.ScheduleGenerator;
 
 public final class TargetPairsGenerator implements ScheduleGenerator {
   private final Map<TestCase, Set<TestCase>> crossClassPairs;

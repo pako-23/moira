@@ -20,25 +20,23 @@ import moira.util.collector.TuscanSquareCollector;
 import moira.util.model.Outcome;
 import moira.util.model.TestCase;
 import moira.util.model.TestSuite;
-import moira.util.runner.ScheduleGenerator;
+import moira.util.schedules.PairCover;
+import moira.util.schedules.ScheduleGenerator;
+import moira.util.schedules.TargetPairsGenerator;
+import moira.util.schedules.TuscanClassOnly;
+import moira.util.schedules.TuscanInterClass;
+import moira.util.schedules.TuscanIntraClass;
+import moira.util.schedules.TuscanPacked;
 import moira.util.service.DefaultService;
 import moira.util.service.Service;
-import moira.util.tuscan.PairCover;
-import moira.util.tuscan.TargetPairsGenerator;
-import moira.util.tuscan.TuscanClassOnly;
-import moira.util.tuscan.TuscanInterClass;
-import moira.util.tuscan.TuscanIntraClass;
-import moira.util.tuscan.TuscanPacked;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
 
-@ExtendWith(MockitoExtension.class)
 public class DefaultFactoryTest {
 
   private static final TestCase TEST_1 = TestCase.fromId("com.example.ExampleTest[desc1]");
@@ -66,6 +64,7 @@ public class DefaultFactoryTest {
 
   @BeforeEach
   public void setup() {
+    MockitoAnnotations.openMocks(this);
     factory = new DefaultFactory();
   }
 

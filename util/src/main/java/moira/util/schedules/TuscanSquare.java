@@ -1,4 +1,4 @@
-package moira.util.tuscan;
+package moira.util.schedules;
 
 public final class TuscanSquare {
   private TuscanSquare() {}

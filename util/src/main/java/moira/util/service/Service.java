@@ -6,7 +6,7 @@ import java.util.Set;
 import moira.util.collector.FlakyPairsCollector;
 import moira.util.model.TestCase;
 import moira.util.model.TestSuite;
-import moira.util.runner.ScheduleGenerator;
+import moira.util.schedules.ScheduleGenerator;
 
 public interface Service {
 

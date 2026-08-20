@@ -1,4 +1,4 @@
-package moira.util.runner;
+package moira.util.schedules;
 
 import moira.util.model.TestCase;
 

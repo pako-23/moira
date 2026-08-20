@@ -13,15 +13,15 @@ import moira.util.collector.PairsCollector;
 import moira.util.collector.TuscanSquareCollector;
 import moira.util.execution.ForkExecutor;
 import moira.util.model.TestCase;
-import moira.util.runner.ScheduleGenerator;
+import moira.util.schedules.PairCover;
+import moira.util.schedules.ScheduleGenerator;
+import moira.util.schedules.TargetPairsGenerator;
+import moira.util.schedules.TuscanClassOnly;
+import moira.util.schedules.TuscanInterClass;
+import moira.util.schedules.TuscanIntraClass;
+import moira.util.schedules.TuscanPacked;
 import moira.util.service.DefaultService;
 import moira.util.service.Service;
-import moira.util.tuscan.PairCover;
-import moira.util.tuscan.TargetPairsGenerator;
-import moira.util.tuscan.TuscanClassOnly;
-import moira.util.tuscan.TuscanInterClass;
-import moira.util.tuscan.TuscanIntraClass;
-import moira.util.tuscan.TuscanPacked;
 
 public class DefaultFactory implements MoiraFactory {
   @Override

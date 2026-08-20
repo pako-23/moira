@@ -1,11 +1,10 @@
-package moira.util.tuscan;
+package moira.util.schedules;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import moira.util.model.TestCase;
-import moira.util.runner.ScheduleGenerator;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;

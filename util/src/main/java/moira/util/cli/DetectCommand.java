@@ -5,7 +5,7 @@ import java.util.concurrent.Callable;
 import moira.util.collector.FlakyPairsCollector;
 import moira.util.factory.DetectionMode;
 import moira.util.factory.MoiraFactory;
-import moira.util.runner.ScheduleGenerator;
+import moira.util.schedules.ScheduleGenerator;
 import moira.util.service.Service;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ITypeConverter;

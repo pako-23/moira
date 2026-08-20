@@ -1,10 +1,10 @@
-package moira.util.tuscan;
+package moira.util.schedules;
 
-import static moira.util.tuscan.PairCoverMatcher.*;
-import static moira.util.tuscan.PossibleBrittleMatcher.*;
-import static moira.util.tuscan.TuscanAllPairsMatcher.*;
-import static moira.util.tuscan.TuscanClassOnlyMatcher.*;
-import static moira.util.tuscan.TuscanIntraClassMatcher.*;
+import static moira.util.schedules.PairCoverMatcher.*;
+import static moira.util.schedules.PossibleBrittleMatcher.*;
+import static moira.util.schedules.TuscanAllPairsMatcher.*;
+import static moira.util.schedules.TuscanClassOnlyMatcher.*;
+import static moira.util.schedules.TuscanIntraClassMatcher.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.*;
 

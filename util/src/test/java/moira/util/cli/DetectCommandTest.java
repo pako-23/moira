@@ -9,7 +9,7 @@ import java.io.PrintWriter;
 import java.util.stream.Stream;
 import moira.util.collector.FlakyPairsCollector;
 import moira.util.factory.DetectionMode;
-import moira.util.runner.ScheduleGenerator;
+import moira.util.schedules.ScheduleGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
