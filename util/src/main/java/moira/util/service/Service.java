@@ -12,6 +12,8 @@ public interface Service {
 
   public void setAppClassPath(final String classpath);
 
+  public void setLogger(final Logger logger);
+
   public TestSuite discoverTestSuite(final File filename);
 
   public boolean isIndependentPair(final TestCase first, final TestCase second);
