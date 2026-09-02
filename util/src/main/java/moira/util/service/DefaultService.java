@@ -53,7 +53,7 @@ public class DefaultService implements Service {
     executor
         .execution()
         .withStdIn(input)
-        .withArguments(moira.util.list.TestCasesLister.class.getName())
+        .withArguments(moira.util.service.TestCasesLister.class.getName())
         .withStdOut(line -> tests.add(TestCase.fromId(line)))
         .exec();
 

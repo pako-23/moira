@@ -36,7 +36,7 @@ public class DefaultServiceListTestCasesTest extends DefaultServiceTest {
     service.discoverTestSuite(createTestSuiteFile());
 
     assertThat(
-        executions[0].getArguments(), hasItem(moira.util.list.TestCasesLister.class.getName()));
+        executions[0].getArguments(), hasItem(moira.util.service.TestCasesLister.class.getName()));
   }
 
   @ParameterizedTest

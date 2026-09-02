@@ -1,4 +1,4 @@
-package moira.util.list;
+package moira.util.service;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -45,19 +45,15 @@ public class TestCasesLister {
     final TestRunner runner = new JUnitRunner();
     final List<TestCase> tests = new ArrayList<>();
 
-    for (final String testClass : classes) {
-      try {
-        runner
-            .request(testClass)
-            .withFilter(
-                test -> {
-                  tests.add(test);
-                  return false;
-                })
-            .run();
-      } catch (final RuntimeException e) {
-      }
-    }
+    if (classes.length == 0) return tests;
+
+    runner
+        .request(classes)
+        .withFilter(
+            test -> {
+              tests.add(test);
+              return true;
+            });
 
     return tests;
   }

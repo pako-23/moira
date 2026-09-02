@@ -1,4 +1,4 @@
-package moira.util.list;
+package moira.util.service;
 
 public class SecondExampleTest {
   @org.junit.Test

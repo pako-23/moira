@@ -1,8 +1,9 @@
-package moira.util.list;
+package moira.util.service;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
+import com.example.TestAppRegistry;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -10,30 +11,31 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import moira.util.execution.Executor;
 import moira.util.execution.ForkExecutor;
-import moira.util.model.SimpleTestCase;
 import moira.util.model.TestCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class TestCasesListerTest {
 
   private ByteArrayOutputStream output;
-  private static final Map<String, TestCase[]> testClasses;
 
-  static {
-    testClasses = new HashMap<>();
+  // private static final Map<String, TestCase[]> testClasses;
 
-    registerTestClass(ExampleTest.class, "testExample");
-    registerTestClass(SecondExampleTest.class, "testSomething", "testSomethingElse");
-    registerTestClass(PrintingTest.class, "testPrinting");
-  }
+  // static {
+  //   testClasses = new HashMap<>();
+
+  //   registerTestClass(ExampleTest.class, "testExample");
+  //   registerTestClass(SecondExampleTest.class, "testSomething", "testSomethingElse");
+  //   registerTestClass(PrintingTest.class, "testPrinting");
+  // }
 
   @BeforeEach
   public void setup() {
@@ -48,37 +50,10 @@ public class TestCasesListerTest {
     assertThat(output.toString(), is(emptyString()));
   }
 
-  @Test
-  public void testSingleTestClass() throws IOException {
-    final String[] inputTestClasses = new String[] {ExampleTest.class.getName()};
-    final ByteArrayInputStream input =
-        new ByteArrayInputStream(String.join("\n", inputTestClasses).getBytes());
-
-    TestCasesLister.run(input, output);
-
-    assertTestCasesFound(parseDiscoveredTestCases(), inputTestClasses);
-  }
-
-  @Test
-  public void testMultipleTestClass() throws IOException {
-    final String[] inputTestClasses =
-        new String[] {ExampleTest.class.getName(), SecondExampleTest.class.getName()};
-    final ByteArrayInputStream input =
-        new ByteArrayInputStream(String.join("\n", inputTestClasses).getBytes());
-
-    TestCasesLister.run(input, output);
-
-    assertTestCasesFound(parseDiscoveredTestCases(), inputTestClasses);
-  }
-
-  @Test
-  public void testNotExistingTestClass() throws IOException {
-    final String[] inputTestClasses =
-        new String[] {
-          ExampleTest.class.getName(),
-          SecondExampleTest.class.getName(),
-          "moira.util.list.SomeNotExistingClass"
-        };
+  @ParameterizedTest
+  @MethodSource("provideTestClasses")
+  public void testSingleTestClass(final String[] inputTestClasses) throws IOException {
+    //    final String[] inputTestClasses = new String[] {ExampleTest.class.getName()};
     final ByteArrayInputStream input =
         new ByteArrayInputStream(String.join("\n", inputTestClasses).getBytes());
 
@@ -89,7 +64,7 @@ public class TestCasesListerTest {
 
   @Test
   public void testPrintingTest() {
-    final String[] inputTestClasses = new String[] {PrintingTest.class.getName()};
+    final String[] inputTestClasses = new String[] {com.example.PrintingTest.class.getName()};
     final ByteArrayInputStream input =
         new ByteArrayInputStream(String.join("\n", inputTestClasses).getBytes());
     final Executor executor = new ForkExecutor();
@@ -103,7 +78,7 @@ public class TestCasesListerTest {
         .withArguments(
             Stream.concat(
                     arguments.stream().filter(name -> name.startsWith("-javaagent")),
-                    Stream.of("moira.util.list.TestCasesLister"))
+                    Stream.of(moira.util.service.TestCasesLister.class.getName()))
                 .toArray(String[]::new))
         .withStdIn(input)
         .withStdOut(line -> discoveredTestCases.add(TestCase.fromId(line)))
@@ -112,12 +87,35 @@ public class TestCasesListerTest {
     assertTestCasesFound(discoveredTestCases, inputTestClasses);
   }
 
+  private static Stream<Arguments> provideTestClasses() {
+    return Stream.of(
+        Arguments.of((Object) new String[] {com.example.JUnit4ExampleTest.class.getName()}),
+        Arguments.of((Object) new String[] {com.example.JUnit4SubclassTest.class.getName()}),
+        Arguments.of((Object) new String[] {com.example.JUnit3SuiteTestAll.class.getName()}),
+        Arguments.of(
+            (Object)
+                new String[] {
+                  com.example.JUnit4ExampleTest.class.getName(),
+                  com.example.JUnit4SubclassTest.class.getName(),
+                  com.example.JUnit3SuiteTestAll.class.getName(),
+                  com.example.JUnit3ExampleTest.class.getName(),
+                }),
+        Arguments.of(
+            (Object)
+                new String[] {
+                  com.example.JUnit4ExampleTest.class.getName(),
+                  com.example.JUnit3ExampleTest.class.getName(),
+                  "com.example.SomeNotExistingTestClass"
+                }));
+  }
+
   private void assertTestCasesFound(
       final List<TestCase> discovered, final String[] inputTestClasses) {
     final TestCase[] expected =
-        Arrays.asList(inputTestClasses).stream()
-            .filter(className -> testClasses.containsKey(className))
-            .flatMap(className -> Arrays.asList(testClasses.get(className)).stream())
+        Stream.of(inputTestClasses)
+            .flatMap(
+                className ->
+                    Stream.of(TestAppRegistry.getTestCases(className)).map(TestCase::fromId))
             .toArray(TestCase[]::new);
 
     assertThat(discovered.size(), is(expected.length));
@@ -128,16 +126,5 @@ public class TestCasesListerTest {
     return Arrays.asList(output.toString().trim().split("\\n")).stream()
         .map(TestCase::fromId)
         .collect(Collectors.toList());
-  }
-
-  private static void registerTestClass(final Class<?> clazz, final String... tests) {
-    testClasses.put(
-        clazz.getName(),
-        Arrays.asList(tests).stream()
-            .map(
-                test ->
-                    new SimpleTestCase(
-                        clazz.getName(), String.format("%s(%s)", test, clazz.getName())))
-            .toArray(TestCase[]::new));
   }
 }
