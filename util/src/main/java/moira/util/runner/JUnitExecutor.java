@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import moira.util.junit.AllDefaultPossibilitiesBuilder;
+import moira.util.junit.JUnitRunnerBuilder;
 import moira.util.model.SimpleTestCase;
 import moira.util.model.TestCase;
 import org.junit.internal.runners.ErrorReportingRunner;
@@ -110,7 +110,7 @@ public class JUnitExecutor {
 
   private static Request classes(final Class<?>... classes) {
     try {
-      final AllDefaultPossibilitiesBuilder builder = new AllDefaultPossibilitiesBuilder();
+      final JUnitRunnerBuilder builder = new JUnitRunnerBuilder();
       final Computer computer = new Computer();
       final Runner suite = computer.getSuite(builder, classes);
       return runner(suite);

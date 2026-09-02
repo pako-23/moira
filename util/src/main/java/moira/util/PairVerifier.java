@@ -85,7 +85,7 @@ public class PairVerifier {
     junit.addListener(listener);
     final boolean success = junit.run(request).wasSuccessful();
 
-    listener.print(System.out);
+    // listener.print(System.out);
 
     return success;
   }

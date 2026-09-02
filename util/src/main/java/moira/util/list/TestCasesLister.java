@@ -8,8 +8,9 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
-import moira.util.junit.ScheduleRun;
+import moira.util.junit.JUnitRunner;
 import moira.util.model.TestCase;
+import moira.util.runner.TestRunner;
 
 public class TestCasesLister {
 
@@ -28,7 +29,7 @@ public class TestCasesLister {
     outputTestCases(output, testCases);
   }
 
-  private static Class<?>[] readTestClasses(final InputStream input) throws IOException {
+  private static String[] readTestClasses(final InputStream input) throws IOException {
     final List<String> classes = new ArrayList<>();
 
     try (final BufferedReader reader = new BufferedReader(new InputStreamReader(input))) {
@@ -37,25 +38,28 @@ public class TestCasesLister {
       while ((line = reader.readLine()) != null) classes.add(line);
     }
 
-    return classes.stream()
-        .map(
-            className -> {
-              try {
-                return Class.forName(className);
-              } catch (final ClassNotFoundException e) {
-                return null;
-              }
-            })
-        .filter(clazz -> clazz != null)
-        .toArray(Class<?>[]::new);
+    return classes.stream().toArray(String[]::new);
   }
 
-  private static List<TestCase> detectTestCases(final Class<?>... classes) {
-    final TestCasesListerFilter filter = new TestCasesListerFilter();
+  private static List<TestCase> detectTestCases(final String... classes) {
+    final TestRunner runner = new JUnitRunner();
+    final List<TestCase> tests = new ArrayList<>();
 
-    new ScheduleRun(classes).withFilter(filter).run();
+    for (final String testClass : classes) {
+      try {
+        runner
+            .request(testClass)
+            .withFilter(
+                test -> {
+                  tests.add(test);
+                  return false;
+                })
+            .run();
+      } catch (final RuntimeException e) {
+      }
+    }
 
-    return filter.getTestCases();
+    return tests;
   }
 
   private static void outputTestCases(final OutputStream output, final List<TestCase> testCases) {

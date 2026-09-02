@@ -7,6 +7,7 @@ dependencies {
     compileOnly(libs.junit)
     implementation(libs.picocli)
     implementation(libs.jna)
+    testImplementation(project(":testapp"))
     testImplementation(libs.junit)
 }
 

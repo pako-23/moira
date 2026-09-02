@@ -19,4 +19,5 @@ plugins {
 include("agent")
 include("moira")
 include("util")
+include("testapp")
 include("test")

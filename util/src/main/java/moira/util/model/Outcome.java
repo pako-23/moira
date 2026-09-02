@@ -16,4 +16,18 @@ public class Outcome {
   public TestCase testCase() {
     return testCase;
   }
+
+  @Override
+  public boolean equals(final Object obj) {
+    if (!(obj instanceof Outcome)) return false;
+
+    final Outcome other = (Outcome) obj;
+
+    return pass == other.pass && testCase.equals(other.testCase);
+  }
+
+  @Override
+  public String toString() {
+    return testCase.toString() + " " + (pass ? "OK" : "FAIL");
+  }
 }

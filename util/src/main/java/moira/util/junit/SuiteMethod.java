@@ -3,45 +3,41 @@ package moira.util.junit;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import junit.framework.Test;
 import junit.framework.TestSuite;
-import org.junit.internal.runners.JUnit38ClassRunner;
 
-public class SuiteMethod extends JUnit38ClassRunner {
-  public SuiteMethod(Class<?> klass) throws Throwable {
-    super(testFromSuiteMethod(klass));
+public class SuiteMethod extends JUnit3Runner {
+  public SuiteMethod(final Class<?> testClass) throws Throwable {
+    super(testClass, testFromSuiteMethod(testClass));
   }
 
-  public static Test testFromSuiteMethod(final Class<?> klass) throws Throwable {
+  private static ArrayList<Test> testFromSuiteMethod(final Class<?> testClass) throws Throwable {
     try {
-      final Method suiteMethod = klass.getMethod("suite");
+      final Method suiteMethod = testClass.getMethod("suite");
       if (!Modifier.isStatic(suiteMethod.getModifiers())) {
-        throw new Exception(klass.getName() + ".suite() must be static");
+        throw new Exception(testClass.getName() + ".suite() must be static");
       }
 
       final Object suite = suiteMethod.invoke(null);
+      final ArrayList<Test> tests = new ArrayList<>();
 
-      if (suite instanceof TestSuite) {
-        final TestSuite flattenedSuite = new TestSuite(klass.getName());
+      if (suite instanceof TestSuite) flattenTestSuite(tests, (TestSuite) suite);
+      else tests.add((Test) suite);
 
-        flattenTestSuite(flattenedSuite, (TestSuite) suite);
+      return tests;
 
-        return flattenedSuite;
-      }
-
-      return (Test) suite;
-
-    } catch (InvocationTargetException e) {
+    } catch (final InvocationTargetException e) {
       throw e.getCause();
     }
   }
 
-  private static void flattenTestSuite(final TestSuite flattenedSuite, final TestSuite suite) {
+  private static void flattenTestSuite(final ArrayList<Test> tests, final TestSuite suite) {
     for (int i = 0; i < suite.testCount(); ++i) {
       final Test test = suite.testAt(i);
 
-      if (test instanceof TestSuite) flattenTestSuite(flattenedSuite, (TestSuite) test);
-      else flattenedSuite.addTest(test);
+      if (test instanceof TestSuite) flattenTestSuite(tests, (TestSuite) test);
+      else tests.add(test);
     }
   }
 }
