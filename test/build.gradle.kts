@@ -7,10 +7,10 @@ sourceSets {
 }
 
 dependencies {
-    "appImplementation"(libs.junit)
     implementation(project(":moira"))
     implementation(project(":util"))
-    testImplementation(sourceSets.named("app").get().output)
+    implementation(project(":testapp"))
+    implementation(libs.junit)
     testImplementation(libs.picocli)
 }
 
@@ -26,16 +26,5 @@ tasks.test {
             .get()
             .asFile
             .absolutePath
-    )
-
-    val junit = configurations
-            .getByName("appRuntimeClasspath")
-            .files
-            .filter { it.name.startsWith("junit-") }
-
-    systemProperty(
-        "app.classpath",
-        (junit + sourceSets.named("app").get().output)
-            .joinToString(File.pathSeparator) { it.absolutePath }
     )
 }

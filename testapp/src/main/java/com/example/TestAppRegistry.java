@@ -13,6 +13,35 @@ public class TestAppRegistry {
         tests = new HashMap<>();
         passing = new HashMap<>();
 
+        registerTestCasesShortDescriptionEntry(com.example.AppArrayTest.class,
+            new Entry("testWriteFirstIndex", true),
+            new Entry("testWriteSecondIndex", true),
+            new Entry("testReadFirstIndex", true),
+            new Entry("testReadSecondIndex", true));
+
+        registerTestCasesShortDescriptionEntry(com.example.AppObjectFieldTest.class,
+            new Entry("testReadFieldX", true),
+            new Entry("testWriteFieldX", true),
+            new Entry("testReadFieldY", true),
+            new Entry("testWriteFieldY", true));
+
+        registerTestCasesShortDescriptionEntry(com.example.AppStaticFieldTest.class,
+            new Entry("testReadFieldX", true),
+            new Entry("testWriteFieldX", true),
+            new Entry("testReadFieldY", true),
+            new Entry("testWriteFieldY", true));
+
+        registerTestCasesShortDescriptionEntry(com.example.OtherPassingTest.class,
+            new Entry("testPass1", true),
+            new Entry("testPass2", true));
+
+        registerTestCasesShortDescriptionEntry(com.example.SimpleFailingTest.class,
+            new Entry("testFail", false));
+
+        registerTestCasesShortDescriptionEntry(com.example.SimplePassingTest.class,
+            new Entry("testPass1", true),
+            new Entry("testPass2", true));
+
         registerTestCasesShortDescriptionEntry(com.example.JUnit4ExampleTest.class,
             new Entry("testSimplePassing", true),
             new Entry("testSimpleFailing", false),

@@ -3,6 +3,7 @@ package moira.test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
+import com.example.TestAppRegistry;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -10,80 +11,20 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.nio.file.Files;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import moira.util.execution.Execution;
 import moira.util.execution.ForkExecutor;
-import moira.util.model.IndexedTestCase;
-import moira.util.model.SimpleTestCase;
 import moira.util.model.TestCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class MoiraListTest {
 
-  private static Map<String, TestCase[]> tests;
   private Execution execution;
   private File testsuite;
   private StringWriter stdout;
-
-  static {
-    tests = new HashMap<>();
-
-    registerTestCase(
-        "com.example.AppArrayTest",
-        "testWriteFirstIndex",
-        "testWriteSecondIndex",
-        "testReadFirstIndex",
-        "testReadSecondIndex");
-    registerTestCase(
-        "com.example.AppObjectFieldTest",
-        "testReadFieldX",
-        "testWriteFieldX",
-        "testReadFieldY",
-        "testWriteFieldY");
-    registerTestCase(
-        "com.example.AppStaticFieldTest",
-        "testReadFieldX",
-        "testWriteFieldX",
-        "testReadFieldY",
-        "testWriteFieldY");
-    registerTestCase("com.example.OtherPassingTest", "testPass1", "testPass2");
-    registerTestCase("com.example.SimplePassingTest", "testPass1", "testPass2");
-    registerTestCase("com.example.SimpleFailingTest", "testFail");
-    registerTestCase(
-        "com.example.ConcreteClassTest",
-        "testSomething",
-        "testSomethingAbstract",
-        "testOnlyInConcrete");
-    registerTestCase("com.example.JUnit3TestMethodTest", "testSomething");
-
-    tests.put(
-        "com.example.JUnit3SuiteTestAll",
-        new TestCase[] {
-          new SimpleTestCase(
-              "com.example.JUnit3SuiteTestAll",
-              "testSomething(com.example.JUnit3FirstChildSimpleTest)"),
-          new SimpleTestCase(
-              "com.example.JUnit3SuiteTestAll",
-              "testSomethingElse(com.example.JUnit3FirstChildSimpleTest)"),
-          new IndexedTestCase(
-              "com.example.JUnit3SuiteTestAll",
-              "testSomething(com.example.JUnit3ParametrizedTest)",
-              0),
-          new IndexedTestCase(
-              "com.example.JUnit3SuiteTestAll",
-              "testSomething(com.example.JUnit3ParametrizedTest)",
-              1),
-          new IndexedTestCase(
-              "com.example.JUnit3SuiteTestAll",
-              "testSomething(com.example.JUnit3ParametrizedTest)",
-              2),
-        });
-  }
 
   @BeforeEach
   public void setup() throws IOException {
@@ -95,9 +36,22 @@ public class MoiraListTest {
 
   @Test
   public void testMultipleTestClasses() throws IOException {
-    Files.write(testsuite.toPath(), tests.keySet());
+    final List<String> tests =
+        Stream.of(
+                com.example.AppArrayTest.class,
+                com.example.AppObjectFieldTest.class,
+                com.example.AppStaticFieldTest.class,
+                com.example.OtherPassingTest.class,
+                com.example.SimplePassingTest.class,
+                com.example.SimpleFailingTest.class,
+                com.example.JUnit4SubclassTest.class,
+                com.example.JUnit3SuiteTestAll.class)
+            .map(testClass -> testClass.getName())
+            .collect(Collectors.toList());
 
-    execute("list", "--app-cp", System.getProperty("app.classpath"), testsuite.toString());
+    Files.write(testsuite.toPath(), tests);
+
+    execute("list", testsuite.toString());
 
     final List<TestCase> listed =
         Arrays.asList(stdout.toString().trim().split("\\n")).stream()
@@ -105,8 +59,11 @@ public class MoiraListTest {
             .collect(Collectors.toList());
 
     final TestCase[] expected =
-        tests.values().stream()
-            .flatMap(cases -> Arrays.asList(cases).stream())
+        tests.stream()
+            .flatMap(
+                test ->
+                    Arrays.asList(TestAppRegistry.getTestCases(test)).stream()
+                        .map(TestCase::fromId))
             .toArray(TestCase[]::new);
 
     assertThat(listed.size(), is(expected.length));
@@ -115,18 +72,9 @@ public class MoiraListTest {
 
   @Test
   public void testEmptyTestSuite() {
-    execute("list", "--app-cp", System.getProperty("app.classpath"), testsuite.toString());
+    execute("list", testsuite.toString());
 
     assertThat(stdout.toString(), emptyString());
-  }
-
-  private static void registerTestCase(final String testClass, final String... descriptions) {
-    tests.put(
-        testClass,
-        Arrays.asList(descriptions).stream()
-            .map(description -> String.format("%s[%s(%s)]", testClass, description, testClass))
-            .map(TestCase::fromId)
-            .toArray(TestCase[]::new));
   }
 
   private void execute(final String... args) {
