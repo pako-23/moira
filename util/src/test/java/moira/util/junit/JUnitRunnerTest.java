@@ -5,12 +5,14 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThrows;
 
 import com.example.TestAppRegistry;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 import moira.util.model.Outcome;
 import moira.util.model.SimpleTestCase;
 import moira.util.model.TestCase;
+import org.junit.internal.builders.JUnit4Builder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -18,6 +20,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.FieldSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.runner.Runner;
 
 public class JUnitRunnerTest {
 
@@ -49,6 +52,36 @@ public class JUnitRunnerTest {
 
     assertThat(outcomes.size(), is(expected.length));
     assertThat(outcomes, hasItems(expected));
+  }
+
+  @Test
+  public void testTestStartedCallback() {
+    final Class<?> testClass = com.example.SimplePassingTest.class;
+    final List<TestCase> startedTestCases = new ArrayList<>();
+    final TestCase[] expected =
+        Stream.of(TestAppRegistry.getTestCases(testClass))
+            .map(TestCase::fromId)
+            .toArray(TestCase[]::new);
+
+    runner.request(testClass.getName()).withTestStartedCallback(startedTestCases::add).run();
+
+    assertThat(startedTestCases.size(), is(expected.length));
+    assertThat(startedTestCases, hasItems(expected));
+  }
+
+  @Test
+  public void testTestFinishedCallback() {
+    final Class<?> testClass = com.example.SimplePassingTest.class;
+    final List<TestCase> finishedTestCases = new ArrayList<>();
+    final TestCase[] expected =
+        Stream.of(TestAppRegistry.getTestCases(testClass))
+            .map(TestCase::fromId)
+            .toArray(TestCase[]::new);
+
+    runner.request(testClass.getName()).withTestFinishedCallback(finishedTestCases::add).run();
+
+    assertThat(finishedTestCases.size(), is(expected.length));
+    assertThat(finishedTestCases, hasItems(expected));
   }
 
   @Test
@@ -167,6 +200,24 @@ public class JUnitRunnerTest {
     final List<Outcome> outcomes = runner.request("com.example.NotExistingTest").run();
 
     assertThat(outcomes.size(), is(0));
+  }
+
+  @Test
+  public void testRunnerBuilderWithoutRunner() throws Throwable {
+    final JUnitRunnerBuilder builder =
+        new JUnitRunnerBuilder() {
+          @Override
+          protected JUnit4Builder junit4Builder() {
+            return new JUnit4Builder() {
+              @Override
+              public Runner runnerForClass(final Class<?> testClass) {
+                return null;
+              }
+            };
+          }
+        };
+
+    assertThat(builder.runnerForClass(Object.class), is(nullValue()));
   }
 
   @ParameterizedTest

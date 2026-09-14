@@ -4,10 +4,10 @@ plugins {
 }
 
 dependencies {
-    jacocoAggregation(project(":agent"))
-    jacocoAggregation(project(":moira"))
-    jacocoAggregation(project(":util"))
-    jacocoAggregation(project(":test"))
+    jacocoAggregation(project(":agent")) { isTransitive = false }
+    jacocoAggregation(project(":moira")) { isTransitive = false }
+    jacocoAggregation(project(":util")) { isTransitive = false }
+    jacocoAggregation(project(":test")) { isTransitive = false }
 }
 
 tasks.check {
