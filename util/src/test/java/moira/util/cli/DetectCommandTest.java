@@ -57,6 +57,16 @@ public class DetectCommandTest extends AbstractMoiraSubcommandTest {
   }
 
   @Test
+  public void testProgressLoggerIsSetOnService() {
+    final File source = new File("testsuite");
+    setupDetectMocks(DetectionMode.TUSCAN_PACKED, source, multiLineOutput);
+
+    assertSuccessfulExecution(cmd.execute("detect", source.toString()));
+
+    verify(service).setLogger(org.mockito.Mockito.any(CommandLineLogger.class));
+  }
+
+  @Test
   public void testDifferentTestSuiteFile() {
     assertDetectOutput(
         DetectionMode.TUSCAN_PACKED, new File("someothertestsuite"), multiLineOutput);

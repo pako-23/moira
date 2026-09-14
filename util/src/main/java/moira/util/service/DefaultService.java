@@ -140,7 +140,7 @@ public class DefaultService implements Service {
               final int index = outcomes.size() % schedule.length;
               outcomes.add(new Outcome(schedule[index], line.equals("true")));
             })
-        .withArguments(moira.util.runner.ChildRunner.class.getName())
+        .withArguments(moira.util.service.ScheduleExecutor.class.getName())
         .exec();
 
     if (outcomes.size() != schedule.length)

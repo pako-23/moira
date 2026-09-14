@@ -30,9 +30,9 @@ public class DefaultServiceIsIndependentTest extends DefaultServiceTest {
     assertThat(service.isIndependentPair(TEST_1, TEST_2), is(true));
 
     assertThat(
-        executions[0].getArguments(), hasItem(moira.util.runner.ChildRunner.class.getName()));
+        executions[0].getArguments(), hasItem(moira.util.service.ScheduleExecutor.class.getName()));
     assertThat(
-        executions[1].getArguments(), hasItem(moira.util.runner.ChildRunner.class.getName()));
+        executions[1].getArguments(), hasItem(moira.util.service.ScheduleExecutor.class.getName()));
   }
 
   @ParameterizedTest

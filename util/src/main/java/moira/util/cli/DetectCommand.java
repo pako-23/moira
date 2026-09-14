@@ -69,7 +69,9 @@ public class DetectCommand implements Callable<Integer> {
 
     final ScheduleGenerator generator = factory.createScheduleGenerator(mode, service, source);
     final FlakyPairsCollector collector = factory.createFlakyPairsCollector(mode, source);
+    final CommandLineLogger logger = new CommandLineLogger(spec.commandLine().getErr());
 
+    service.setLogger(logger);
     service.findFlakyPairs(generator, collector);
     collector.print(spec.commandLine().getOut());
 

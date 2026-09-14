@@ -57,7 +57,8 @@ public class DefaultServiceFindFlakyTests extends DefaultServiceTest {
     service.findFlakyPairs(generator, collector);
 
     for (final MockedExecution execution : executions)
-      assertThat(execution.getArguments(), hasItem(moira.util.runner.ChildRunner.class.getName()));
+      assertThat(
+          execution.getArguments(), hasItem(moira.util.service.ScheduleExecutor.class.getName()));
 
     assertThat(collector.updates.size(), is(outcomes.length));
     for (int i = 0; i < outcomes.length; ++i) {
