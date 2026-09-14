@@ -1,7 +1,7 @@
 package moira.profiler;
 
 import java.io.FileNotFoundException;
-import java.io.PrintWriter;
+import java.io.PrintStream;
 import moira.collect.Map;
 import moira.collect.MapBuilder;
 
@@ -69,17 +69,22 @@ public class DataFlows {
   }
 
   public void dump(final String fileName) throws FileNotFoundException {
-    try (PrintWriter writer = new PrintWriter(fileName)) {
-      final Iterator it = iterator();
-
-      while (it.hasNext()) {
-        final int from = it.getFrom();
-        final int to = it.getTo();
-
-        writer.println("from: " + getTestName(from) + ", to: " + getTestName(to));
-        it.next();
-      }
+    try (PrintStream output = new PrintStream(fileName)) {
+      dump(output);
     }
+  }
+
+  public void dump(final PrintStream output) {
+    final Iterator it = iterator();
+
+    while (it.hasNext()) {
+      final int from = it.getFrom();
+      final int to = it.getTo();
+
+      output.println("from: " + getTestName(from) + ", to: " + getTestName(to));
+      it.next();
+    }
+    output.flush();
   }
 
   public void update(final ReadWriteSet set) {

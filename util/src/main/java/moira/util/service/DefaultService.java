@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -16,6 +18,8 @@ import moira.util.model.TestSuite;
 import moira.util.schedules.ScheduleGenerator;
 
 public class DefaultService implements Service {
+  private static final String FROM_PREFIX = "from: ";
+  private static final String TO_SEPARATOR = ", to: ";
 
   private final Executor executor;
   private Logger logger;
@@ -25,7 +29,7 @@ public class DefaultService implements Service {
     this.logger =
         new Logger() {
           @Override
-          public void log(String line) {}
+          public void log(final String line) {}
         };
   }
 
@@ -42,17 +46,10 @@ public class DefaultService implements Service {
   @Override
   public TestSuite discoverTestSuite(final File filename) {
     final List<TestCase> tests = new ArrayList<>();
-    final InputStream input;
-
-    try {
-      input = Files.newInputStream(filename.toPath());
-    } catch (final IOException e) {
-      throw new RuntimeException("failed to open testsuite file", e);
-    }
 
     executor
         .execution()
-        .withStdIn(input)
+        .withStdIn(openTestSuiteFile(filename))
         .withArguments(moira.util.service.TestCasesLister.class.getName())
         .withStdOut(line -> tests.add(TestCase.fromId(line)))
         .exec();
@@ -85,7 +82,50 @@ public class DefaultService implements Service {
 
   @Override
   public Map<TestCase, Set<TestCase>> profile(final Profiler profiler, final File filename) {
-    return null;
+    final InputStream tests = openTestSuiteFile(filename);
+    final String agent = Agent.path();
+    final Map<TestCase, Set<TestCase>> dependencies = new HashMap<>();
+
+    executor
+        .execution()
+        .withStdIn(tests)
+        .withStdOut(
+            line -> {
+              final String dependency = line.trim();
+              if (!dependency.startsWith(FROM_PREFIX)) return;
+
+              final int separator = dependency.indexOf(TO_SEPARATOR, FROM_PREFIX.length());
+              if (separator < 0 || separator != dependency.lastIndexOf(TO_SEPARATOR)) return;
+
+              final String fromId = dependency.substring(FROM_PREFIX.length(), separator);
+              final String toId = dependency.substring(separator + TO_SEPARATOR.length());
+
+              final TestCase from;
+              final TestCase to;
+              try {
+                from = TestCase.fromId(fromId);
+                to = TestCase.fromId(toId);
+              } catch (final IllegalArgumentException ignored) {
+                return;
+              }
+              if (!from.toString().equals(fromId) || !to.toString().equals(toId)) return;
+
+              dependencies.compute(
+                  from,
+                  (key, value) -> {
+                    if (value == null) value = new HashSet<>();
+                    value.add(to);
+                    return value;
+                  });
+            })
+        .withArguments(
+            "-javaagent:" + agent,
+            "-Xbootclasspath/a:" + agent,
+            "-Dmoira.profiler.name=" + profiler.getProfilerClass(),
+            moira.util.service.AgentRunner.class.getName())
+        .exec();
+
+    return dependencies;
   }
 
   private Outcome[] executeSchedule(final TestCase[] schedule) {
@@ -135,5 +175,13 @@ public class DefaultService implements Service {
         return line[currentByte++];
       }
     };
+  }
+
+  private InputStream openTestSuiteFile(final File filename) {
+    try {
+      return Files.newInputStream(filename.toPath());
+    } catch (final IOException e) {
+      throw new RuntimeException("failed to open testsuite file", e);
+    }
   }
 }

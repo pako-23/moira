@@ -1,6 +1,7 @@
 package moira.profiler;
 
 import java.io.FileNotFoundException;
+import java.io.PrintStream;
 import moira.collect.Map;
 import moira.collect.MapBuilder;
 
@@ -87,6 +88,12 @@ public final class TargetPairsProfiler {
   }
 
   public static void dump(final String fileName) throws FileNotFoundException {
+    try (PrintStream output = new PrintStream(fileName)) {
+      dump(output);
+    }
+  }
+
+  public static void dump(final PrintStream output) {
     Map.Iterator<String, ReadWriteSet> it = mapping.iterator();
 
     while (it.hasNext()) {
@@ -94,6 +101,6 @@ public final class TargetPairsProfiler {
       it.next();
     }
 
-    dataFlows.dump(fileName);
+    dataFlows.dump(output);
   }
 }

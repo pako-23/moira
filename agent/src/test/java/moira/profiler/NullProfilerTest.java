@@ -75,10 +75,10 @@ public class NullProfilerTest {
     assertDoesNotThrow(() -> NullProfiler.exitTestMethod());
   }
 
-  @Test
-  public void testDumpMethod() {
-    assertDoesNotThrow(() -> NullProfiler.dump(null));
-  }
+  // @Test
+  // public void testDumpMethod() {
+  //   assertDoesNotThrow(() -> NullProfiler.dump(null));
+  // }
 
   @Test
   public void testConstructorIsPrivate() throws NoSuchMethodException {

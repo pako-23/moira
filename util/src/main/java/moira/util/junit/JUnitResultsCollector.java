@@ -2,6 +2,7 @@ package moira.util.junit;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import moira.util.model.Outcome;
 import moira.util.model.TestCase;
 import org.junit.runner.Description;
@@ -12,17 +13,23 @@ public class JUnitResultsCollector extends RunListener {
   private final List<Outcome> outcomes;
   private TestCase runningTestCase;
   private boolean isRunningTestCasePassed;
+  private final Consumer<TestCase> testStartedCallback;
+  private final Consumer<TestCase> testFinishedCallback;
 
-  public JUnitResultsCollector() {
+  public JUnitResultsCollector(
+      final Consumer<TestCase> testStartedCallback, final Consumer<TestCase> testFinishedCallback) {
     outcomes = new ArrayList<>();
     runningTestCase = null;
     isRunningTestCasePassed = false;
+    this.testStartedCallback = testStartedCallback;
+    this.testFinishedCallback = testFinishedCallback;
   }
 
   @Override
   public void testStarted(final Description description) {
     runningTestCase = JUnitDescription.convert(description);
     isRunningTestCasePassed = true;
+    testStartedCallback.accept(runningTestCase);
   }
 
   @Override
@@ -37,6 +44,7 @@ public class JUnitResultsCollector extends RunListener {
 
   @Override
   public void testFinished(final Description description) {
+    testFinishedCallback.accept(runningTestCase);
     outcomes.add(new Outcome(runningTestCase, isRunningTestCasePassed));
   }
 

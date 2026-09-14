@@ -2,6 +2,7 @@ package moira.util.junit;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import moira.util.model.Outcome;
@@ -55,15 +56,20 @@ public class JUnitRunner implements TestRunner {
 
   private static class JUnitScheduleRun implements ScheduleRun {
     private Request request;
+    private Consumer<TestCase> testStartedCallback;
+    private Consumer<TestCase> testFinishedCallback;
 
     public JUnitScheduleRun(final Request request) {
       this.request = request;
+      this.testStartedCallback = (test) -> {};
+      this.testFinishedCallback = (test) -> {};
     }
 
     @Override
     public List<Outcome> run() {
       final JUnitCore junit = new JUnitCore();
-      final JUnitResultsCollector listener = new JUnitResultsCollector();
+      final JUnitResultsCollector listener =
+          new JUnitResultsCollector(testStartedCallback, testFinishedCallback);
 
       junit.addListener(listener);
       junit.run(request);
@@ -115,6 +121,18 @@ public class JUnitRunner implements TestRunner {
                 return comparator.compare(JUnitDescription.convert(a), JUnitDescription.convert(b));
               });
 
+      return this;
+    }
+
+    @Override
+    public ScheduleRun withTestStartedCallback(final Consumer<TestCase> callback) {
+      testStartedCallback = callback;
+      return this;
+    }
+
+    @Override
+    public ScheduleRun withTestFinishedCallback(final Consumer<TestCase> callback) {
+      testFinishedCallback = callback;
       return this;
     }
   }
