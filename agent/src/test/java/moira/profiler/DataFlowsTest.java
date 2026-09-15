@@ -2,12 +2,9 @@ package moira.profiler;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.fail;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -258,19 +255,12 @@ public class DataFlowsTest {
   }
 
   private List<String> makeDump(final String fileName) {
-    List<String> lines = null;
+    final ByteArrayOutputStream output = new ByteArrayOutputStream();
 
-    try {
-      File file = new File(fileName);
-      file.deleteOnExit();
+    dataFlows.dump(new PrintStream(output));
 
-      dataFlows.dump(fileName);
-      lines =
-          Files.readAllLines(Paths.get(fileName)).stream().sorted().collect(Collectors.toList());
-    } catch (final IOException e) {
-      fail(e.getMessage());
-    }
-
-    return lines;
+    return Stream.of(output.toString().split("\n"))
+        .filter(line -> !line.isEmpty())
+        .collect(Collectors.toList());
   }
 }

@@ -2,14 +2,12 @@ package moira.profiler;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -27,21 +25,14 @@ public class NaiveProfilerTest {
     NaiveProfiler.setup();
   }
 
-  private List<String> makeDump(String fileName) {
-    List<String> lines = null;
-    fileName = "test-snapshot-prof-" + fileName;
+  private List<String> makeDump() {
+    final ByteArrayOutputStream output = new ByteArrayOutputStream();
 
-    try {
-      File file = new File(fileName);
-      file.deleteOnExit();
-      NaiveProfiler.dump(fileName);
-      lines =
-          Files.readAllLines(Paths.get(fileName)).stream().sorted().collect(Collectors.toList());
-    } catch (IOException e) {
-      fail(e.getMessage());
-    }
+    NaiveProfiler.dump(new PrintStream(output));
 
-    return lines;
+    return Stream.of(output.toString().split("\n"))
+        .filter(line -> !line.isEmpty())
+        .collect(Collectors.toList());
   }
 
   @Test
@@ -58,7 +49,7 @@ public class NaiveProfilerTest {
     NaiveProfiler.disable();
     NaiveProfiler.exitTestMethod();
 
-    assertThat(makeDump("object-field-dependency").size(), is(0));
+    assertThat(makeDump().size(), is(0));
   }
 
   @Test
@@ -75,6 +66,6 @@ public class NaiveProfilerTest {
     NaiveProfiler.disable();
     NaiveProfiler.exitTestMethod();
 
-    assertThat(makeDump("array-field-dependency").size(), is(0));
+    assertThat(makeDump().size(), is(0));
   }
 }

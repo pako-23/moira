@@ -2,14 +2,12 @@ package moira.profiler;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -25,21 +23,14 @@ public class TargetPairsProfilerTest {
     TargetPairsProfiler.setup();
   }
 
-  private List<String> makeDump(String fileName) {
-    List<String> lines = null;
-    fileName = "target-pairs-" + fileName;
+  private List<String> makeDump() {
+    final ByteArrayOutputStream output = new ByteArrayOutputStream();
 
-    try {
-      File file = new File(fileName);
-      file.deleteOnExit();
-      TargetPairsProfiler.dump(fileName);
-      lines =
-          Files.readAllLines(Paths.get(fileName)).stream().sorted().collect(Collectors.toList());
-    } catch (IOException e) {
-      fail(e.getMessage());
-    }
+    TargetPairsProfiler.dump(new PrintStream(output));
 
-    return lines;
+    return Stream.of(output.toString().split("\n"))
+        .filter(line -> !line.isEmpty())
+        .collect(Collectors.toList());
   }
 
   private void runIntoVirtualTest(final String testName, final Runnable operations) {
@@ -52,14 +43,14 @@ public class TargetPairsProfilerTest {
 
   @Test
   public void testSetupNoTests() {
-    assertThat(makeDump("setup-no-tests").size(), is(0));
+    assertThat(makeDump().size(), is(0));
   }
 
   @Test
   public void testEnterExitNoAccess() {
     runIntoVirtualTest(TEST_A, () -> {});
 
-    assertThat(makeDump("enter-exit-no-access").size(), is(0));
+    assertThat(makeDump().size(), is(0));
   }
 
   @Test
@@ -67,7 +58,7 @@ public class TargetPairsProfilerTest {
     TargetPairsProfiler.writeStaticField(FIELD_A);
     TargetPairsProfiler.readStaticField(FIELD_A);
 
-    assertThat(makeDump("outside-test-noop").size(), is(0));
+    assertThat(makeDump().size(), is(0));
   }
 
   @Test
@@ -84,7 +75,7 @@ public class TargetPairsProfilerTest {
           TargetPairsProfiler.writeStaticField(FIELD_A);
         });
 
-    final List<String> lines = makeDump("write-write-conflict");
+    final List<String> lines = makeDump();
     assertThat(lines.size(), is(2));
     assertThat(lines, hasItems("from: TestA, to: TestB", "from: TestB, to: TestA"));
   }
@@ -103,7 +94,7 @@ public class TargetPairsProfilerTest {
           TargetPairsProfiler.readStaticField(FIELD_A);
         });
 
-    final List<String> lines = makeDump("read-read-conflict");
+    final List<String> lines = makeDump();
     assertThat(lines.size(), is(2));
     assertThat(lines, hasItems("from: TestA, to: TestB", "from: TestB, to: TestA"));
   }
@@ -122,7 +113,7 @@ public class TargetPairsProfilerTest {
           TargetPairsProfiler.readStaticField(FIELD_A);
         });
 
-    final List<String> lines = makeDump("write-read-conflict");
+    final List<String> lines = makeDump();
     assertThat(lines.size(), is(2));
     assertThat(lines, hasItems("from: TestA, to: TestB", "from: TestB, to: TestA"));
   }
@@ -141,7 +132,7 @@ public class TargetPairsProfilerTest {
           TargetPairsProfiler.writeStaticField(FIELD_A);
         });
 
-    final List<String> lines = makeDump("read-write-conflict");
+    final List<String> lines = makeDump();
     assertThat(lines.size(), is(2));
     assertThat(lines, hasItems("from: TestA, to: TestB", "from: TestB, to: TestA"));
   }
@@ -160,7 +151,7 @@ public class TargetPairsProfilerTest {
           TargetPairsProfiler.writeStaticField(FIELD_B);
         });
 
-    assertThat(makeDump("different-fields").size(), is(0));
+    assertThat(makeDump().size(), is(0));
   }
 
   @Test
@@ -183,7 +174,7 @@ public class TargetPairsProfilerTest {
           TargetPairsProfiler.writeStaticField(FIELD_A);
         });
 
-    final List<String> lines = makeDump("three-tests");
+    final List<String> lines = makeDump();
     assertThat(lines.size(), is(6));
     assertThat(
         lines,
@@ -217,7 +208,7 @@ public class TargetPairsProfilerTest {
           TargetPairsProfiler.writeStaticField(FIELD_B);
         });
 
-    final List<String> lines = makeDump("multi-field");
+    final List<String> lines = makeDump();
     assertThat(lines.size(), is(4));
     assertThat(
         lines,
@@ -242,7 +233,7 @@ public class TargetPairsProfilerTest {
           TargetPairsProfiler.writeStaticField(FIELD_A);
         });
 
-    final List<String> lines = makeDump("dump-content");
+    final List<String> lines = makeDump();
     assertThat(lines.size(), is(2));
     assertThat(lines, hasItems("from: TestA, to: TestB", "from: TestB, to: TestA"));
   }
@@ -263,7 +254,7 @@ public class TargetPairsProfilerTest {
       TargetPairsProfiler.exitTestMethod();
     }
 
-    final List<String> lines = makeDump("noop-methods");
+    final List<String> lines = makeDump();
     assertThat(lines.size(), is(0));
   }
 
@@ -282,7 +273,7 @@ public class TargetPairsProfilerTest {
           TargetPairsProfiler.writeStaticField(FIELD_A);
         });
 
-    List<String> lines = makeDump("repeated-access");
+    List<String> lines = makeDump();
     assertThat(lines.size(), is(2));
     assertThat(lines, hasItems("from: TestA, to: TestB", "from: TestB, to: TestA"));
   }
@@ -305,7 +296,7 @@ public class TargetPairsProfilerTest {
           TargetPairsProfiler.resume();
         });
 
-    final List<String> lines = makeDump("suspend-no-conflict");
+    final List<String> lines = makeDump();
     assertThat(lines.size(), is(0));
   }
 
@@ -327,7 +318,7 @@ public class TargetPairsProfilerTest {
           TargetPairsProfiler.enable();
         });
 
-    final List<String> lines = makeDump("disabled-no-conflict");
+    final List<String> lines = makeDump();
     assertThat(lines.size(), is(0));
   }
 }

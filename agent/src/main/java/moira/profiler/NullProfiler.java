@@ -29,9 +29,5 @@ public final class NullProfiler {
 
   public static void exitTestMethod() {}
 
-  public static void dump(final String fileName) {}
-
-  public static void dump(final PrintStream output) {
-    output.flush();
-  }
+  public static void dump(final PrintStream output) {}
 }

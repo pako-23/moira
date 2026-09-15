@@ -4,13 +4,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.fail;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -108,19 +106,16 @@ public class ProfilerTest {
     }
   }
 
-  private static List<String> dump(final Class<?> clazz, final String prefix, final String suffix) {
-    final String fileName = prefix + "-" + suffix;
+  private static List<String> dump(final Class<?> clazz) {
+    final ByteArrayOutputStream output = new ByteArrayOutputStream();
 
     try {
-      final File file = new File(fileName);
-      file.deleteOnExit();
-      clazz.getMethod("dump", String.class).invoke(null, fileName);
+      clazz.getMethod("dump", PrintStream.class).invoke(null, new PrintStream(output));
 
-      return Files.readAllLines(Paths.get(fileName)).stream().sorted().collect(Collectors.toList());
-    } catch (final NoSuchMethodException
-        | IllegalAccessException
-        | InvocationTargetException
-        | IOException e) {
+      return Stream.of(output.toString().split("\n"))
+          .filter(line -> !line.isEmpty())
+          .collect(Collectors.toList());
+    } catch (final NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
       fail(e.getMessage());
       return null;
     }
@@ -162,48 +157,46 @@ public class ProfilerTest {
 
   private static Stream<Arguments> profilers() {
     return Stream.of(
-        Arguments.of(ObjectProfiler.class, "obj-prof"),
-        Arguments.of(OnlineProfiler.class, "online-prof"),
-        Arguments.of(NaiveProfiler.class, "naive-prof"));
+        Arguments.of(ObjectProfiler.class),
+        Arguments.of(OnlineProfiler.class),
+        Arguments.of(NaiveProfiler.class));
   }
 
   @ParameterizedTest
   @MethodSource("profilers")
-  public void testConstructorIsPrivate(final Class<?> profiler, final String prefix)
-      throws NoSuchMethodException {
+  public void testConstructorIsPrivate(final Class<?> profiler) throws NoSuchMethodException {
     final Constructor<?> constructor = profiler.getDeclaredConstructor();
     assertThat(Modifier.isPrivate(constructor.getModifiers()), is(true));
   }
 
   @ParameterizedTest
   @MethodSource("profilers")
-  public void testFinalClass(final Class<?> profiler, final String prefix)
-      throws NoSuchMethodException {
+  public void testFinalClass(final Class<?> profiler) throws NoSuchMethodException {
     assertThat(Modifier.isFinal(NaiveProfiler.class.getModifiers()), is(true));
   }
 
   @ParameterizedTest
   @MethodSource("profilers")
-  public void testEnterExitTestMethod(final Class<?> profiler, final String prefix) {
+  public void testEnterExitTestMethod(final Class<?> profiler) {
     enterTestMethod(profiler, TEST_NAME[0]);
     exitTestMethod(profiler);
   }
 
   @ParameterizedTest
   @MethodSource("profilers")
-  public void testInitialProfilerSetup(final Class<?> profiler, final String prefix) {
+  public void testInitialProfilerSetup(final Class<?> profiler) {
     readArrayElement(profiler, ARRAY, INDEX);
     writeArrayElement(profiler, ARRAY, INDEX);
     readStaticField(profiler, FIELD);
     writeStaticField(profiler, FIELD);
     readObjectField(profiler, OBJECT, FIELD);
     writeObjectField(profiler, OBJECT, FIELD);
-    assertThat(dump(profiler, prefix, "initial-profiler-setup").size(), is(0));
+    assertThat(dump(profiler).size(), is(0));
   }
 
   @ParameterizedTest
   @MethodSource("profilers")
-  public void testSuspendedProfiler(final Class<?> profiler, final String prefix) {
+  public void testSuspendedProfiler(final Class<?> profiler) {
     enterTestMethod(profiler, TEST_NAME[0]);
     enable(profiler);
     suspend(profiler);
@@ -216,12 +209,12 @@ public class ProfilerTest {
     resume(profiler);
     disable(profiler);
     exitTestMethod(profiler);
-    assertThat(dump(profiler, prefix, "suspended").size(), is(0));
+    assertThat(dump(profiler).size(), is(0));
   }
 
   @ParameterizedTest
   @MethodSource("profilers")
-  public void testNullObjects(final Class<?> profiler, final String prefix) {
+  public void testNullObjects(final Class<?> profiler) {
     enterTestMethod(profiler, TEST_NAME[0]);
     enable(profiler);
     readArrayElement(profiler, null, INDEX);
@@ -230,12 +223,12 @@ public class ProfilerTest {
     writeObjectField(profiler, null, FIELD);
     disable(profiler);
     exitTestMethod(profiler);
-    assertThat(dump(profiler, prefix, "null-objects").size(), is(0));
+    assertThat(dump(profiler).size(), is(0));
   }
 
   @ParameterizedTest
   @MethodSource("profilers")
-  public void testStaticDoubleWriteDependency(final Class<?> profiler, final String prefix) {
+  public void testStaticDoubleWriteDependency(final Class<?> profiler) {
     enterTestMethod(profiler, TEST_NAME[0]);
     enable(profiler);
     writeStaticField(profiler, FIELD);
@@ -249,7 +242,7 @@ public class ProfilerTest {
     disable(profiler);
     exitTestMethod(profiler);
 
-    final List<String> lines = dump(profiler, prefix, "static-field-double-write-dependency");
+    final List<String> lines = dump(profiler);
     final List<String> expected =
         Stream.of("from: " + TEST_NAME[0] + ", to: " + TEST_NAME[1])
             .sorted()
@@ -260,7 +253,7 @@ public class ProfilerTest {
 
   @ParameterizedTest
   @MethodSource("profilers")
-  public void testStaticWriteBeforeRead(final Class<?> profiler, final String prefix) {
+  public void testStaticWriteBeforeRead(final Class<?> profiler) {
     enterTestMethod(profiler, TEST_NAME[0]);
     enable(profiler);
     writeStaticField(profiler, FIELD);
@@ -273,12 +266,12 @@ public class ProfilerTest {
     readStaticField(profiler, FIELD);
     disable(profiler);
     exitTestMethod(profiler);
-    assertThat(dump(profiler, prefix, "static-write-before-read-dependency").size(), is(0));
+    assertThat(dump(profiler).size(), is(0));
   }
 
   @ParameterizedTest
   @MethodSource("profilers")
-  public void testStaticDependency(final Class<?> profiler, final String prefix) {
+  public void testStaticDependency(final Class<?> profiler) {
     enterTestMethod(profiler, TEST_NAME[0]);
     enable(profiler);
     writeStaticField(profiler, FIELD);
@@ -291,7 +284,7 @@ public class ProfilerTest {
     disable(profiler);
     exitTestMethod(profiler);
 
-    final List<String> lines = dump(profiler, prefix, "static-field-dependency");
+    final List<String> lines = dump(profiler);
     final List<String> expected =
         Stream.of("from: " + TEST_NAME[0] + ", to: " + TEST_NAME[1])
             .sorted()
@@ -302,7 +295,7 @@ public class ProfilerTest {
 
   @ParameterizedTest
   @MethodSource("profilers")
-  public void testStaticDependencyInverted(final Class<?> profiler, final String prefix) {
+  public void testStaticDependencyInverted(final Class<?> profiler) {
     enterTestMethod(profiler, TEST_NAME[1]);
     enable(profiler);
     readStaticField(profiler, FIELD);
@@ -315,7 +308,7 @@ public class ProfilerTest {
     disable(profiler);
     exitTestMethod(profiler);
 
-    final List<String> lines = dump(profiler, prefix, "static-field-dependency-inverted");
+    final List<String> lines = dump(profiler);
     final List<String> expected =
         Stream.of("from: " + TEST_NAME[0] + ", to: " + TEST_NAME[1])
             .sorted()
@@ -326,7 +319,7 @@ public class ProfilerTest {
 
   @ParameterizedTest
   @MethodSource("profilers")
-  public void testObjectDependency(final Class<?> profiler, final String prefix) {
+  public void testObjectDependency(final Class<?> profiler) {
     enterTestMethod(profiler, TEST_NAME[0]);
     enable(profiler);
     writeObjectField(profiler, OBJECT, FIELD);
@@ -339,7 +332,7 @@ public class ProfilerTest {
     disable(profiler);
     exitTestMethod(profiler);
 
-    final List<String> lines = dump(profiler, prefix, "object-dependency");
+    final List<String> lines = dump(profiler);
     final List<String> expected =
         Stream.of("from: " + TEST_NAME[0] + ", to: " + TEST_NAME[1])
             .sorted()
@@ -350,7 +343,7 @@ public class ProfilerTest {
 
   @ParameterizedTest
   @MethodSource("profilers")
-  public void testObjectWriteBeforeRead(final Class<?> profiler, final String prefix) {
+  public void testObjectWriteBeforeRead(final Class<?> profiler) {
     enterTestMethod(profiler, TEST_NAME[0]);
     enable(profiler);
     writeObjectField(profiler, OBJECT, FIELD);
@@ -364,12 +357,12 @@ public class ProfilerTest {
     disable(profiler);
     exitTestMethod(profiler);
 
-    assertThat(dump(profiler, prefix, "object-write-before-read").size(), is(0));
+    assertThat(dump(profiler).size(), is(0));
   }
 
   @ParameterizedTest
   @MethodSource("profilers")
-  public void testObjectDoubleWriteDependency(final Class<?> profiler, final String prefix) {
+  public void testObjectDoubleWriteDependency(final Class<?> profiler) {
     enterTestMethod(profiler, TEST_NAME[0]);
     enable(profiler);
     writeObjectField(profiler, OBJECT, FIELD);
@@ -383,7 +376,7 @@ public class ProfilerTest {
     disable(profiler);
     exitTestMethod(profiler);
 
-    final List<String> lines = dump(profiler, prefix, "object-double-write-dependency");
+    final List<String> lines = dump(profiler);
     final List<String> expected =
         Stream.of("from: " + TEST_NAME[0] + ", to: " + TEST_NAME[1])
             .sorted()
@@ -394,7 +387,7 @@ public class ProfilerTest {
 
   @ParameterizedTest
   @MethodSource("profilers")
-  public void testObjectDependencyInverted(final Class<?> profiler, final String prefix) {
+  public void testObjectDependencyInverted(final Class<?> profiler) {
     enterTestMethod(profiler, TEST_NAME[1]);
     enable(profiler);
     readObjectField(profiler, OBJECT, FIELD);
@@ -407,7 +400,7 @@ public class ProfilerTest {
     disable(profiler);
     exitTestMethod(profiler);
 
-    final List<String> lines = dump(profiler, prefix, "object-dependency-inverted");
+    final List<String> lines = dump(profiler);
     final List<String> expected =
         Stream.of("from: " + TEST_NAME[0] + ", to: " + TEST_NAME[1])
             .sorted()
@@ -418,7 +411,7 @@ public class ProfilerTest {
 
   @ParameterizedTest
   @MethodSource("profilers")
-  public void testObjectDifferent(final Class<?> profiler, final String prefix) {
+  public void testObjectDifferent(final Class<?> profiler) {
     final String first = "first";
     final String second = "second";
     enterTestMethod(profiler, TEST_NAME[0]);
@@ -433,12 +426,12 @@ public class ProfilerTest {
     disable(profiler);
     exitTestMethod(profiler);
 
-    assertThat(dump(profiler, prefix, "object-different").size(), is(0));
+    assertThat(dump(profiler).size(), is(0));
   }
 
   @ParameterizedTest
   @MethodSource("profilers")
-  public void testArrayDoubleWriteDependency(final Class<?> profiler, final String prefix) {
+  public void testArrayDoubleWriteDependency(final Class<?> profiler) {
     enterTestMethod(profiler, TEST_NAME[0]);
     enable(profiler);
     writeArrayElement(profiler, ARRAY, INDEX);
@@ -452,7 +445,7 @@ public class ProfilerTest {
     disable(profiler);
     exitTestMethod(profiler);
 
-    final List<String> lines = dump(profiler, prefix, "array-double-write-dependency");
+    final List<String> lines = dump(profiler);
     final List<String> expected =
         Stream.of("from: " + TEST_NAME[0] + ", to: " + TEST_NAME[1])
             .sorted()
@@ -463,7 +456,7 @@ public class ProfilerTest {
 
   @ParameterizedTest
   @MethodSource("profilers")
-  public void testArrayWriteBeforeRead(final Class<?> profiler, final String prefix) {
+  public void testArrayWriteBeforeRead(final Class<?> profiler) {
     enterTestMethod(profiler, TEST_NAME[0]);
     enable(profiler);
     writeArrayElement(profiler, ARRAY, INDEX);
@@ -477,12 +470,12 @@ public class ProfilerTest {
     disable(profiler);
     exitTestMethod(profiler);
 
-    assertThat(dump(profiler, prefix, "array-write-before-read").size(), is(0));
+    assertThat(dump(profiler).size(), is(0));
   }
 
   @ParameterizedTest
   @MethodSource("profilers")
-  public void testArrayDependency(final Class<?> profiler, final String prefix) {
+  public void testArrayDependency(final Class<?> profiler) {
     enterTestMethod(profiler, TEST_NAME[0]);
     enable(profiler);
     writeArrayElement(profiler, ARRAY, INDEX);
@@ -495,7 +488,7 @@ public class ProfilerTest {
     disable(profiler);
     exitTestMethod(profiler);
 
-    final List<String> lines = dump(profiler, prefix, "array-dependency");
+    final List<String> lines = dump(profiler);
     final List<String> expected =
         Stream.of("from: " + TEST_NAME[0] + ", to: " + TEST_NAME[1])
             .sorted()
@@ -506,7 +499,7 @@ public class ProfilerTest {
 
   @ParameterizedTest
   @MethodSource("profilers")
-  public void testArrayDependencyInverted(final Class<?> profiler, final String prefix) {
+  public void testArrayDependencyInverted(final Class<?> profiler) {
     enterTestMethod(profiler, TEST_NAME[0]);
     enable(profiler);
     writeArrayElement(profiler, ARRAY, INDEX);
@@ -519,7 +512,7 @@ public class ProfilerTest {
     disable(profiler);
     exitTestMethod(profiler);
 
-    final List<String> lines = dump(profiler, prefix, "array-dependency-inverted");
+    final List<String> lines = dump(profiler);
     final List<String> expected =
         Stream.of("from: " + TEST_NAME[0] + ", to: " + TEST_NAME[1])
             .sorted()
@@ -530,7 +523,7 @@ public class ProfilerTest {
 
   @ParameterizedTest
   @MethodSource("profilers")
-  public void testArrayDifferent(final Class<?> profiler, final String prefix) {
+  public void testArrayDifferent(final Class<?> profiler) {
     final int[] first = new int[10];
     final int[] second = new int[10];
     enterTestMethod(profiler, TEST_NAME[0]);
@@ -545,12 +538,12 @@ public class ProfilerTest {
     disable(profiler);
     exitTestMethod(profiler);
 
-    assertThat(dump(profiler, prefix, "array-different").size(), is(0));
+    assertThat(dump(profiler).size(), is(0));
   }
 
   @ParameterizedTest
   @MethodSource("profilers")
-  public void testStaticDependencyDisabled(final Class<?> profiler, final String prefix) {
+  public void testStaticDependencyDisabled(final Class<?> profiler) {
     enterTestMethod(profiler, TEST_NAME[0]);
     writeStaticField(profiler, FIELD);
     exitTestMethod(profiler);
@@ -559,12 +552,12 @@ public class ProfilerTest {
     readStaticField(profiler, FIELD);
     exitTestMethod(profiler);
 
-    assertThat(dump(profiler, prefix, "static-field-dependency-disabled").size(), is(0));
+    assertThat(dump(profiler).size(), is(0));
   }
 
   @ParameterizedTest
   @MethodSource("profilers")
-  public void testObjectDependencyDisabled(final Class<?> profiler, final String prefix) {
+  public void testObjectDependencyDisabled(final Class<?> profiler) {
     enterTestMethod(profiler, TEST_NAME[0]);
     writeObjectField(profiler, OBJECT, FIELD);
     exitTestMethod(profiler);
@@ -573,12 +566,12 @@ public class ProfilerTest {
     readObjectField(profiler, OBJECT, FIELD);
     exitTestMethod(profiler);
 
-    assertThat(dump(profiler, prefix, "object-dependency-disabled").size(), is(0));
+    assertThat(dump(profiler).size(), is(0));
   }
 
   @ParameterizedTest
   @MethodSource("profilers")
-  public void testArrayDependencyDisabled(final Class<?> profiler, final String prefix) {
+  public void testArrayDependencyDisabled(final Class<?> profiler) {
     enterTestMethod(profiler, TEST_NAME[0]);
     writeArrayElement(profiler, ARRAY, INDEX);
     exitTestMethod(profiler);
@@ -587,12 +580,12 @@ public class ProfilerTest {
     readArrayElement(profiler, ARRAY, INDEX);
     exitTestMethod(profiler);
 
-    assertThat(dump(profiler, prefix, "array-dependency-disabled").size(), is(0));
+    assertThat(dump(profiler).size(), is(0));
   }
 
   @ParameterizedTest
   @MethodSource("profilers")
-  public void testManyObjects(final Class<?> profiler, final String prefix) {
+  public void testManyObjects(final Class<?> profiler) {
     final Object[] objects = new Object[1000];
 
     for (int i = 0; i < objects.length; ++i) objects[i] = new Object();
@@ -609,7 +602,7 @@ public class ProfilerTest {
     disable(profiler);
     exitTestMethod(profiler);
 
-    final List<String> lines = dump(profiler, prefix, "many-object-dependency");
+    final List<String> lines = dump(profiler);
     final List<String> expected =
         Stream.of("from: " + TEST_NAME[0] + ", to: " + TEST_NAME[1])
             .sorted()
@@ -620,7 +613,7 @@ public class ProfilerTest {
 
   @ParameterizedTest
   @MethodSource("profilers")
-  public void testManyArrays(final Class<?> profiler, final String prefix) {
+  public void testManyArrays(final Class<?> profiler) {
     final Object[] arrays = new Object[1024];
 
     for (int i = 0; i < arrays.length; ++i) arrays[i] = new int[5];
@@ -637,7 +630,7 @@ public class ProfilerTest {
     disable(profiler);
     exitTestMethod(profiler);
 
-    final List<String> lines = dump(profiler, prefix, "many-array-dependency");
+    final List<String> lines = dump(profiler);
     final List<String> expected =
         Stream.of("from: " + TEST_NAME[0] + ", to: " + TEST_NAME[1])
             .sorted()

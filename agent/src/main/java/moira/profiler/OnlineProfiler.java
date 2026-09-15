@@ -1,6 +1,5 @@
 package moira.profiler;
 
-import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.lang.reflect.Array;
 import moira.collect.ArrayMap;
@@ -42,12 +41,6 @@ public final class OnlineProfiler {
             .keyDeletionCallback(OnlineProfiler::fieldMappingDump)
             .hashFunction(System::identityHashCode)
             .build();
-  }
-
-  public static void dump(final String fileName) throws FileNotFoundException {
-    try (PrintStream output = new PrintStream(fileName)) {
-      dump(output);
-    }
   }
 
   public static void dump(final PrintStream output) {

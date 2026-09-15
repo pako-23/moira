@@ -187,4 +187,19 @@ public class ClassManglerTest {
         mangler.visitMethod(access, METHOD_NAME, METHOD_DESC, null, null),
         sameInstance(methodVisitorMock));
   }
+
+  @Test
+  public void testFinalizeMethod() {
+    when(configMock.isSuspended(CLASS_NAME)).thenReturn(false);
+    when(configMock.shouldMangle(CLASS_NAME)).thenReturn(true);
+    mangler.visit(VERSION, Opcodes.ACC_PUBLIC, CLASS_NAME, null, OBJECT_SUPER, null);
+    verify(classVisitorMock)
+        .visit(VERSION, Opcodes.ACC_PUBLIC, CLASS_NAME, null, OBJECT_SUPER, null);
+
+    when(classVisitorMock.visitMethod(Opcodes.ACC_PROTECTED, "finalize", METHOD_DESC, null, null))
+        .thenReturn(methodVisitorMock);
+    assertThat(
+        mangler.visitMethod(Opcodes.ACC_PROTECTED, "finalize", METHOD_DESC, null, null),
+        sameInstance(methodVisitorMock));
+  }
 }

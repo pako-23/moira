@@ -1,6 +1,5 @@
 package moira.profiler;
 
-import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.lang.reflect.Array;
 import moira.collect.ArrayMap;
@@ -148,12 +147,6 @@ public final class NaiveProfiler {
     if (value != 0) return true;
     suspend.set(1);
     return false;
-  }
-
-  public static void dump(final String fileName) throws FileNotFoundException {
-    try (PrintStream output = new PrintStream(fileName)) {
-      dump(output);
-    }
   }
 
   public static void dump(final PrintStream output) {

@@ -2,13 +2,10 @@ package moira.profiler;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.lang.ref.WeakReference;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -28,21 +25,14 @@ public class ObjectProfilerTest {
     ObjectProfiler.setup();
   }
 
-  private List<String> makeDump(String fileName) {
-    List<String> lines = null;
-    fileName = "obj-prof-" + fileName;
+  private List<String> makeDump() {
+    final ByteArrayOutputStream output = new ByteArrayOutputStream();
 
-    try {
-      File file = new File(fileName);
-      file.deleteOnExit();
-      ObjectProfiler.dump(fileName);
-      lines =
-          Files.readAllLines(Paths.get(fileName)).stream().sorted().collect(Collectors.toList());
-    } catch (IOException e) {
-      fail(e.getMessage());
-    }
+    ObjectProfiler.dump(new PrintStream(output));
 
-    return lines;
+    return Stream.of(output.toString().split("\n"))
+        .filter(line -> !line.isEmpty())
+        .collect(Collectors.toList());
   }
 
   @Test
@@ -59,7 +49,7 @@ public class ObjectProfilerTest {
     ObjectProfiler.disable();
     ObjectProfiler.exitTestMethod();
 
-    final List<String> lines = makeDump("object-field-dependency");
+    final List<String> lines = makeDump();
     final List<String> expected =
         Stream.of("from: " + TEST_NAME[0] + ", to: " + TEST_NAME[1])
             .sorted()
@@ -82,7 +72,7 @@ public class ObjectProfilerTest {
     ObjectProfiler.disable();
     ObjectProfiler.exitTestMethod();
 
-    final List<String> lines = makeDump("array-field-dependency");
+    final List<String> lines = makeDump();
     final List<String> expected =
         Stream.of("from: " + TEST_NAME[0] + ", to: " + TEST_NAME[1])
             .sorted()
@@ -120,7 +110,7 @@ public class ObjectProfilerTest {
     ObjectProfiler.disable();
     ObjectProfiler.exitTestMethod();
 
-    assertThat(makeDump("object-gc-dependency").size(), is(0));
+    assertThat(makeDump().size(), is(0));
   }
 
   @Test
@@ -152,6 +142,6 @@ public class ObjectProfilerTest {
     ObjectProfiler.disable();
     ObjectProfiler.exitTestMethod();
 
-    assertThat(makeDump("array-gc-dependency").size(), is(0));
+    assertThat(makeDump().size(), is(0));
   }
 }

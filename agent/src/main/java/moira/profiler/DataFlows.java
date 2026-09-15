@@ -1,6 +1,5 @@
 package moira.profiler;
 
-import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import moira.collect.Map;
 import moira.collect.MapBuilder;
@@ -66,12 +65,6 @@ public class DataFlows {
 
   public String getTestName(final int i) {
     return tests[i].name;
-  }
-
-  public void dump(final String fileName) throws FileNotFoundException {
-    try (PrintStream output = new PrintStream(fileName)) {
-      dump(output);
-    }
   }
 
   public void dump(final PrintStream output) {
