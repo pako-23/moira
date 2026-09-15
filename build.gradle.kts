@@ -6,7 +6,6 @@ plugins {
 dependencies {
     jacocoAggregation(project(":agent")) { isTransitive = false }
     jacocoAggregation(project(":moira")) { isTransitive = false }
-    jacocoAggregation(project(":util")) { isTransitive = false }
     jacocoAggregation(project(":test")) { isTransitive = false }
 }
 

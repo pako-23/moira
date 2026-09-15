@@ -14,9 +14,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import moira.util.execution.Execution;
-import moira.util.execution.ForkExecutor;
-import moira.util.model.TestCase;
+import moira.execution.Execution;
+import moira.execution.ForkExecutor;
+import moira.model.TestCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -85,7 +85,7 @@ public class MoiraListTest {
         .withArguments(
             Stream.concat(
                     arguments.stream().filter(name -> name.startsWith("-javaagent")),
-                    Stream.concat(Stream.of("moira.util.cli.MoiraUtil"), Stream.of(args)))
+                    Stream.concat(Stream.of(moira.cli.Moira.class.getName()), Stream.of(args)))
                 .toArray(String[]::new))
         .exec();
   }

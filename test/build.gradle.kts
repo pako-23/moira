@@ -8,7 +8,6 @@ sourceSets {
 
 dependencies {
     implementation(project(":moira"))
-    implementation(project(":util"))
     implementation(project(":testapp"))
     implementation(libs.junit)
     testImplementation(libs.picocli)

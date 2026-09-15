@@ -1,9 +1,0 @@
-package moira.util.schedules;
-
-import moira.util.model.TestCase;
-
-public interface ScheduleGenerator {
-  public TestCase[] generate();
-
-  public int count();
-}
