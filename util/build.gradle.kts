@@ -6,9 +6,9 @@ plugins {
 dependencies {
     compileOnly(libs.junit)
     implementation(libs.picocli)
-    implementation(libs.jna)
     testImplementation(project(":testapp"))
     testImplementation(libs.junit)
+    testRuntimeOnly(project(":agent"))
 }
 
 val agentJar = rootProject.project(":agent").tasks.named<Jar>("jar").flatMap { it.archiveFile }

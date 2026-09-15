@@ -11,6 +11,7 @@ import java.lang.instrument.UnmodifiableClassException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.List;
+import moira.profiler.NullProfiler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
@@ -71,6 +72,40 @@ public class AgentTest {
       order.verify(instrumentationMock).retransformClasses(classes[0]);
       order.verify(instrumentationMock).isModifiableClass(classes[1]);
       order.verifyNoMoreInteractions();
+    }
+  }
+
+  @Test
+  public void testProfilerAndLambdaFormClassesAreNotRetransformed()
+      throws UnmodifiableClassException, ClassNotFoundException {
+    final String property = "moira.profiler.name";
+    final String originalProfiler = System.getProperty(property);
+    System.setProperty(property, "NullProfiler");
+
+    try {
+      final Class<?> lambdaForm = Class.forName("java.lang.invoke.LambdaForm");
+      final Class<?>[] classes = new Class<?>[] {NullProfiler.class, lambdaForm};
+      when(instrumentationMock.getAllLoadedClasses()).thenReturn(classes);
+      when(instrumentationMock.isRetransformClassesSupported()).thenReturn(true);
+      when(instrumentationMock.isModifiableClass(classes[0])).thenReturn(true);
+      when(instrumentationMock.isModifiableClass(classes[1])).thenReturn(true);
+
+      try (final MockedConstruction<Transformer> transformerMock =
+          mockConstruction(Transformer.class)) {
+        Agent.premain("", instrumentationMock);
+        final List<Transformer> transformers = transformerMock.constructed();
+        final InOrder order = inOrder(instrumentationMock);
+        assertThat(transformers.size(), is(1));
+        order.verify(instrumentationMock).addTransformer(transformers.get(0), true);
+        order.verify(instrumentationMock).isRetransformClassesSupported();
+        order.verify(instrumentationMock).getAllLoadedClasses();
+        order.verify(instrumentationMock).isModifiableClass(classes[0]);
+        order.verify(instrumentationMock).isModifiableClass(classes[1]);
+        order.verifyNoMoreInteractions();
+      }
+    } finally {
+      if (originalProfiler == null) System.clearProperty(property);
+      else System.setProperty(property, originalProfiler);
     }
   }
 }

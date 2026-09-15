@@ -2,12 +2,10 @@
 asm = "9.8"
 junit = "4.13.2"
 picocli = "4.7.7"
-jna = "5.19.1"
 
 [libraries]
 asm = { module = "org.ow2.asm:asm", version.ref = "asm" }
 asm-commons = { module = "org.ow2.asm:asm-commons", version.ref = "asm" }
 asm-util = { module = "org.ow2.asm:asm-util", version.ref = "asm" }
-jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
 junit = { module = "junit:junit", version.ref = "junit" }
 picocli = { module = "info.picocli:picocli", version.ref = "picocli" }
