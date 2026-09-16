@@ -12,3 +12,9 @@ dependencies {
 tasks.check {
     dependsOn(tasks.named<JacocoReport>("testCodeCoverageReport"))
 }
+
+tasks.named<JacocoReport>("testCodeCoverageReport") {
+    reports {
+        csv.required.set(true)
+    }
+}
