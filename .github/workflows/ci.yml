@@ -159,5 +159,5 @@ jobs:
             "release/moira-${RELEASE_VERSION}.tar" \
             "release/SHA256SUMS" \
             --generate-notes \
-            --title "Moira ${RELEASE_VERSION}" \
+            --title "moira ${RELEASE_VERSION}" \
             --verify-tag
