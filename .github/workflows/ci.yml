@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches: [main]
+    tags: ['v*.*.*']
   pull_request:
 
 permissions:
@@ -12,9 +13,33 @@ jobs:
   build:
     name: Build Moira
     runs-on: ubuntu-latest
+    outputs:
+      release_version: ${{ steps.release_metadata.outputs.version }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Validate release tag
+        id: release_metadata
+        if: github.event_name == 'tags'
+        shell: bash
+        run: |
+          if [[ ! "${GITHUB_REF_NAME}" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "Invalid release tag: ${GITHUB_REF_NAME}" >&2
+            echo "Expected a stable semantic version such as v1.2.3." >&2
+            exit 1
+          fi
+
+          tagged_commit="$(git rev-parse "${GITHUB_REF_NAME}^{commit}")"
+          git fetch --no-tags origin main
+          if ! git merge-base --is-ancestor "${tagged_commit}" origin/main; then
+            echo "Release tags must point to a commit contained in origin/main." >&2
+            exit 1
+          fi
+
+          echo "version=${GITHUB_REF_NAME#v}" >> "${GITHUB_OUTPUT}"
 
       - name: Set up Java
         uses: actions/setup-java@v6
@@ -26,13 +51,30 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
 
       - name: Run checks
-        run: gradle build
+        env:
+          RELEASE_VERSION: ${{ steps.release_metadata.outputs.version }}
+        run: |
+          if test -n "${RELEASE_VERSION}"; then
+            gradle build -PreleaseVersion=${RELEASE_VERSION}"
+          else
+            gradle build
+          fi
 
       - name: Upload JaCoCo report
         uses: actions/upload-artifact@v7
         with:
           name: jacoco-report
           path: build/reports/jacoco/testCodeCoverageReport
+
+      - name: Upload release distributions
+        if: github.event_name == 'tags'
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-distributions
+          path: |
+            moira/build/distributions/moira-${{ steps.release_metadata.outputs.version }}.zip
+            moira/build/distributions/moira-${{ steps.release_metadata.outputs.version }}.tar
+          if-no-files-found: error
 
   coverage-badges:
     name: Update coverage badges
@@ -70,3 +112,52 @@ jobs:
           git add .github/badges
           git commit -m "chore: update coverage badges"
           git push
+
+  release:
+    name: Publish release
+    needs: build
+    if: github.event_name == 'tags'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download release distributions
+        uses: actions/download-artifact@v8
+        with:
+          name: release-distributions
+          path: release
+
+      - name: Verify distributions and generate checksums
+        env:
+          RELEASE_VERSION: ${{ needs.build.outputs.release_version }}
+        shell: bash
+        run: |
+          tar_archive="release/moira-${RELEASE_VERSION}.tar"
+          zip_archive="release/moira-${RELEASE_VERSION}.zip"
+          extraction_directory="${RUNNER_TEMP}/moira-release"
+
+          mkdir -p "${extraction_directory}"
+          tar -xf "${tar_archive}" -C "${extraction_directory}"
+          unzip -t "${zip_archive}"
+
+          test -f "${extraction_directory}/moira-${RELEASE_VERSION}/agent/agent.jar"
+          "${extraction_directory}/moira-${RELEASE_VERSION}/bin/moira" --help >/dev/null
+
+          cd release
+          sha256sum "moira-${RELEASE_VERSION}.zip" "moira-${RELEASE_VERSION}.tar" > SHA256SUMS
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_VERSION: ${{ needs.build.outputs.release_version }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            "release/moira-${RELEASE_VERSION}.zip" \
+            "release/moira-${RELEASE_VERSION}.tar" \
+            "release/SHA256SUMS" \
+            --generate-notes \
+            --title "Moira ${RELEASE_VERSION}" \
+            --verify-tag

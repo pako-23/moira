@@ -3,6 +3,8 @@ plugins {
     application
 }
 
+version = providers.gradleProperty("releaseVersion").getOrElse("0.0.1-SNAPSHOT")
+
 dependencies {
     compileOnly(libs.junit)
     implementation(libs.picocli)
