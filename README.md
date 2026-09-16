@@ -1,5 +1,8 @@
 # Moira
 
+[![Latest Release](https://img.shields.io/github/v/release/pako-23/moira?sort=semver)](https://github.com/pako-23/moira/releases/latest)
+![License](./LICENSE)
+
 Moira is a dynamic analysis tool designed to uncover hidden
 dependencies within  JUnit test suites. By leveraging a Java Agent,
 Moira monitors execution in real-time to identify shared state and

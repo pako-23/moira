@@ -9,8 +9,8 @@ permissions:
   contents: read
 
 jobs:
-  test:
-    name: Test
+  build:
+    name: Build Moira
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -26,4 +26,4 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
 
       - name: Run checks
-        run: ./gradlew build
+        run: gradle build
