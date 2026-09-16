@@ -14,6 +14,7 @@ import moira.model.TestCase;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class DefaultServiceProfileTest extends DefaultServiceTest {
 
@@ -27,7 +28,7 @@ public class DefaultServiceProfileTest extends DefaultServiceTest {
     final MockedExecution[] executions = captureExecutions(1);
     final File testsuite = createTestSuiteFile("com.example.FirstTest", "com.example.SecondTest");
 
-    service.profile(Profiler.NULL, testsuite);
+    service.profile(ProfileOptions.builder().withTestSuite(testsuite));
 
     assertThat(
         executions[0].getStdInContent(),
@@ -41,7 +42,8 @@ public class DefaultServiceProfileTest extends DefaultServiceTest {
   public void testProfilerArguments(final Profiler profiler) throws IOException {
     final MockedExecution[] executions = captureExecutions(1);
 
-    service.profile(profiler, createTestSuiteFile());
+    service.profile(
+        ProfileOptions.builder().withProfiler(profiler).withTestSuite(createTestSuiteFile()));
 
     final String agent = Agent.path();
     assertThat(
@@ -50,6 +52,25 @@ public class DefaultServiceProfileTest extends DefaultServiceTest {
             "-javaagent:" + agent,
             "-Xbootclasspath/a:" + agent,
             "-Dmoira.profiler.name=" + profiler.getProfilerClass(),
+            moira.service.AgentRunner.class.getName()));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"com/example/", "com/example/,org/example/"})
+  public void testFilterArgument(final String filter) throws IOException {
+    final MockedExecution[] executions = captureExecutions(1);
+
+    service.profile(
+        ProfileOptions.builder().withTestSuite(createTestSuiteFile()).withFilter(filter));
+
+    final String agent = Agent.path();
+    assertThat(
+        executions[0].getArguments(),
+        contains(
+            "-javaagent:" + agent,
+            "-Xbootclasspath/a:" + agent,
+            "-Dmoira.profiler.name=" + Profiler.NULL.getProfilerClass(),
+            "-Dmoira.agent.filter=" + filter,
             moira.service.AgentRunner.class.getName()));
   }
 
@@ -63,7 +84,7 @@ public class DefaultServiceProfileTest extends DefaultServiceTest {
         "  from: " + SOURCE_TWO + ", to: " + TARGET_TWO + "  ");
 
     final Map<TestCase, Set<TestCase>> dependencies =
-        service.profile(Profiler.NULL, createTestSuiteFile());
+        service.profile(ProfileOptions.builder().withTestSuite(createTestSuiteFile()));
 
     assertThat(dependencies.keySet(), containsInAnyOrder(SOURCE_ONE, SOURCE_TWO));
     assertThat(dependencies.get(SOURCE_ONE), containsInAnyOrder(TARGET_ONE, TARGET_TWO));
@@ -83,7 +104,7 @@ public class DefaultServiceProfileTest extends DefaultServiceTest {
         "from: " + SOURCE_ONE + ", to: com.example.TargetTest[first]#01");
 
     final Map<TestCase, Set<TestCase>> dependencies =
-        service.profile(Profiler.NULL, createTestSuiteFile());
+        service.profile(ProfileOptions.builder().withTestSuite(createTestSuiteFile()));
 
     assertThat(dependencies, anEmptyMap());
   }
@@ -92,7 +113,9 @@ public class DefaultServiceProfileTest extends DefaultServiceTest {
   public void testNotExistingTestSuiteFile() {
     final RuntimeException exception =
         assertThrows(
-            RuntimeException.class, () -> service.profile(Profiler.NULL, new File("not-existing")));
+            RuntimeException.class,
+            () ->
+                service.profile(ProfileOptions.builder().withTestSuite(new File("not-existing"))));
 
     assertThat(exception.getMessage(), containsString("failed to open testsuite file"));
   }

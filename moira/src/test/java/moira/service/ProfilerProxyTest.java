@@ -71,7 +71,6 @@ public class ProfilerProxyTest {
   @AfterEach
   public void cleanup() {
     DummyProfiler.reset();
-    System.clearProperty("moira.profiler.filename");
   }
 
   @Nested

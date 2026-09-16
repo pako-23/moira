@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import moira.model.TestCase;
+import moira.service.ProfileOptions;
 import moira.service.Profiler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 
 public class ProfileCommandTest extends AbstractMoiraSubcommandTest {
 
@@ -68,13 +70,26 @@ public class ProfileCommandTest extends AbstractMoiraSubcommandTest {
     final File testsuite = new File("testsuite");
     final Map<TestCase, Set<TestCase>> result = sampleResult();
 
-    when(service.profile(Profiler.NULL, testsuite)).thenReturn(result);
+    when(service.profile(org.mockito.ArgumentMatchers.any(ProfileOptions.class)))
+        .thenReturn(result);
 
     final int exitCode = cmd.execute("profile", "--app-cp", classpath, testsuite.toString());
 
     assertSuccessfulExecution(exitCode);
     verify(service, times(1)).setAppClassPath(classpath);
     assertDetectedPairs(result);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"--filter", "-f"})
+  public void testSetFilter(final String option) {
+    assertProfileOutputWithFilter(
+        Profiler.NULL,
+        new File("testsuite"),
+        sampleResult(),
+        "com.example.,org.example.",
+        option,
+        "com.example.,org.example.");
   }
 
   @Test
@@ -117,6 +132,10 @@ public class ProfileCommandTest extends AbstractMoiraSubcommandTest {
         stdout.toString(),
         matchesPattern(
             optionDescriptionPattern("--app-cp=<classpath>", "The application's classpath")));
+    assertThat(
+        stdout.toString(),
+        matchesPattern(
+            optionDescriptionPattern("-f, --filter=<filter>", "A filter for the profiler")));
   }
 
   private void assertProfileOutput(
@@ -124,7 +143,17 @@ public class ProfileCommandTest extends AbstractMoiraSubcommandTest {
       final File testsuite,
       final Map<TestCase, Set<TestCase>> result,
       final String... options) {
-    when(service.profile(profiler, testsuite)).thenReturn(result);
+    assertProfileOutputWithFilter(profiler, testsuite, result, null, options);
+  }
+
+  private void assertProfileOutputWithFilter(
+      final Profiler profiler,
+      final File testsuite,
+      final Map<TestCase, Set<TestCase>> result,
+      final String filter,
+      final String... options) {
+    when(service.profile(org.mockito.ArgumentMatchers.any(ProfileOptions.class)))
+        .thenReturn(result);
 
     final String[] args = new String[options.length + 2];
     args[0] = "profile";
@@ -133,6 +162,12 @@ public class ProfileCommandTest extends AbstractMoiraSubcommandTest {
 
     assertSuccessfulExecution(cmd.execute(args));
     assertDetectedPairs(result);
+
+    final ArgumentCaptor<ProfileOptions> captor = ArgumentCaptor.forClass(ProfileOptions.class);
+    verify(service).profile(captor.capture());
+    assertThat(captor.getValue().getProfiler(), is(profiler));
+    assertThat(captor.getValue().getTestSuite(), is(testsuite));
+    assertThat(captor.getValue().getFilter(), is(filter));
   }
 
   private void assertDetectedPairs(final Map<TestCase, Set<TestCase>> result) {

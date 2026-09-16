@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import moira.factory.MoiraFactory;
 import moira.model.TestCase;
+import moira.service.ProfileOptions;
 import moira.service.Profiler;
 import moira.service.Service;
 import picocli.CommandLine.Command;
@@ -46,6 +47,12 @@ public class ProfileCommand implements Callable<Integer> {
   private String classpath;
 
   @Option(
+      description = "A filter for the profiler.",
+      names = {"--filter", "-f"},
+      paramLabel = "<filter>")
+  private String filter;
+
+  @Option(
       names = {"-h", "--help"},
       description = "Display help and exit.",
       usageHelp = true)
@@ -69,7 +76,13 @@ public class ProfileCommand implements Callable<Integer> {
     final Service service = factory.createService();
 
     if (!classpath.isEmpty()) service.setAppClassPath(classpath);
-    final Map<TestCase, Set<TestCase>> result = service.profile(profiler, testsuite);
+
+    ProfileOptions options =
+        ProfileOptions.builder().withProfiler(profiler).withTestSuite(testsuite);
+
+    if (filter != null) options = options.withFilter(filter);
+
+    final Map<TestCase, Set<TestCase>> result = service.profile(options);
 
     result.entrySet().stream()
         .forEach(

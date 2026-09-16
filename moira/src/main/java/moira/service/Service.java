@@ -21,5 +21,5 @@ public interface Service {
   public void findFlakyPairs(
       final ScheduleGenerator generator, final FlakyPairsCollector collector);
 
-  public Map<TestCase, Set<TestCase>> profile(final Profiler profiler, final File filename);
+  public Map<TestCase, Set<TestCase>> profile(final ProfileOptions options);
 }

@@ -81,10 +81,19 @@ public class DefaultService implements Service {
   }
 
   @Override
-  public Map<TestCase, Set<TestCase>> profile(final Profiler profiler, final File filename) {
-    final InputStream tests = openTestSuiteFile(filename);
+  public Map<TestCase, Set<TestCase>> profile(final ProfileOptions options) {
+    final InputStream tests = openTestSuiteFile(options.getTestSuite());
     final String agent = Agent.path();
     final Map<TestCase, Set<TestCase>> dependencies = new HashMap<>();
+    final List<String> args = new ArrayList<>();
+
+    args.add("-javaagent:" + agent);
+    args.add("-Xbootclasspath/a:" + agent);
+    args.add("-Dmoira.profiler.name=" + options.getProfiler().getProfilerClass());
+
+    if (options.getFilter() != null) args.add("-Dmoira.agent.filter=" + options.getFilter());
+
+    args.add(moira.service.AgentRunner.class.getName());
 
     executor
         .execution()
@@ -118,11 +127,7 @@ public class DefaultService implements Service {
                     return value;
                   });
             })
-        .withArguments(
-            "-javaagent:" + agent,
-            "-Xbootclasspath/a:" + agent,
-            "-Dmoira.profiler.name=" + profiler.getProfilerClass(),
-            moira.service.AgentRunner.class.getName())
+        .withArguments(args.stream().toArray(String[]::new))
         .exec();
 
     return dependencies;
