@@ -87,6 +87,15 @@ public class DefaultService implements Service {
     final Map<TestCase, Set<TestCase>> dependencies = new HashMap<>();
     final List<String> args = new ArrayList<>();
 
+    args.add("-Xss2m");
+
+    if (JavaVersion.version() >= 9) {
+      args.add("--add-opens");
+      args.add("java.base/java.util=ALL-UNNAMED");
+      args.add("--add-opens");
+      args.add("java.base/sun.security.jca=ALL-UNNAMED");
+    }
+
     args.add("-javaagent:" + agent);
     args.add("-Xbootclasspath/a:" + agent);
     args.add("-Dmoira.profiler.name=" + options.getProfiler().getProfilerClass());
