@@ -92,6 +92,27 @@ public class ProfileCommandTest extends AbstractMoiraSubcommandTest {
         "com.example.,org.example.");
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {"--suspend", "-s"})
+  public void testSetSuspend(final String option) {
+    final File testsuite = new File("testsuite");
+    final Map<TestCase, Set<TestCase>> result = sampleResult();
+    final String suspend = "com.example.,org.example.";
+
+    when(service.profile(org.mockito.ArgumentMatchers.any(ProfileOptions.class)))
+        .thenReturn(result);
+
+    assertSuccessfulExecution(cmd.execute("profile", option, suspend, testsuite.toString()));
+    assertDetectedPairs(result);
+
+    final ArgumentCaptor<ProfileOptions> captor = ArgumentCaptor.forClass(ProfileOptions.class);
+    verify(service).profile(captor.capture());
+    assertThat(captor.getValue().getProfiler(), is(Profiler.NULL));
+    assertThat(captor.getValue().getTestSuite(), is(testsuite));
+    assertThat(captor.getValue().getFilter(), is(nullValue()));
+    assertThat(captor.getValue().getSuspend(), is(suspend));
+  }
+
   @Test
   public void testInvalidProfiler() {
     assertFailedWithMessage(
@@ -136,6 +157,11 @@ public class ProfileCommandTest extends AbstractMoiraSubcommandTest {
         stdout.toString(),
         matchesPattern(
             optionDescriptionPattern("-f, --filter=<filter>", "A filter for the profiler")));
+    assertThat(
+        stdout.toString(),
+        matchesPattern(
+            optionDescriptionPattern(
+                "-s, --suspend=<suspend>", "The suspend filter for the profiler")));
   }
 
   private void assertProfileOutput(
@@ -168,6 +194,7 @@ public class ProfileCommandTest extends AbstractMoiraSubcommandTest {
     assertThat(captor.getValue().getProfiler(), is(profiler));
     assertThat(captor.getValue().getTestSuite(), is(testsuite));
     assertThat(captor.getValue().getFilter(), is(filter));
+    assertThat(captor.getValue().getSuspend(), is(nullValue()));
   }
 
   private void assertDetectedPairs(final Map<TestCase, Set<TestCase>> result) {

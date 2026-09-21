@@ -15,6 +15,7 @@ public class ProfileOptionsTest {
     assertThat(options.getProfiler(), is(Profiler.NULL));
     assertThat(options.getTestSuite(), is(nullValue()));
     assertThat(options.getFilter(), is(nullValue()));
+    assertThat(options.getSuspend(), is(nullValue()));
   }
 
   @Test
@@ -40,5 +41,13 @@ public class ProfileOptionsTest {
 
     assertThat(options.withFilter("com/example/"), is(sameInstance(options)));
     assertThat(options.getFilter(), is("com/example/"));
+  }
+
+  @Test
+  public void testSetSuspend() {
+    final ProfileOptions options = ProfileOptions.builder();
+
+    assertThat(options.withSuspend("com/example/"), is(sameInstance(options)));
+    assertThat(options.getSuspend(), is("com/example/"));
   }
 }

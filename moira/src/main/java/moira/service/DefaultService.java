@@ -92,6 +92,7 @@ public class DefaultService implements Service {
     args.add("-Dmoira.profiler.name=" + options.getProfiler().getProfilerClass());
 
     if (options.getFilter() != null) args.add("-Dmoira.agent.filter=" + options.getFilter());
+    if (options.getSuspend() != null) args.add("-Dmoira.agent.suspend=" + options.getSuspend());
 
     args.add(moira.service.AgentRunner.class.getName());
 

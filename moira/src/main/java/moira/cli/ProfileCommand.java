@@ -53,6 +53,12 @@ public class ProfileCommand implements Callable<Integer> {
   private String filter;
 
   @Option(
+      description = "The suspend filter for the profiler.",
+      names = {"--suspend", "-s"},
+      paramLabel = "<suspend>")
+  private String suspend;
+
+  @Option(
       names = {"-h", "--help"},
       description = "Display help and exit.",
       usageHelp = true)
@@ -81,6 +87,7 @@ public class ProfileCommand implements Callable<Integer> {
         ProfileOptions.builder().withProfiler(profiler).withTestSuite(testsuite);
 
     if (filter != null) options = options.withFilter(filter);
+    if (suspend != null) options = options.withSuspend(suspend);
 
     final Map<TestCase, Set<TestCase>> result = service.profile(options);
 

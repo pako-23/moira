@@ -74,6 +74,25 @@ public class DefaultServiceProfileTest extends DefaultServiceTest {
             moira.service.AgentRunner.class.getName()));
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {"com/example/", "com/example/,org/example/"})
+  public void testSuspendArgument(final String suspend) throws IOException {
+    final MockedExecution[] executions = captureExecutions(1);
+
+    service.profile(
+        ProfileOptions.builder().withTestSuite(createTestSuiteFile()).withSuspend(suspend));
+
+    final String agent = Agent.path();
+    assertThat(
+        executions[0].getArguments(),
+        contains(
+            "-javaagent:" + agent,
+            "-Xbootclasspath/a:" + agent,
+            "-Dmoira.profiler.name=" + Profiler.NULL.getProfilerClass(),
+            "-Dmoira.agent.suspend=" + suspend,
+            moira.service.AgentRunner.class.getName()));
+  }
+
   @Test
   public void testReturnsDependencies() throws IOException {
     final MockedExecution[] executions = captureExecutions(1);

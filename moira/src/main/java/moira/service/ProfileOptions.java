@@ -5,12 +5,14 @@ import java.io.File;
 public class ProfileOptions {
   private Profiler profiler;
   private String filter;
+  private String suspend;
   private File testsuite;
 
   private ProfileOptions() {
     this.profiler = Profiler.NULL;
     this.testsuite = null;
     this.filter = null;
+    this.suspend = null;
   }
 
   public static ProfileOptions builder() {
@@ -32,6 +34,11 @@ public class ProfileOptions {
     return this;
   }
 
+  public ProfileOptions withSuspend(final String suspend) {
+    this.suspend = suspend;
+    return this;
+  }
+
   public Profiler getProfiler() {
     return this.profiler;
   }
@@ -42,5 +49,9 @@ public class ProfileOptions {
 
   public String getFilter() {
     return this.filter;
+  }
+
+  public String getSuspend() {
+    return this.suspend;
   }
 }
