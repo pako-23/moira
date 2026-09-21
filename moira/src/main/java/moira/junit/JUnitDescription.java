@@ -10,7 +10,7 @@ import org.junit.runner.Description;
 public class JUnitDescription {
 
   private static final Pattern pattern =
-      Pattern.compile("^(.*)\\[moira: ([A-Za-z0-9.]+)(?:, index: (\\d+))?\\]$");
+      Pattern.compile("^(.*)\\[moira: ([A-Za-z0-9.$]+)(?:, index: (\\d+))?\\]$");
 
   private JUnitDescription() {}
 
